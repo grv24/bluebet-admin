@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "jsx": "react-jsx",                         // ✅ Required for JSX
+    "esModuleInterop": true,                    // ✅ Fixes import React from 'react'
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "skipLibCheck": true,                       // ✅ Skip type checking of declaration files
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@components/*": ["src/components/*"],
+      "@assets/*": ["src/assets/*"],
+      "@styles/*": ["src/styles/*"],
+      "@layouts/*": ["src/layouts/*"],
+      "@utils/*": ["src/utils/*"],
+      "@pages/*": ["src/pages/*"],
+      "@routes/*": ["src/routes/*"],
+      "@dummy/*": ["src/__dummy__data/*"]
+    },
+    "types": ["jest", "node", "react", "react-dom"]                   // ✅ Jest types in test files
+  },
+  "include": ["src", "jest.setup.ts", "src/types"]
+}

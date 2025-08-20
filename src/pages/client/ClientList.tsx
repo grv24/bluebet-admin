@@ -1,0 +1,697 @@
+import React, { useMemo, useState, useCallback, useEffect } from "react";
+import { FaFilePdf, FaFileExcel } from "react-icons/fa6";
+import { DepositModal, WithdrawModal } from "@/components";
+import { useNavigate } from "react-router-dom";
+import ExporsureLimit from "@/components/common/ExporsureLimit";
+import CreditModal from "@/components/common/CreditModal";
+import PasswordModal from "@/components/common/PasswordModal";
+import ChangeStatusModal from "@/components/common/ChangeStatusModal";
+import { useCookies } from "react-cookie";
+import { getDecodedTokenData, baseUrl } from "@/helper/auth";
+import { getDownlineList } from "@/helper/user";
+import { useQuery } from "@tanstack/react-query";
+import { useDrawerMetrics } from "@/components/context/DrawerMetricsContext";
+
+const pageSizeOptions = [25, 50, 100];
+
+interface ClientRow {
+  userName: string;
+  creditRef: string;
+  balance: number;
+  clientPL?: string;
+  exposure: number;
+  availableBalance: number;
+  ust: boolean;
+  bst: boolean;
+  exposureLimit: number;
+  defaultPercent: number;
+  accountType: string;
+  _id?: string;
+}
+
+interface APIUser {
+  _id?: string;
+  PersonalDetails?: {
+    loginId?: string;
+    userName?: string;
+  };
+  AccountDetails?: {
+    Balance?: number;
+    creditReference?: number;
+    ExposureLimit?: number;
+    Exposure?: number;
+    profitLoss?: number;
+  };
+  userLocked?: boolean;
+  bettingLocked?: boolean;
+  defaultPercent?: number;
+  __type?: string;
+}
+
+interface DownlineListResponse {
+  users: APIUser[];
+  totalUsers: number;
+  totalPages: number;
+  currentPage: number;
+}
+
+interface ModalState {
+  deposit: ClientRow | null;
+  withdraw: ClientRow | null;
+  exposureLimit: ClientRow | null;
+  credit: ClientRow | null;
+  password: ClientRow | null;
+  changeStatus: ClientRow | null;
+}
+
+const getTotalCreditRef = (data: ClientRow[]): number => {
+  return data.reduce((sum: number, row: ClientRow) => {
+    const num = Number(row.creditRef.replace(/,/g, ""));
+    return sum + (isNaN(num) ? 0 : num);
+  }, 0);
+};
+
+const formatNumber = (num: number): string => num.toLocaleString("en-IN");
+
+// Deposit Modal Component
+interface DepositModalProps {
+  open: boolean;
+  onClose: () => void;
+  user: ClientRow | null;
+}
+
+const ClientList: React.FC = () => {
+  const [cookies] = useCookies(["Admin", "TechAdmin"]);
+  const [search, setSearch] = useState("");
+  const [pageSize, setPageSize] = useState(25);
+  const [page, setPage] = useState(1);
+  const [activeTab, setActiveTab] = useState<"active" | "deactive">("active");
+
+
+  console.log("my data",getDecodedTokenData(cookies)?.AccountDetails?.Balance);
+
+  // Consolidated modal state for better performance
+  const [modalState, setModalState] = useState<ModalState>({
+    deposit: null,
+    withdraw: null,
+    exposureLimit: null,
+    credit: null,
+    password: null,
+    changeStatus: null,
+  });
+
+  // Memoized auth token to avoid recalculation
+  const authToken = useMemo(
+    () => cookies[baseUrl.includes("techadmin") ? "TechAdmin" : "Admin"],
+    [cookies]
+  );
+
+  // Decoded token data
+  const { userId, __type: userType } = getDecodedTokenData(cookies) || {};
+
+  // Get downline list data with optimized query key
+  const {
+    data: downlineData,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery<DownlineListResponse>({
+    queryKey: ["downlineList", userId, page, pageSize, search],
+    queryFn: async () => {
+      const response = await getDownlineList({
+        token: authToken || "",
+        userId: userId || "",
+        page,
+        limit: pageSize,
+      });
+      return response;
+    },
+    enabled:
+      !!userId &&
+      !!authToken &&
+      !modalState.deposit &&
+      !modalState.withdraw &&
+      !modalState.exposureLimit &&
+      !modalState.credit &&
+      !modalState.password &&
+      !modalState.changeStatus,
+    staleTime: 30000, // Cache for 30 seconds
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+  });
+
+  console.log(modalState, "modalState");
+  // Optimized data transformation with error handling
+  const transformedData = useMemo<ClientRow[]>(() => {
+    if (!downlineData?.users || !Array.isArray(downlineData.users)) {
+      return [];
+    }
+    console.log(downlineData.users, "downlineData");
+    return downlineData.users.map((user: APIUser): ClientRow => {
+      const balance = user.AccountDetails?.Balance || 0;
+      const creditRefNum = user.AccountDetails?.creditReference || 0;
+      return {
+        userName:
+          user.PersonalDetails?.loginId ||
+          user.PersonalDetails?.userName ||
+          "N/A",
+        creditRef: creditRefNum ? creditRefNum.toLocaleString() : "0",
+        balance,
+        // Client P/L = Balance - Credit Reference
+        clientPL: formatNumber(balance - creditRefNum),
+        exposure: user.AccountDetails?.Exposure || 0,
+        // Available Balance = Balance
+        availableBalance: balance,
+        // Interpret as ACTIVE states (true means active)
+        ust: user.userLocked === true ? false : true,
+        bst: user.bettingLocked === true ? false : true,
+        exposureLimit: user.AccountDetails?.ExposureLimit || 0,
+        defaultPercent: user.defaultPercent || 0,
+        accountType: user.__type || "User",
+        _id: user._id || "",
+      };
+    });
+  }, [downlineData?.users]);
+
+  // Tab filtering: Active = userActive && betActive; Deactive = otherwise
+  const tabFilteredData = useMemo<ClientRow[]>(() => {
+    if (activeTab === "active") {
+      return transformedData.filter((row) => row.ust && row.bst);
+    }
+    return transformedData.filter((row) => !(row.ust && row.bst));
+  }, [transformedData, activeTab]);
+
+  // Client-side search filtering (for current page only) within the selected tab
+  const filteredData = useMemo<ClientRow[]>(() => {
+    if (!search.trim()) return tabFilteredData;
+
+    const searchTerm = search.toLowerCase();
+    return tabFilteredData.filter(
+      (row) =>
+        row.userName.toLowerCase().includes(searchTerm) ||
+        row.accountType.toLowerCase().includes(searchTerm)
+    );
+  }, [tabFilteredData, search]);
+
+  // Pagination metadata
+  const paginationInfo = useMemo(
+    () => ({
+      totalPages: downlineData?.totalPages || 0,
+      totalUsers: downlineData?.totalUsers || 0,
+      currentPage: downlineData?.currentPage || page,
+      hasNextPage: page < (downlineData?.totalPages || 0),
+      hasPrevPage: page > 1,
+    }),
+    [downlineData, page]
+  );
+
+  // Memoized handlers for better performance
+  const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    setSearch(e.target.value);
+    setPage(1);
+  }, []);
+
+  const handlePageSizeChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      e.preventDefault();
+      setPageSize(Number(e.target.value));
+      setPage(1);
+    },
+    []
+  );
+
+  const handleReset = useCallback(() => {
+    setSearch("");
+    setPage(1);
+  }, []);
+
+  const handleRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  // Modal handlers with consolidated state management
+  const openModal = useCallback((type: keyof ModalState, user: ClientRow) => {
+    setModalState((prev) => ({ ...prev, [type]: user }));
+  }, []);
+
+  const closeModal = useCallback((type: keyof ModalState) => {
+    setModalState((prev) => ({ ...prev, [type]: null }));
+  }, []);
+
+  // Pagination handlers
+  const handlePrevPage = useCallback(() => {
+    setPage((prev) => Math.max(1, prev - 1));
+  }, []);
+
+  const handleNextPage = useCallback(() => {
+    setPage((prev) => Math.min(paginationInfo.totalPages, prev + 1));
+  }, [paginationInfo.totalPages]);
+
+  // Calculate total credit reference for visible data
+  const totalCreditRef = useMemo(
+    () => getTotalCreditRef(filteredData),
+    [filteredData]
+  );
+
+  const totals = useMemo(() => {
+    const parseNumeric = (value: string | number | undefined): number => {
+      if (typeof value === "number") return value || 0;
+      if (!value) return 0;
+      const num = Number(value.toString().replace(/,/g, ""));
+      return isNaN(num) ? 0 : num;
+    };
+    return filteredData.reduce(
+      (
+        acc,
+        row
+      ) => {
+        acc.balance += row.balance || 0;
+        acc.clientPL += parseNumeric(row.clientPL);
+        acc.exposure += row.exposure || 0;
+        acc.availableBalance += row.availableBalance || 0;
+        acc.exposureLimit += row.exposureLimit || 0;
+        acc.defaultPercent += row.defaultPercent || 0;
+        return acc;
+      },
+      {
+        balance: 0,
+        clientPL: 0,
+        exposure: 0,
+        availableBalance: 0,
+        exposureLimit: 0,
+        defaultPercent: 0,
+      }
+    );
+  }, [filteredData]);
+
+  // Drawer metrics updater side-effect
+  const { setGroups } = useDrawerMetrics();
+  useEffect(() => {
+    // Compute summary metrics similar to screenshot
+    const totalCreditRefNum = filteredData.reduce((s, r) => s + Number(r.creditRef.replace(/,/g, "")) || 0, 0);
+    const totalBalance = filteredData.reduce((s, r) => s + (r.balance || 0), 0);
+    const availableBalance = totalBalance; // per new rule
+    const clientPLTotal = filteredData.reduce((s, r) => s + (Number((r.clientPL || "0").toString().replace(/,/g, "")) || 0), 0);
+
+    const downLevelCreditRef = totalCreditRefNum; // placeholder: using same total for demo
+    const downLevelPL = clientPLTotal; // aggregate
+
+    setGroups([
+      [
+        { label: "Upper Level Credit Referance", value: 0 },
+        { label: "Total Master Balance", value: totalBalance },
+        { label: "Available Balance", value: availableBalance },
+      ],
+      [
+        { label: "Down level Occupy Balance", value: 0 },
+        { label: "Upper Level", value: 0 },
+        { label: "Available Balance With Profit/Loss", value: availableBalance },
+      ],
+      [
+        { label: "Down Level Credit Referance", value: downLevelCreditRef },
+        { label: "Down Level Profit/Loss", value: downLevelPL },
+        { label: "My Profit/Loss", value: 0 },
+      ],
+    ]);
+  }, [filteredData, setGroups]);
+
+  const navigate = useNavigate();
+
+  // Enhanced error state
+  if (error) {
+    return (
+      <div className="p-4 bg-[#fafafa] min-h-screen">
+        <div className="flex flex-col justify-center items-center h-64 space-y-4">
+          <div className="text-lg text-red-500">❌ Error loading data</div>
+          <button
+            onClick={handleRefresh}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 bg-[#fafafa] min-h-screen min-w-fit">
+      <div className="flex flex-wrap items-center justify-between mb-2 gap-2">
+        <h2 className="m-0 text-lg font-normal">Account List</h2>
+        <button
+          className="px-4 leading-8 rounded cursor-pointer tracking-tight font-medium text-white text-sm bg-[var(--bg-primary)] hover:opacity-90 transition"
+          onClick={() => navigate("/add-client")}
+        >
+          Add Account
+        </button>
+      </div>
+      {/* Top tabs like screenshot: Active Users / Deactivate Users */}
+      <div className="flex items-center gap-6 mb-3 border-b border-gray-200">
+        <button
+          className={`-mb-px pb-2 text-sm font-medium ${
+            activeTab === "active"
+              ? "text-[var(--bg-primary)] border-b-2 border-[var(--bg-primary)]"
+              : "text-gray-600 hover:text-gray-800"
+          }`}
+          onClick={() => {
+            setActiveTab("active");
+            setPage(1);
+          }}
+        >
+          Active Users
+        </button>
+        <button
+          className={`-mb-px pb-2 text-sm font-medium ${
+            activeTab === "deactive"
+              ? "text-[var(--bg-primary)] border-b-2 border-[var(--bg-primary)]"
+              : "text-gray-600 hover:text-gray-800"
+          }`}
+          onClick={() => {
+            setActiveTab("deactive");
+            setPage(1);
+          }}
+        >
+          Deactivate Users
+        </button>
+      </div>
+
+      <div className="flex flex-wrap gap-1 mb-2">
+        <button className="flex cursor-pointer items-center gap-2 px-3 leading-8 rounded font-medium text-white text-xs bg-[#cb0606] hover:opacity-90 transition">
+          <FaFilePdf className="w-3 h-3" /> PDF
+        </button>
+        <button className="flex cursor-pointer items-center gap-2 px-3 leading-8 rounded font-medium text-white text-xs bg-[#217346] hover:opacity-90 transition">
+          <FaFileExcel className="w-3 h-3" /> Excel
+        </button>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <span className="text-xs">Show</span>
+        <select
+          value={pageSize}
+          onChange={handlePageSizeChange}
+          className="px-2 py-1 rounded border border-gray-300 text-xs"
+        >
+          {pageSizeOptions.map((opt) => (
+            <option className="text-xs text-gray-500" key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+        <span className="text-xs">entries</span>
+        <div className="ml-auto flex gap-2 items-center">
+          <span className="text-xs">Search:</span>
+          <input
+            type="text"
+            placeholder="Search..."
+            value={search}
+            onChange={handleSearch}
+            className="px-2 py-1 rounded border border-gray-300 min-w-[120px] text-xs leading-6"
+          />
+          {/* <button 
+            className="px-4 py-1 rounded font-medium cursor-pointer text-white text-sm leading-6 bg-[var(--bg-primary)] hover:opacity-90 transition"
+            onClick={handleRefresh}
+            disabled={isLoading}
+          >
+            {"Refresh"}
+          </button> */}
+          <button
+            onClick={handleReset}
+            className="px-4 py-1 rounded leading-6 cursor-pointer font-medium text-white text-sm bg-[#74788d] hover:opacity-90 transition"
+          >
+            Reset
+          </button>
+        </div>
+      </div>
+
+      {/* Modal Components with consolidated state management */}
+      <DepositModal
+        title="Deposit"
+        open={!!modalState.deposit}
+        onClose={() => closeModal("deposit")}
+        user={modalState.deposit}
+      />
+      <WithdrawModal
+        title="Withdraw"
+        open={!!modalState.withdraw}
+        onClose={() => closeModal("withdraw")}
+        user={modalState.withdraw}
+      />
+      <ExporsureLimit
+        title="Exposure Limit"
+        open={!!modalState.exposureLimit}
+        onClose={() => closeModal("exposureLimit")}
+        user={modalState.exposureLimit}
+        onSuccess={() => refetch()}
+      />
+      <CreditModal
+        title="Credit Reference"
+        open={!!modalState.credit}
+        onClose={() => closeModal("credit")}
+        user={modalState.credit}
+        onSuccess={() => refetch()}
+      />
+      <PasswordModal
+        title="Password"
+        open={!!modalState.password}
+        onClose={() => closeModal("password")}
+        user={modalState.password}
+      />
+      <ChangeStatusModal
+        key={`${modalState.changeStatus?._id || ""}-${!!modalState.changeStatus}`}
+        title="Change Status"
+        open={!!modalState.changeStatus}
+        onClose={() => closeModal("changeStatus")}
+        user={modalState.changeStatus}
+        onSuccess={() => refetch()}
+      />
+      <div className="bg-white rounded-lg shadow mb-4">
+        <table className="w-full min-w-[900px] border-separate border-spacing-0">
+          <thead>
+            <tr className="bg-[#f5f5f5] text-center  text-xs">
+              <th className="py-2 px-2 font-semibold whitespace-nowrap border border-[#e0e0e0]">
+                User Name
+              </th>
+              <th className="py-2 px-2 font-semibold whitespace-nowrap border border-[#e0e0e0]">
+                Credit Ref
+              </th>
+              <th className="py-2 px-2 font-semibold whitespace-nowrap border border-[#e0e0e0]">
+                Balance
+              </th>
+              <th className="py-2 px-2 font-semibold whitespace-nowrap border border-[#e0e0e0]">
+                Client(P/L)
+              </th>
+              <th className="py-2 px-2 font-semibold whitespace-nowrap border border-[#e0e0e0]">
+                Exposure
+              </th>
+              <th className="py-2 px-2 font-semibold whitespace-nowrap border border-[#e0e0e0]">
+                Available Balance
+              </th>
+              <th className="py-2 px-2 font-semibold whitespace-nowrap border border-[#e0e0e0]">
+                U st
+              </th>
+              <th className="py-2 px-2 font-semibold whitespace-nowrap border border-[#e0e0e0]">
+                B st
+              </th>
+              <th className="py-2 px-2 font-semibold whitespace-nowrap border border-[#e0e0e0]">
+                Exposure Limit
+              </th>
+              <th className="py-2 px-2 font-semibold whitespace-nowrap border border-[#e0e0e0]">
+                Default (%)
+              </th>
+              <th className="py-2 px-2 font-semibold whitespace-nowrap border border-[#e0e0e0]">
+                Account Type
+              </th>
+              <th className="py-2 px-2 font-semibold whitespace-nowrap border border-[#e0e0e0]">
+                Action
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {/* Data Rows */}
+            {filteredData.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={12}
+                  className="text-center py-6 text-gray-500 border border-[#e0e0e0]"
+                >
+                  No data found
+                </td>
+              </tr>
+            ) : (
+              <>
+                {/* Totals row at top, like the screenshot */}
+                <tr className="bg-[#f0f4f8] font-bold text-xs">
+                  <td className="border border-[#e0e0e0] py-2 px-2"></td>
+                  <td className="border border-[#e0e0e0] text-center py-2 px-2">
+                    {formatNumber(totalCreditRef)}
+                  </td>
+                  <td className="border border-[#e0e0e0] text-center py-2 px-2">
+                    {formatNumber(totals.balance)}
+                  </td>
+                  <td className="border border-[#e0e0e0] text-center py-2 px-2">
+                    {formatNumber(totals.clientPL)}
+                  </td>
+                  <td className="border border-[#e0e0e0] text-center py-2 px-2">
+                    {formatNumber(totals.exposure)}
+                  </td>
+                  <td className="border border-[#e0e0e0] text-center py-2 px-2">
+                    {formatNumber(totals.availableBalance)}
+                  </td>
+                  <td className="border border-[#e0e0e0] text-center py-2 px-2"></td>
+                  <td className="border border-[#e0e0e0] text-center py-2 px-2"></td>
+                  <td className="border border-[#e0e0e0] text-center py-2 px-2">
+                    {formatNumber(totals.exposureLimit)}
+                  </td>
+                  <td className="border border-[#e0e0e0] text-center py-2 px-2">
+                    {formatNumber(totals.defaultPercent)}
+                  </td>
+                  <td className="border border-[#e0e0e0] py-2 px-2"></td>
+                  <td className="border border-[#e0e0e0] py-2 px-2"></td>
+                </tr>
+                {filteredData.map((row: ClientRow, idx: number) => (
+                <tr
+                  key={row.userName + idx}
+                  className={`text-xs h-12 ${idx % 2 === 0 ? "bg-white" : "bg-[#0000000d]"}`}
+                >
+                  <td className="pl-2 pr-2 py-2 align-middle border border-[#e0e0e0]">
+                    <span className="bg-[#444] text-white rounded leading-6 px-2 font-medium text-sm tracking-wider inline-block">
+                      {row.userName}
+                    </span>
+                  </td>
+                  <td className="px-2 py-2 text-center font-medium align-middle border border-[#e0e0e0]">
+                    {row.creditRef}
+                  </td>
+                  <td className="px-2 py-2 text-center font-medium align-middle border border-[#e0e0e0]">
+                    {row.balance.toLocaleString()}
+                  </td>
+                  <td className="px-2 py-2 text-center font-medium align-middle border border-[#e0e0e0]">
+                    {row.clientPL}
+                  </td>
+                  <td className="px-2 py-2 text-center font-medium align-middle border border-[#e0e0e0]">
+                    {row.exposure.toLocaleString()}
+                  </td>
+                  <td className="px-2 py-2 text-center font-medium align-middle border border-[#e0e0e0]">
+                    {row.availableBalance.toLocaleString()}
+                  </td>
+                  <td className="px-2 py-2 text-center align-middle border border-[#e0e0e0]">
+                    <input
+                      type="checkbox"
+                      checked={row.ust}
+                      readOnly
+                      className="w-5 h-5 accent-black rounded-none border border-black bg-black"
+                      style={{ accentColor: "#000" }}
+                    />
+                  </td>
+                  <td className="px-2 py-2 text-center align-middle border border-[#e0e0e0]">
+                    <input
+                      type="checkbox"
+                      checked={row.bst}
+                      readOnly
+                      className="w-5 h-5 accent-black rounded-none border border-black bg-black"
+                      style={{ accentColor: "#000" }}
+                    />
+                  </td>
+                  <td className="px-2 py-2 text-center font-medium align-middle border border-[#e0e0e0]">
+                    {row.exposureLimit.toLocaleString()}
+                  </td>
+                  <td className="px-2 py-2 text-center font-medium align-middle border border-[#e0e0e0]">
+                    {row.defaultPercent}
+                  </td>
+                  <td className="px-2 py-2 text-center align-middle border border-[#e0e0e0]">
+                    {row.accountType}
+                  </td>
+
+                  <td className="px-2 py-2 text-center align-middle border border-[#e0e0e0]">
+                    <div className="flex flex-nowrap gap-1">
+                      {[
+                        {
+                          label: "D",
+                          modalType: "deposit" as keyof ModalState,
+                          tooltip: "Deposit",
+                        },
+                        {
+                          label: "W",
+                          modalType: "withdraw" as keyof ModalState,
+                          tooltip: "Withdraw",
+                        },
+                        {
+                          label: "L",
+                          modalType: "exposureLimit" as keyof ModalState,
+                          tooltip: "Exposure Limit",
+                        },
+                        {
+                          label: "C",
+                          modalType: "credit" as keyof ModalState,
+                          tooltip: "Credit",
+                        },
+                        {
+                          label: "P",
+                          modalType: "password" as keyof ModalState,
+                          tooltip: "Password",
+                        },
+                        {
+                          label: "S",
+                          modalType: "changeStatus" as keyof ModalState,
+                          tooltip: "Status",
+                        },
+                      ].map((action) => (
+                        <span
+                          key={action.label}
+                          title={action.tooltip}
+                          className="bg-[#444] hover:bg-[#333] cursor-pointer text-white rounded px-2 leading-6 font-medium text-xs tracking-wider transition-colors"
+                          onClick={() => openModal(action.modalType, row)}
+                        >
+                          {action.label}
+                        </span>
+                      ))}
+                      <span className="bg-[#444] hover:bg-[#333] cursor-pointer text-white rounded px-2 leading-6 font-medium text-xs tracking-wider">
+                        MORE
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+                ))}
+              </>
+            )}
+            {/* <tr className="bg-[#f0f4f8] font-bold text-xs">
+              <td className="border border-[#e0e0e0] py-2 px-2">Total</td>
+              <td className="border border-[#e0e0e0] text-center py-2 px-2">
+                {formatNumber(totalCreditRef)}
+              </td>
+              <td
+                className="border border-[#e0e0e0] py-2 px-2"
+                colSpan={6}
+              ></td>
+            </tr> */}
+          </tbody>
+        </table>
+      </div>
+      {/* Enhanced Pagination */}
+      <div className="flex justify-between items-center gap-2 flex-wrap mt-4">
+        <div className="text-sm text-gray-600">
+          Showing {filteredData.length} of {paginationInfo.totalUsers} entries
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handlePrevPage}
+            disabled={!paginationInfo.hasPrevPage}
+            className="bg-gray-200 hover:bg-gray-300 rounded px-3 py-1 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          >
+            Previous
+          </button>
+          <span className="min-w-[80px] text-center font-medium text-base">
+            Page {paginationInfo.currentPage} of {paginationInfo.totalPages}
+          </span>
+          <button
+            onClick={handleNextPage}
+            disabled={!paginationInfo.hasNextPage}
+            className="bg-gray-200 hover:bg-gray-300 rounded px-3 py-1 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ClientList;

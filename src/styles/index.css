@@ -1,0 +1,31 @@
+@import "tailwindcss";
+:root {
+  --bg-primary: #0088cc;
+  --bg-primary65: #0088cca5;
+  --bg-primary90: #0088cce6;
+  --text-primary: #fff;
+  --bg-secondary: #2c3e50;
+  --bg-secondary70: #2c3e50b3;
+  --bg-secondary85: #2c3e50d9;
+  --text-secondary: #fff;
+  --bg-aside-menu: #bbbbbb;
+}
+body {
+  font-family: "Roboto Condensed", sans-serif;
+}
+#root {
+  width: fit-content;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 15s linear infinite;
+}

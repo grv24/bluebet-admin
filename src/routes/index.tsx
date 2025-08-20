@@ -1,0 +1,183 @@
+import {
+  CasinoReport,
+  CasinoResult,
+  ChangePassword,
+  ClientList,
+  CurrentBet,
+  GameReport,
+  General,
+  LiveMarket,
+  Sports,
+  MarketAnalysis,
+  MultiLogin,
+  NotFound,
+  ProfitLoss,
+  SignIn,
+  Statement,
+  Verification,
+  VirtualMarket,
+  AddClient,
+  AuthChangePassword,
+  TransactionPassword,
+} from "@/pages";
+import type { Route } from "./types";
+import { Navigate } from "react-router-dom";
+
+const RedirectToClients = () => <Navigate to="/clients" />;
+
+const baseUrl = import.meta.env.VITE_LOCAL_CLIENT_URL;
+const title = baseUrl?.includes("techadmin") ? "Tech Admin" : "Admin";
+
+
+export const routes: Route[] = [
+  {
+    path: "/",
+    component: RedirectToClients,
+    layout: "private",
+    private: true,
+    title: `Home | ${title}`,
+    description: "Home page",
+  },
+  {
+    path: "/sign-in",
+    component: SignIn,
+    layout: "public",
+    private: false,
+    title: `Sign In | ${title}`,
+    description: "Sign in page",
+  },
+
+  {
+    path: "/market-analysis",
+    component: MarketAnalysis,
+    layout: "private",
+    private: true,
+    title: `Market Analysis | ${title}`,
+    description: "Market analysis page",
+  },
+  {
+    path: "/clients",
+    component: ClientList,
+    layout: "private",
+    private: true,
+    title: `Clients | ${title}`,
+    description: "Clients page",
+  },
+  {
+    path: "/live-market/:game",
+    component: LiveMarket,
+    layout: "private",
+    private: true,
+    title: `Live Market | ${title}`,
+    description: "Live market page",
+  },
+  {
+    path: "/live-virtual-market/:game",
+    component: VirtualMarket,
+    layout: "private",
+    private: true,
+    title: `Live Virtual Market | ${title}`,
+    description: "Live virtual market page",
+  },
+  {
+    path: "/multi-login",
+    component: MultiLogin,
+    layout: "private",
+    private: true,
+    title: `Multi Login | ${title}`,
+    description: "Multi login page",
+  },
+  //report
+  {
+    path: "/reports/account-statement",
+    component: Statement,
+    layout: "private",
+    private: true,
+    title: `Statement | ${title}`,
+  },
+  {
+    path: "/reports/current-bets",
+    component: CurrentBet,
+    layout: "private",
+    private: true,
+    title: `Current Bets | ${title}`,
+  },
+  {
+    path: "/reports/general-report",
+    component: General,
+    layout: "private",
+    private: true,
+    title: `General | ${title}`,
+  },
+  {
+    path: "/reports/game-report",
+    component: GameReport,
+    layout: "private",
+    private: true,
+    title: `Game Report | ${title}`,
+  },
+  {
+    path: "/reports/casino-report",
+    component: CasinoReport,
+    layout: "private",
+    private: true,
+      title: `Casino Report | ${title}`,
+  },
+  {
+    path: "/reports/profit-and-loss",
+    component: ProfitLoss,
+    layout: "private",
+    private: true,
+    title: `Profit Loss | ${title}`,
+  },
+  {
+    path: "/reports/casino-result-report",
+    component: CasinoResult,
+    layout: "private",
+    private: true,
+    title: `Casino Result | ${title}`,
+  },
+  {
+    path: "/secure-auth-verification",
+    component: Verification,
+    layout: "private",
+    private: true,
+    title: `Verification | ${title}`,
+  },
+  {
+    path: "/change-password",
+    component: ChangePassword,
+    layout: "private",
+    private: true,
+    title: `Change Password | ${title}`,
+  },
+  {
+    path: "/auth/change-password",
+    component: AuthChangePassword,
+    layout: "public",
+    private: false,
+    title: `Change Password | ${title}`,
+  },
+  {
+    path: "/add-client",
+    component: AddClient,
+    layout: "private",
+    private: true,
+    title: `Add Client | ${title}`,
+  },
+  {
+    path: "/transaction-password",
+    component: TransactionPassword,
+    layout: "public",
+    private: false,
+    title: `Transaction Password | ${title}`,
+  },
+  {
+    path: "*",
+    component: NotFound,
+    layout: "public",
+    private: false,
+    title: `404 | ${title}`,
+    description: "Page not found",
+  },
+];
