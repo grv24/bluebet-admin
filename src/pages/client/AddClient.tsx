@@ -88,13 +88,17 @@ interface PartnershipCalculations {
 // Helper functions for validation
 const validateFormInputs = (
   data: FormData,
-  userExists: boolean | null
+  userExists: boolean | null,
+  allowedTypes: string[]
 ): string | null => {
   if (userExists !== null && userExists) {
     return "Login ID already exists. Please choose a different one.";
   }
   if (data.password !== data.retypePassword) {
     return "Passwords do not match";
+  }
+  if (data.accountType && !allowedTypes.includes(data.accountType)) {
+    return "Selected account type is not allowed for your user level.";
   }
   return null;
 };
@@ -295,11 +299,17 @@ const AddClient: React.FC = () => {
   const { userExists, isCheckingUserId, checkLoginId, resetState } =
     useLoginIdCheck(whiteListId);
 
-  // Memoized computed values to prevent unnecessary recalculations
-  const allowedUserTypes = useMemo(
-    () => AdminList.find((item) => item.name === userType)?.allowedTypes || [],
-    [userType]
-  );
+  // Get allowed user types for current user using Admin.ts helper
+  const currentUserAllowedTypes = useMemo(() => {
+    const userType = decodedData?.user?.__type;
+    if (!userType) return [];
+    
+    const adminConfig = AdminList.find(admin => 
+      admin.name.toLowerCase() === userType.toLowerCase()
+    );
+    
+    return adminConfig?.allowedTypes || [];
+  }, [decodedData?.user?.__type]);
 
   // Get panel data from sports settings with error handling
   const panelData = useMemo(() => {
@@ -307,13 +317,13 @@ const AddClient: React.FC = () => {
       // Extract commission and partnership values from the new sports settings structure
       const sportsSettings = currentSportsData?.data || {};
       const commissionValues = Object.values(sportsSettings)
-        .filter(
+        ?.filter(
           (setting: any) =>
             setting &&
             typeof setting === "object" &&
             setting.matchCommission !== undefined
         )
-        .map((setting: any) => setting.matchCommission);
+        ?.map((setting: any) => setting.matchCommission);
 
       const partnershipValues = Object.values(sportsSettings)
         .filter(
@@ -322,7 +332,7 @@ const AddClient: React.FC = () => {
             typeof setting === "object" &&
             setting.partnership !== undefined
         )
-        .map((setting: any) => setting.partnership);
+        ?.map((setting: any) => setting.partnership);
 
       // Calculate averages for panel data
       const avgCommission =
@@ -479,6 +489,8 @@ const AddClient: React.FC = () => {
   // Development logging - can be removed in production
   if (process.env.NODE_ENV === "development") {
     console.log("Current Sports Data:", currentSportsData);
+    console.log("User Type:", userType);
+    console.log("Allowed Account Types:", currentUserAllowedTypes);
   }
 
   // Function to convert modified panel values back to original sports settings format
@@ -557,7 +569,7 @@ const AddClient: React.FC = () => {
   const onSubmit = useCallback(
     async (data: FormData) => {
       // Validate form inputs
-      const validationError = validateFormInputs(data, userExists);
+      const validationError = validateFormInputs(data, userExists, currentUserAllowedTypes);
       if (validationError) {
         toast.error(validationError);
         return;
@@ -824,8 +836,8 @@ const AddClient: React.FC = () => {
                   <option className="text-xs text-gray-500" value="">
                     Select Account Type
                   </option>
-                  {decodedData?.permissions?.adminPanels.map(
-                    (allowedType: string) => (
+                  {currentUserAllowedTypes.length > 0 ? (
+                    currentUserAllowedTypes.map((allowedType: string) => (
                       <option
                         className="text-xs text-gray-500"
                         key={allowedType}
@@ -833,7 +845,11 @@ const AddClient: React.FC = () => {
                       >
                         {getAccountTypeLabel(allowedType)}
                       </option>
-                    )
+                    ))
+                  ) : (
+                    <option className="text-xs text-gray-500" value="" disabled>
+                      No account types available for your user level
+                    </option>
                   )}
                 </select>
               </div>
@@ -1209,7 +1225,7 @@ const AddClient: React.FC = () => {
             <div className="flex justify-end">
               <button
                 onClick={handleSubmit(onSubmit)}
-                disabled={isLoading}
+                disabled={isLoading || currentUserAllowedTypes.length === 0}
                 className="leading-8 px-3 rounded font-normal text-white text-xs bg-[var(--bg-primary,#2196f3)] hover:opacity-90 transition w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {isLoading ? (
