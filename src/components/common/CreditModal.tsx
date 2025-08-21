@@ -40,17 +40,20 @@ const CreditModal: React.FC<CreditModalProps> = ({
       downlineUserId,
       creditReference,
       transactionPassword,
+      userType,
     }: {
       cookies: any;
       downlineUserId: string;
       creditReference: number;
       transactionPassword: string;
+      userType: string;
     }) =>
       changeCreditReference({
         cookies: cookieBag,
-        downlineUserId,
+        userId: user?._id || "",
         creditReference,
         transactionPassword,
+        userType,
       }),
     onSuccess: () => {
       setNewLimit(0);
@@ -102,6 +105,7 @@ console.log(user.creditRef,'user')
                 downlineUserId: user?._id || "",
                 creditReference: Number(newLimit),
                 transactionPassword: password,
+                userType: user?.__type || "",
               });
             }}
           >

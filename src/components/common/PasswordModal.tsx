@@ -40,7 +40,8 @@ const PasswordModal: React.FC<PasswordModalProps> = ({
         user._id,
         newpassword.trim(),
         transactionPassword.trim(),
-        cookieBag
+        cookieBag,
+        user?.__type || ""
       );
     },
     onSuccess: (res: any) => {

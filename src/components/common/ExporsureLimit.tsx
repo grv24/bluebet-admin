@@ -43,17 +43,20 @@ const ExporsureLimit: React.FC<ExporsureLimitProps> = ({
       downlineUserId,
       exposureLimit,
       transactionPassword,
+      userType,
     }: {
       cookies: any;
       downlineUserId: string;
       exposureLimit: number;
       transactionPassword: string;
+      userType: string;
     }) =>
       exposureLimitChange({
         cookies: cookieBag,
-        downlineUserId: user?._id || "",
+        userId: user?._id || "",
         exposureLimit,
         transactionPassword,
+        userType: user?.__type || "",
       }),
     onSuccess: () => {
       setNewLimit(0);
@@ -85,6 +88,7 @@ const ExporsureLimit: React.FC<ExporsureLimitProps> = ({
       downlineUserId: user?._id || "",
       exposureLimit: Number(newLimit),
       transactionPassword: password,
+      userType: user?.__type || "",
     });
   };
 

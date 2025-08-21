@@ -118,32 +118,32 @@ export const getDownlineList = async ({
 
 export const depositBalance = async ({
   token,
-  downlineUserId,
-  uplineUserId,
+  userId,
   amount,
   remark,
   transactionPassword,
+  userType,
 }: {
   token: string;
-  downlineUserId: string;
-  uplineUserId: string;
+  userId: string;
   amount: number;
   remark: string;
   transactionPassword: string;
+  userType: string;
 }) => {
   try {
-    const response = await fetch(`${SERVER_URL}/api/v1/depositchips`, {
-      method: "PATCH",
+    const response = await fetch(`${SERVER_URL}/api/v1/users/deposit`, {
+      method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         amount,
-        downlineUserId,
+        userId,
         transactionPassword,
-        uplineUserId,
         remark,
+        userType,
       }),
     });
     return response.json();
@@ -170,7 +170,8 @@ export const changeDownlinePassword = async (
   downlineUserId: string,
   newPassword: string,
   transactionPassword: string,
-  cookies: any
+  cookies: any,
+  userType: string
 ): Promise<ChangePasswordResponse> => {
   return apiRequest(
     `/api/v1/changeDownlinePassword/${downlineUserId}`,
@@ -181,6 +182,7 @@ export const changeDownlinePassword = async (
         downlineUserId,
         newPassword,
         transactionPassword,
+        userType,
       }),
     }
   );
@@ -189,24 +191,24 @@ export const changeDownlinePassword = async (
 //withdraw chips
 export const withdrawChips = async ({
   cookies,
-  downlineUserId,
+  userId,
   amount,
-  uplineUserId,
   transactionPassword,
+  userType,
 }: {
   cookies: any;
-  downlineUserId: string;
+  userId: string;
   amount: number;
-  uplineUserId: string;
   transactionPassword: string;
+  userType: string;
 }) => {
-  return apiRequest("/api/v1/withdrawchips", cookies, {
+  return apiRequest("/api/v1/users/withdraw", cookies, {
     method: "POST",
     body: JSON.stringify({
       amount,
-      downlineUserId,
-      uplineUserId,
+      userId,
       transactionPassword,
+      userType,
     }),
   });
 };
@@ -214,21 +216,24 @@ export const withdrawChips = async ({
 //exposure limit change
 export const exposureLimitChange = async ({
   cookies,
-  downlineUserId,
+  userId,
   exposureLimit,
   transactionPassword,
+  userType,
 }: {
   cookies: any;
-  downlineUserId: string;
+  userId: string;
   exposureLimit: number;
   transactionPassword: string;
+  userType: string;
 }) => {
-  return apiRequest("/api/v1/exposurelimit", cookies, {
+  return apiRequest("/api/v1/users/set-exposure-limit", cookies, {
     method: "PATCH",
     body: JSON.stringify({
-      downlineUserId,
+      userId,
       exposureLimit,
       transactionPassword,
+      userType,
     }),
   });
 };
@@ -236,21 +241,24 @@ export const exposureLimitChange = async ({
 // change credit reference
 export const changeCreditReference = async ({
   cookies,
-  downlineUserId,
+  userId,
   creditReference,
   transactionPassword,
+  userType,
 }: {
   cookies: any;
-  downlineUserId: string;
+  userId: string;
   creditReference: number;
   transactionPassword: string;
+  userType: string;
 }) => {
-  return apiRequest("/api/v1/change-creditReference", cookies, {
+  return apiRequest("/api/v1/users/set-credit-ref", cookies, {
     method: "PATCH",
     body: JSON.stringify({
-      downlineUserId,
+      userId,
       creditReference,
       transactionPassword,
+      userType,
     }),
   });
 };
@@ -258,27 +266,30 @@ export const changeCreditReference = async ({
 // change user/bet status
 export const changeUserStatus = async ({
   cookies,
-  downlineUserId,
+  userId,
   lockBet,
   lockUser,
   transactionPassword,
+  userType,
 }: {
   cookies: any;
-  downlineUserId: string;
+  userId: string;
   lockBet: boolean;
   lockUser: boolean;
   transactionPassword: string;
+  userType: string;
 }) => {
   return apiRequest(
-    `/api/v1/changeUserLockAndBetLock/${downlineUserId}`,
+    `/api/v1/users/change-user-lock-and-bet-lock/${userId}`,
     cookies,
     {
       method: "PATCH",
       body: JSON.stringify({
-        downlineUserId,
+        userId,
         lockBet,
         lockUser,
         transactionPassword,
+        userType,
       }),
     }
   );

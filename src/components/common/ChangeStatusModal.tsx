@@ -36,19 +36,22 @@ const ChangeStatusModal: React.FC<ChangeStatusModalProps> = ({ open, onClose, us
       lockUser,
       lockBet,
       transactionPassword,
+      userType,
     }: {
       cookies: any;
       downlineUserId: string;
       lockUser: boolean;
       lockBet: boolean;
       transactionPassword: string;
+      userType: string;
     }) => {
       const response: any = await changeUserStatus({
         cookies: cookieBag,
-        downlineUserId,
+        userId: user?._id || "",
         lockUser,
         lockBet,
         transactionPassword,
+        userType: user?.__type || "",
       });
       if (!response?.success) {
         throw new Error(response?.message || "Update failed");
@@ -156,6 +159,7 @@ const ChangeStatusModal: React.FC<ChangeStatusModalProps> = ({ open, onClose, us
                 lockUser,
                 lockBet,
                 transactionPassword: password,
+                userType: user?.__type || "",
               });
             }}
           >

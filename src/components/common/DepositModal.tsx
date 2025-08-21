@@ -6,6 +6,7 @@ import { baseUrl, getDecodedTokenData } from "@/helper/auth";
 import { depositBalance } from "@/helper/user";
 
 export interface ClientRow {
+  __type: string;
   userName: string;
   balance: number;
   creditRef: string;
@@ -40,7 +41,6 @@ const DepositModal: React.FC<DepositModalProps> = ({
   const upline: any = getDecodedTokenData(cookies) || {};
   const token = cookies[baseUrl.includes("techadmin") ? "TechAdmin" : "Admin"];
   const uplineBalance = Number(upline?.user?.AccountDetails?.Balance || 0);
-// console.log(user,'user')
   if (!open || !user) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,16 +62,16 @@ const DepositModal: React.FC<DepositModalProps> = ({
       setError("Transaction password is required.");
       return;
     }
-
+    console.log(user, "user");
     try {
       setLoading(true);
       const res = await depositBalance({
         token,
         amount: enteredAmount,
-        downlineUserId: user?._id || "", // This is now userId from the new structure
-        uplineUserId: upline?.user?.userId || upline?.userId,
+        userId: user?._id || "", // This is now userId from the new structure
         transactionPassword: password,
         remark,
+        userType: user?.__type || "",
       });
 
       if (res?.success) {

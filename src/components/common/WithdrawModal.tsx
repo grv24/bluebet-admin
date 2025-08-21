@@ -50,9 +50,9 @@ const WithdrawModal = ({ open, onClose, user, title }: WithdrawModalProps) => {
         await withdrawChips({
           cookies,
           amount: enteredAmount,
-          downlineUserId: user?._id || "", // This is now userId from the new structure
-          uplineUserId: upline?.user?.userId || upline?.userId,
+          userId: user?._id || "", // This is now userId from the new structure
           transactionPassword: password,
+          userType: user?.__type || "",
         });
 
         // Reset state and close

@@ -43,6 +43,7 @@ interface ClientRow {
   defaultPercent: number;  // Default percentage setting
   accountType: string;     // Type of account (e.g., "Client", "Agent")
   _id?: string;           // Optional database ID
+  __type: string;         // User type for API calls
 }
 
 /**
@@ -356,6 +357,7 @@ const ClientList: React.FC = () => {
         defaultPercent: 0, // Not available in new structure
         accountType: user.__type || "User",
         _id: user.userId || "",
+        __type: user.__type || "User",
       };
     });
   }, [downlineData?.users]);
