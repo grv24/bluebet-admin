@@ -233,7 +233,14 @@ const AddClient: React.FC = () => {
     const hasNoSpaces = !/\s/.test(value);
     const startsWithCapital = /^[A-Z]/.test(value);
     const hasSpecial = /[^A-Za-z0-9\s]/.test(value);
-    return hasMinLen && hasLetter && hasNumber && hasSpecial && hasNoSpaces && startsWithCapital;
+    return (
+      hasMinLen &&
+      hasLetter &&
+      hasNumber &&
+      hasSpecial &&
+      hasNoSpaces &&
+      startsWithCapital
+    );
   };
 
   // Memoized auth token to avoid recalculation
@@ -244,15 +251,20 @@ const AddClient: React.FC = () => {
 
   //decoded token data
   const decodedData = getDecodedTokenData(cookies);
-  const userId = decodedData?.user?.id;
+  console.log("decodedData", decodedData);
+  const userId = decodedData?.user?.userId;
   const userType = decodedData?.user?.__type;
   const commissionSettings = {
-    percentageWise: decodedData?.user?.percentageWiseCommission || false,
-    partnerShipWise: decodedData?.user?.partnerShipWiseCommission || false,
+    percentageWise:
+      decodedData?.user?.commissionLenaYaDena?.commissionLena || false,
+    partnerShipWise:
+      decodedData?.user?.commissionLenaYaDena?.commissionDena || false,
   };
   const commissionLenaYaDena = {
-    commissionLena: decodedData?.user?.commissionLena || false,
-    commissionDena: decodedData?.user?.commissionDena || false,
+    commissionLena:
+      decodedData?.user?.commissionLenaYaDena?.commissionLena || false,
+    commissionDena:
+      decodedData?.user?.commissionLenaYaDena?.commissionDena || false,
   };
 
   // Get current sport settings
@@ -292,18 +304,64 @@ const AddClient: React.FC = () => {
   // Get panel data from sports settings with error handling
   const panelData = useMemo(() => {
     try {
-      return validatePanelSettings(currentSportsData?.sportsSettings || {});
+      // Extract commission and partnership values from the new sports settings structure
+      const sportsSettings = currentSportsData?.data || {};
+      const commissionValues = Object.values(sportsSettings)
+        .filter(
+          (setting: any) =>
+            setting &&
+            typeof setting === "object" &&
+            setting.matchCommission !== undefined
+        )
+        .map((setting: any) => setting.matchCommission);
+
+      const partnershipValues = Object.values(sportsSettings)
+        .filter(
+          (setting: any) =>
+            setting &&
+            typeof setting === "object" &&
+            setting.partnership !== undefined
+        )
+        .map((setting: any) => setting.partnership);
+
+      // Calculate averages for panel data
+      const avgCommission =
+        commissionValues.length > 0
+          ? commissionValues.reduce(
+              (sum: number, val: number) => sum + val,
+              0
+            ) / commissionValues.length
+          : 0;
+
+      const avgPartnership =
+        partnershipValues.length > 0
+          ? partnershipValues.reduce(
+              (sum: number, val: number) => sum + val,
+              0
+            ) / partnershipValues.length
+          : 0;
+
+      return {
+        panelCommission: {
+          own: avgCommission,
+          total: avgCommission,
+        },
+        panelPartnership: {
+          own: avgPartnership,
+          total: avgPartnership,
+        },
+      };
     } catch (error) {
       console.warn("Panel validation error:", error);
       return { panelCommission: null, panelPartnership: null };
     }
-  }, [currentSportsData?.sportsSettings]);
+  }, [currentSportsData?.data]);
 
   // Debug: Log sports data when it changes
   console.log("Sports Settings Loaded:", {
-    hasData: !!currentSportsData?.sportsSettings,
-    sportsCount: currentSportsData?.sportsSettings
-      ? Object.keys(currentSportsData.sportsSettings).length
+    hasData: !!currentSportsData?.data,
+    sportsCount: currentSportsData?.data
+      ? Object.keys(currentSportsData.data).length
       : 0,
     validationResult: panelData,
   });
@@ -401,7 +459,6 @@ const AddClient: React.FC = () => {
     };
   }, [panelData?.panelPartnership, ourPartnership]);
 
-
   const remarksText = useMemo(
     () => `creating account for ${watchedValues.clientName || ""}`,
     [watchedValues.clientName]
@@ -444,74 +501,27 @@ const AddClient: React.FC = () => {
       const updatedSportsSettings = JSON.parse(
         JSON.stringify(originalSportsSettings)
       ); // Deep copy
-      const sportNames = Object.keys(updatedSportsSettings).filter(
-        (k) => k !== "success"
-      );
 
       // Get current user key from mapping
       const currentUserKey =
         USER_TYPE_MAP[userType || ""] || userType?.toLowerCase();
 
-      // Update each sport with new panel values
-      for (const sportName of sportNames) {
-        const setting = updatedSportsSettings[sportName];
+      // Update each sport setting with new commission and partnership values
+      Object.keys(updatedSportsSettings).forEach((sportKey) => {
+        if (sportKey === "success" || sportKey === "status") return;
 
-        // Update match commission if it exists
-        if (setting.matchCommission) {
-          // Always set own to 0 and total to calculated total
-          setting.matchCommission.own = 0;
-          setting.matchCommission.total = newCommissionTotal;
+        const setting = updatedSportsSettings[sportKey];
 
-          // Create or update current user type's commission
-          if (currentUserKey) {
-            if (!setting.matchCommission[currentUserKey]) {
-              setting.matchCommission[currentUserKey] = {
-                userId: userId || "",
-                matchCommission: 0,
-              };
-            }
-            setting.matchCommission[currentUserKey].matchCommission =
-              newCommissionOwn;
-          }
+        // Update match commission
+        if (setting.matchCommission !== undefined) {
+          setting.matchCommission = newCommissionOwn;
         }
 
-        // Update session commission if it exists (for sports like Cricket)
-        if (setting.sessionCommission) {
-          // Always set own to 0 and total to calculated total
-          setting.sessionCommission.own = 0;
-          setting.sessionCommission.total = newCommissionTotal;
-
-          // Create or update current user type's session commission
-          if (currentUserKey) {
-            if (!setting.sessionCommission[currentUserKey]) {
-              setting.sessionCommission[currentUserKey] = {
-                userId: userId || "",
-                sessionCommission: 0,
-              };
-            }
-            setting.sessionCommission[currentUserKey].sessionCommission =
-              newCommissionOwn;
-          }
+        // Update partnership
+        if (setting.partnership !== undefined) {
+          setting.partnership = newPartnershipOwn;
         }
-
-        // Update partnership if it exists
-        if (setting.partnerShip) {
-          // Set own to calculated downline value and total to calculated total
-          setting.partnerShip.own = newPartnershipDownline;
-          setting.partnerShip.total = newPartnershipTotal;
-
-          // Create or update current user type's partnership
-          if (currentUserKey) {
-            if (!setting.partnerShip[currentUserKey]) {
-              setting.partnerShip[currentUserKey] = {
-                userId: userId || "",
-                partnership: 0,
-              };
-            }
-            setting.partnerShip[currentUserKey].partnership = newPartnershipOwn;
-          }
-        }
-      }
+      });
 
       // Log the exact structure being created for verification
       console.log("🏈 Sports Settings Conversion Complete:", {
@@ -528,36 +538,13 @@ const AddClient: React.FC = () => {
       });
 
       // Log each sport's structure to verify format
-      sportNames.forEach((sportName) => {
-        const sport = updatedSportsSettings[sportName];
-        console.log(`📊 ${sportName} Structure:`, {
-          matchCommission: sport.matchCommission
-            ? {
-                ...(currentUserKey && {
-                  [currentUserKey]: sport.matchCommission[currentUserKey],
-                }),
-                own: sport.matchCommission.own,
-                total: sport.matchCommission.total,
-              }
-            : "Not present",
-          sessionCommission: sport.sessionCommission
-            ? {
-                ...(currentUserKey && {
-                  [currentUserKey]: sport.sessionCommission[currentUserKey],
-                }),
-                own: sport.sessionCommission.own,
-                total: sport.sessionCommission.total,
-              }
-            : "Not present",
-          partnerShip: sport.partnerShip
-            ? {
-                ...(currentUserKey && {
-                  [currentUserKey]: sport.partnerShip[currentUserKey],
-                }),
-                own: sport.partnerShip.own,
-                total: sport.partnerShip.total,
-              }
-            : "Not present",
+      Object.keys(updatedSportsSettings).forEach((sportKey) => {
+        if (sportKey === "success" || sportKey === "status") return;
+
+        const sport = updatedSportsSettings[sportKey];
+        console.log(`📊 ${sportKey} Structure:`, {
+          matchCommission: sport.matchCommission,
+          partnership: sport.partnership,
         });
       });
 
@@ -598,7 +585,7 @@ const AddClient: React.FC = () => {
 
         // Convert modified values back to original sports settings format
         const updatedSportsSettings = convertToOriginalSportsSettings(
-          currentSportsData?.sportsSettings,
+          currentSportsData?.data,
           updatedCommissionOwn,
           updatedCommissionTotal,
           updatedPartnershipOwn,
@@ -607,42 +594,37 @@ const AddClient: React.FC = () => {
         );
 
         const formData = {
-          PersonalDetails: {
-            userName: data.clientName.trim(),
-            loginId: data.loginId.trim(),
-            password: data.password.trim(),
-          },
-          ...(data.accountType !== "Client" && {
-            allowedNoOfUsers: "99999",
-          }),
-          commissionSettings: {
-            percentageWise: commissionSettings?.percentageWise || false,
-            partnerShipWise: commissionSettings?.partnerShipWise || false,
-          },
-          commissionLenaYaDena: {
-            commissionLena: commissionLenaYaDena?.commissionLena || false,
-            commissionDena: commissionLenaYaDena?.commissionDena || false,
-          },
+          // personal detail
+          userName: data.clientName.trim(),
+          loginId: data.loginId.trim(),
+          user_password: data.password.trim(),
+          fancyLocked: false,
+          bettingLocked: false,
+          userLocked: false,
+          isPanelCommission: true,
+
           // Send updated sports settings with modified commission/partnership values
           ...(data.accountType !== "Client" && {
-            sportsSettings: updatedSportsSettings,
+            // sportsSettings: updatedSportsSettings,
+            casinoSettings: updatedSportsSettings?.casinoSettings,
+            cricketSettings: updatedSportsSettings?.cricketSettings,
+            tennisSettings: updatedSportsSettings?.tennisSettings,
+            soccerSettings: updatedSportsSettings?.soccerSettings,
+            internationalCasinoSettings:
+              updatedSportsSettings?.internationalCasinoSettings,
           }),
           remarks: `creating account for ${data.clientName}`,
-          whiteList: {
-            AdminUrl: "",
-            ClientUrl: "",
-            CommonName: "",
-          },
+
           ...(data.accountType !== "Client" && {
-            AccountDetails: {
-              creditReference: data.creditReference,
-            },
+            // AccountDetails: {
+            creditRef: data.creditReference,
+            // },
           }),
           // Include exposureLimit for Client accounts
           ...(data.accountType === "Client" && {
-            AccountDetails: {
-              ExposureLimit: data.exposureLimit || 0,
-            },
+            // AccountDetails: {
+            creditRef: data.exposureLimit || 0,
+            // },
           }),
           transactionPassword: data.transactionPassword,
         };
@@ -784,7 +766,8 @@ const AddClient: React.FC = () => {
                     type={showRetypePassword ? "text" : "password"}
                     {...register("retypePassword", {
                       required: "Please retype password",
-                      validate: (v) => (v === password ? true : "Passwords do not match"),
+                      validate: (v) =>
+                        v === password ? true : "Passwords do not match",
                     })}
                     className="w-full border border-gray-300 rounded px-3 py-2 pr-10 text-xs mb-2"
                     placeholder="Retype Password"
@@ -841,15 +824,17 @@ const AddClient: React.FC = () => {
                   <option className="text-xs text-gray-500" value="">
                     Select Account Type
                   </option>
-                  {allowedUserTypes.map((allowedType: string) => (
-                    <option
-                      className="text-xs text-gray-500"
-                      key={allowedType}
-                      value={allowedType}
-                    >
-                      {getAccountTypeLabel(allowedType)}
-                    </option>
-                  ))}
+                  {decodedData?.permissions?.adminPanels.map(
+                    (allowedType: string) => (
+                      <option
+                        className="text-xs text-gray-500"
+                        key={allowedType}
+                        value={allowedType}
+                      >
+                        {getAccountTypeLabel(allowedType)}
+                      </option>
+                    )
+                  )}
                 </select>
               </div>
               {/* Allowed No of Users is fixed to 99999 and hidden from UI */}
@@ -1213,7 +1198,7 @@ const AddClient: React.FC = () => {
             <label className="block text-xs font-normal mb-1">
               Transaction Password:
             </label>
-              <input
+            <input
               type="password"
               {...register("transactionPassword", {
                 required: "Transaction Password is required",

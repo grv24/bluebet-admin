@@ -13,46 +13,13 @@ export interface ChangePasswordResponse {
 }
 
 interface UserData {
-  PersonalDetails: {
-    userName: string;
-    loginId: string;
-    password: string;
-  };
-  allowedNoOfUsers?: string;
-  commissionLenaYaDena: {
-    commissionLena: boolean;
-    commissionDena: boolean;
-  };
-  commissionSettings: {
-    percentageWise: boolean;
-    partnerShipWise: boolean;
-  };
-  sportsSettings?: any; // Raw sports settings for panel commission handling
-  panelCommission?: {
-    techAdmin?: { userId: string; commission: number };
-    upline: number;
-    downline: number;
-    our: number;
-    total: number;
-  };
-  panelPartnership?: {
-    techAdmin?: { userId: string; partnership: number };
-    upline: number;
-    downline: number;
-    our: number;
-    total: number;
-  };
-  remarks: string;
-  whiteList: {
-    AdminUrl: string;
-    ClientUrl: string;
-    CommonName: string;
-  };
-  // Optional fields for Client accounts
-  exposureLimit?: number;
-  minBet?: number;
-  maxBet?: number;
-  delay?: number;
+  userName: string;
+  loginId: string;
+  user_password: string;
+  fancyLocked: boolean;
+  bettingLocked: boolean;
+  userLocked: boolean;
+  isPanelCommission: boolean;
 }
 
 export const createNewUser = async ({
@@ -65,7 +32,7 @@ export const createNewUser = async ({
   userData: UserData;
 }) => {
   const apiEndpoint = {
-    Admin: `${SERVER_URL}/api/v1/createadmin`,
+    Admin: `${SERVER_URL}/api/v1/users/admins/new-account`,
     MiniAdmin: `${SERVER_URL}/api/v1/createminiadmin`,
     SuperMaster: `${SERVER_URL}/api/v1/createsupermaster`,
     Master: `${SERVER_URL}/api/v1/createmaster`,
@@ -104,7 +71,7 @@ export const getCurrentSportsSettings = async ({
 }) => {
   try {
     const response = await fetch(
-      `${SERVER_URL}/api/v1/mycurrentsportsettings/${userId}`,
+      `${SERVER_URL}/api/v1/users/sports-casino-setting`,
       {
         method: "GET",
         headers: {
@@ -132,7 +99,7 @@ export const getDownlineList = async ({
 }) => {
   try {
     const response = await fetch(
-      `${SERVER_URL}/api/v1/getAllDownlineList/${userId}?page=${page}&limit=${limit}`,
+      `${SERVER_URL}/api/v1/users/my-downline-users?page=${page}&limit=${limit}`,
       {
         method: "GET",
         headers: {
@@ -198,7 +165,6 @@ export const changeOwnPassword = async (
   });
 };
 
-
 //downline pwd change
 export const changeDownlinePassword = async (
   downlineUserId: string,
@@ -206,10 +172,18 @@ export const changeDownlinePassword = async (
   transactionPassword: string,
   cookies: any
 ): Promise<ChangePasswordResponse> => {
-  return apiRequest(`/api/v1/changeDownlinePassword/${downlineUserId}`, cookies, {
-    method: "PATCH",
-    body: JSON.stringify({ downlineUserId, newPassword, transactionPassword }),
-  });
+  return apiRequest(
+    `/api/v1/changeDownlinePassword/${downlineUserId}`,
+    cookies,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        downlineUserId,
+        newPassword,
+        transactionPassword,
+      }),
+    }
+  );
 };
 
 //withdraw chips
@@ -225,10 +199,15 @@ export const withdrawChips = async ({
   amount: number;
   uplineUserId: string;
   transactionPassword: string;
-}) => { 
+}) => {
   return apiRequest("/api/v1/withdrawchips", cookies, {
     method: "POST",
-    body: JSON.stringify({ amount, downlineUserId, uplineUserId, transactionPassword }),
+    body: JSON.stringify({
+      amount,
+      downlineUserId,
+      uplineUserId,
+      transactionPassword,
+    }),
   });
 };
 
@@ -246,7 +225,11 @@ export const exposureLimitChange = async ({
 }) => {
   return apiRequest("/api/v1/exposurelimit", cookies, {
     method: "PATCH",
-    body: JSON.stringify({ downlineUserId, exposureLimit, transactionPassword }),
+    body: JSON.stringify({
+      downlineUserId,
+      exposureLimit,
+      transactionPassword,
+    }),
   });
 };
 
@@ -264,7 +247,11 @@ export const changeCreditReference = async ({
 }) => {
   return apiRequest("/api/v1/change-creditReference", cookies, {
     method: "PATCH",
-    body: JSON.stringify({ downlineUserId, creditReference, transactionPassword }),
+    body: JSON.stringify({
+      downlineUserId,
+      creditReference,
+      transactionPassword,
+    }),
   });
 };
 
@@ -282,12 +269,17 @@ export const changeUserStatus = async ({
   lockUser: boolean;
   transactionPassword: string;
 }) => {
-  return apiRequest(`/api/v1/changeUserLockAndBetLock/${downlineUserId}`, cookies, {
-    method: "PATCH",
-    body: JSON.stringify({ downlineUserId,lockBet,lockUser, transactionPassword }),
-  });
+  return apiRequest(
+    `/api/v1/changeUserLockAndBetLock/${downlineUserId}`,
+    cookies,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        downlineUserId,
+        lockBet,
+        lockUser,
+        transactionPassword,
+      }),
+    }
+  );
 };
-
-
-
-
