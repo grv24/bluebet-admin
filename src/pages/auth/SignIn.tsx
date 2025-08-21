@@ -10,10 +10,17 @@ import {
   getDecodedTokenData,
   isAuthenticated,
   LoginRequest,
+  getAuthCookieKey,
+  debugCookies,
+  getUserType,
+  removeDirectCookie,
+  getDirectCookie,
 } from "@/helper/auth";
 import { authenticate } from "@/helper/auth";
 import { useGlobalData } from "@/App";
 import toast from "react-hot-toast";
+import socketService, { ForceLogoutData } from "@/utils/socketService";
+import ForceLogoutModal from "@/components/common/ForceLogoutModal";
 
 interface SignInFormInputs {
   userId: string;
@@ -28,9 +35,12 @@ const SignIn = () => {
     "Admin",
     "TechAdmin",
     "hasPopupBeenShown",
+    "token",
   ]);
-  const token = cookies[baseUrl.includes("techadmin") ? "TechAdmin" : "Admin"];
+  const token = cookies[getAuthCookieKey()];
   const [showPassword, setShowPassword] = useState(false);
+  const [forceLogoutData, setForceLogoutData] = useState<ForceLogoutData | null>(null);
+  const [showForceLogoutModal, setShowForceLogoutModal] = useState(false);
 
   // Get global data from context (may be undefined on public routes)
   const globalData = useGlobalData();
@@ -40,31 +50,70 @@ const SignIn = () => {
 
   const { mutate: login, isPending } = useLoginMutation({
     onSuccess: (responseData) => {
-      if (responseData?.success && responseData?.token) {
+      if (responseData?.status && responseData?.data?.token) {
         // Decode using fresh token
-        const cookieKey = baseUrl.includes("techadmin") ? "TechAdmin" : "Admin";
-        const { PersonalDetails }: any =
-          getDecodedTokenData({ [cookieKey]: responseData.token } as any) || {};
+        const cookieKey = getAuthCookieKey();
+        const decodedData: any =
+          getDecodedTokenData({ [cookieKey]: responseData.data.token } as any) || {};
 
         // If id is not active, DO NOT set Admin/TechAdmin cookie; store temporary token and redirect
-        if (PersonalDetails?.idIsActive === false) {
+        if (decodedData.user?.isActive === false) {
           toast.success("Please change your password", { removeDelay: 2000 });
-          setCookie("token" as any, responseData.token, { path: "/" });
+          setCookie("token" as any, responseData.data.token, { path: "/" });
           navigate("/auth/change-password", { replace: true });
           return;
         }
 
-        // Otherwise, fully authenticate (sets Admin/TechAdmin cookie)
+        // Authenticate using direct cookie setting
         authenticate(
           responseData,
-          () => {
-            toast.success("Login successful!", { duration: 500 });
+          async () => {
+            try {
+              // Get user details from token for socket connection
+              const decodedToken = getDecodedTokenData({ [cookieKey]: responseData.data.token } as any);
+              const userType = getUserType();
+              
+              console.log("🔍 Login success - attempting socket connection:", {
+                decodedToken: decodedToken?.user,
+                userType,
+                loginId: decodedToken?.user?.PersonalDetails?.loginId
+              });
+              
+              // Connect to Socket.IO
+              if (decodedToken?.user?.PersonalDetails?.loginId) {
+                // console.log("🔌 Starting socket connection...");
+                const status = socketService.getConnectionStatus();
+                if (!status.isConnected && !status.isConnecting) {
+                  await socketService.connect(decodedToken.user.PersonalDetails.loginId, userType);
+                  // console.log("🔌 Socket connected successfully");
+                  // console.log("🔌 Socket status after connection:", socketService.isSocketConnected());
+                }
+              } else {
+                // console.error("🔌 No loginId found in token, cannot connect socket");
+              }
+              
+              toast.success("Login successful!", { duration: 500 });
+              // Navigate to clients page without page refresh
+              setTimeout(() => {
+                navigate("/clients");
+              }, 100);
+            } catch (socketError) {
+              console.error("🔌 Socket connection failed:", socketError);
+              console.error("🔌 Socket error details:", {
+                message: (socketError as any)?.message,
+                stack: (socketError as any)?.stack
+              });
+              // Continue with login even if socket fails
+              toast.success("Login successful!", { duration: 500 });
+              setTimeout(() => {
+                navigate("/clients");
+              }, 100);
+            }
           },
-          (name: string, value: any, options?: any) =>
-            setCookie(name as "Admin" | "TechAdmin", value, options)
+          setCookie as any
         );
-        navigate("/clients", { replace: true });
       } else {
+        console.log(responseData, "responseData");
         const errorMessage =
           responseData?.message || "Login failed. Please try again.";
         toast.error(errorMessage);
@@ -111,7 +160,58 @@ const SignIn = () => {
     formState: { errors },
   } = useForm<SignInFormInputs>();
 
-  // // Check if already authenticated
+  // Setup Socket.IO force logout handler
+  useEffect(() => {
+    socketService.onForceLogout((data: ForceLogoutData) => {
+      console.log("🚨 Force logout triggered:", data);
+      
+      // Show force logout modal
+      setForceLogoutData(data);
+      setShowForceLogoutModal(true);
+      
+      // Clear all cookies using both react-cookie and direct methods
+      const authCookieKey = getAuthCookieKey();
+      
+      // React-cookie removal
+      setCookie("Admin", "", { path: "/", maxAge: 0 });
+      setCookie("TechAdmin", "", { path: "/", maxAge: 0 });
+      setCookie("hasPopupBeenShown", "", { path: "/", maxAge: 0 });
+      setCookie("token", "", { path: "/", maxAge: 0 });
+      
+      // Direct cookie removal (including chunked tokens)
+      removeDirectCookie(authCookieKey);  
+      removeDirectCookie(`${authCookieKey}_encoded`);
+      removeDirectCookie("hasPopupBeenShown");
+      removeDirectCookie("token");
+      
+      // Clean up chunked cookies
+      const chunksCount = getDirectCookie(`${authCookieKey}_chunks`);
+      if (chunksCount) {
+        const numChunks = parseInt(chunksCount);
+        for (let i = 0; i < numChunks; i++) {
+          removeDirectCookie(`${authCookieKey}_chunk_${i}`);
+        }
+        removeDirectCookie(`${authCookieKey}_chunks`);
+      }
+      
+      console.log("🧹 All cookies cleared after force logout");
+      
+      // Disconnect socket
+      socketService.disconnect();
+      
+      // Force reload to clear all state
+      setTimeout(() => {
+        window.location.href = "/sign-in";
+      }, 1000);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      socketService.onForceLogout(() => {});
+    };
+  }, [setCookie]);
+
+  // Check if already authenticated
   useEffect(() => {
     const authCookies: AuthCookies = {
       Admin: cookies.Admin,
@@ -119,8 +219,13 @@ const SignIn = () => {
       hasPopupBeenShown: cookies.hasPopupBeenShown,
     };
 
+    debugCookies(authCookies);
+
     if (isAuthenticated(authCookies)) {
+      console.log("✅ User already authenticated, redirecting to clients");
       navigate("/clients", { replace: true });
+    } else {
+      console.log("❌ User not authenticated, staying on sign-in page");
     }
   }, [cookies.Admin, cookies.TechAdmin, cookies.hasPopupBeenShown, navigate]);
 
@@ -128,9 +233,16 @@ const SignIn = () => {
     setShowPassword(!showPassword);
   };
 
+  const handleForceLogoutModalClose = () => {
+    setShowForceLogoutModal(false);
+    setForceLogoutData(null);
+    // Force reload to login page to clear all state
+    window.location.href = "/sign-in";
+  };
+
   const onSubmit = (data: SignInFormInputs) => {
     // Validate required data
-    if (!IpAddressData?.IpAddress) {
+    if (!IpAddressData?.ip) {
       toast.error("Unable to get IP address. Please try again.");
       return;
     }
@@ -143,7 +255,7 @@ const SignIn = () => {
     const loginData: LoginRequest = {
       loginId: data.userId.trim(),
       password: data.password.trim(),
-      IpAddress: IpAddressData.IpAddress,
+      IpAddress: IpAddressData.ip,
       hostUrl: baseUrl,
     };
 
@@ -156,7 +268,8 @@ const SignIn = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start bg-gradient-to-b from-[var(--bg-primary)] to-[var(--bg-secondary)] w-screen">
+    <>
+      <div className="min-h-screen flex flex-col items-center justify-start bg-gradient-to-b from-[var(--bg-primary)] to-[var(--bg-secondary)] w-screen">
       {/* login box */}
       <div className="text-center w-[400px] max-w-[90%] flex flex-col items-center justify-center gap-5 my-16">
         {/* logo */}
@@ -270,7 +383,15 @@ const SignIn = () => {
           </form>
         </div>
       </div>
-    </div>
+      </div>
+
+      {/* Force Logout Modal */}
+      <ForceLogoutModal
+        isOpen={showForceLogoutModal}
+        data={forceLogoutData}
+        onClose={handleForceLogoutModalClose}
+      />
+    </>
   );
 };
 

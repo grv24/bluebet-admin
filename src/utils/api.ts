@@ -1,8 +1,9 @@
-import { SERVER_URL } from "@/helper/auth";
+import { SERVER_URL, getAuthCookieKey } from "@/helper/auth";
 
 // Helper function to get token from cookies
 export const getTokenFromCookies = (cookies: any): string | null => {
-  const token = cookies?.Admin || cookies?.TechAdmin || cookies?.token;
+  const authCookieKey = getAuthCookieKey();
+  const token = cookies?.[authCookieKey] || cookies?.token;
   if (!token || token === "undefined") {
     return null;
   }

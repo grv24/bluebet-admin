@@ -261,7 +261,7 @@ const Header: React.FC = () => {
             onMouseLeave={() => setIsUserDropdownOpen(false)}
           >
             <span className="font-normal text-sm cursor-pointer">
-              {userData?.PersonalDetails?.userName}
+              {userData?.user?.PersonalDetails?.userName}
             </span>
             <i className="fa-solid fa-caret-down ml-1 text-xs"></i>
             {/* User Dropdown */}

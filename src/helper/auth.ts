@@ -8,6 +8,63 @@ export const baseUrl = window.location.origin.includes("localhost")
   ? import.meta.env.VITE_LOCAL_CLIENT_URL
   : window.location.origin;
 
+/* Helper functions for authentication */
+export const isTechAdminUrl = (): boolean => {
+  return baseUrl.includes("techadmin");
+};
+
+export const getAuthCookieKey = (): "Admin" | "TechAdmin" => {
+  return isTechAdminUrl() ? "TechAdmin" : "Admin";
+};
+
+export const getUserType = (): "admin" | "techadmin" => {
+  return isTechAdminUrl() ? "techadmin" : "admin";
+};
+
+export const getUserTypeFromToken = (cookies: AuthCookies): "admin" | "techadmin" | null => {
+  const decodedToken = getDecodedTokenData(cookies);
+  if (!decodedToken) return null;
+  
+  console.log("🔍 getUserTypeFromToken - decoded token:", decodedToken);
+  console.log("🔍 getUserTypeFromToken - __type:", decodedToken.user?.__type);
+  
+  // Check if __type exists and handle different possible values
+  if (decodedToken.user?.__type === "techAdmin" || decodedToken.user?.__type === "techadmin") {
+    return "techadmin";
+  } else if (decodedToken.user?.__type === "admin" || decodedToken.user?.__type === "Admin") {
+    return "admin";
+  }
+  
+  // Fallback: check the URL to determine user type
+  console.log("🔍 Falling back to URL-based user type detection");
+  return isTechAdminUrl() ? "techadmin" : "admin";
+};
+
+// Debug function to check all cookies
+export const debugCookies = (cookies: AuthCookies): void => {
+  console.log("🍪 Cookie Debug Info:", {
+    allCookies: cookies,
+    adminCookie: cookies.Admin ? `${cookies.Admin.substring(0, 20)}...` : "null",
+    techAdminCookie: cookies.TechAdmin ? `${cookies.TechAdmin.substring(0, 20)}...` : "null",
+    hasPopupBeenShown: cookies.hasPopupBeenShown,
+    currentUrl: window.location.href,
+    hostname: window.location.hostname,
+    protocol: window.location.protocol,
+  });
+
+  // Decode and log token structure for debugging
+  const authCookieKey = getAuthCookieKey();
+  const token = cookies[authCookieKey];
+  if (token) {
+    try {
+      const decoded = jwtDecode(token);
+      console.log("🔍 Full Token Structure:", decoded);
+    } catch (error) {
+      console.error("❌ Error decoding token for debug:", error);
+    }
+  }
+};
+
 /* Types */
 export interface LoginRequest {
   loginId: string;
@@ -17,62 +74,70 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  success: boolean;
-  token: string;
-  message?: string;
+  status: boolean;
+  message: string;
+  data: {
+    token: string;
+  };
 }
 
 export interface DecodedToken {
-  AccountDetails: {
-    Balance: number;
-    Exposure: number;
-    ExposureLimit: number;
-    freeChips: number;
-    liability: number;
-    profitLoss: number;
-    totalSettledAmount: number;
-  };
-  IpAddress: string;
-  PersonalDetails: {
-    countryCode: string | null;
-    encry_password: string;
-    idIsActive: boolean;
-    isAutoRegisteredUser: boolean;
-    loginId: string;
-    mobile: string | null;
-    salt: string;
-    userName: string;
-    user_password: string;
-  };
-  allowedNoOfUsers: number;
-  bettingLocked: boolean;
-  closedAccounts: boolean;
-  commissionLenaYaDena: {
-    commissionLena: boolean;
-    commissionDena: boolean;
-  };
-  commissionSettings: {
-    partnerShipWise: boolean;
-    percentageWise: boolean;
-  };
-  createdAt: string; // ISO date string
-  createdUsersCount: number;
   exp: number; // Unix timestamp
-  fancyLocked: boolean;
-  groupID: string;
   iat: number; // Unix timestamp
-  remarks: string;
-  updatedAt: string; // ISO date string
-  upline: string;
-  userId: string;
-  userLocked: boolean;
-  __type: string;
-  __v: number;
+  iss: string;
+  permissions: {
+    adminPanels: string[];
+    canDeleteBets: boolean;
+    canDeleteUsers: boolean;
+    specialPermissions: boolean;
+  };
+  sessionData: {
+    ip: string;
+    userAgent: string;
+  };
+  user: {
+    userId: string;
+    PersonalDetails: {
+      userName: string;
+      loginId: string;
+      user_password: string;
+      countryCode: string | null;
+      mobile: string | null;
+      idIsActive: boolean;
+      isAutoRegisteredUser: boolean;
+    };
+    IpAddress: string | null;
+    uplineId: string;
+    fancyLocked: boolean;
+    bettingLocked: boolean;
+    userLocked: boolean;
+    __type: string;
+    remarks: string;
+    AccountDetails: {
+      liability: number;
+      Balance: number;
+      profitLoss: number;
+      freeChips: number;
+      totalSettledAmount: number;
+      Exposure: number;
+      ExposureLimit: number;
+    };
+    allowedNoOfUsers: number;
+    createdUsersCount: number;
+    commissionLenaYaDena: {
+      commissionLena: boolean;
+      commissionDena: boolean;
+    };
+    groupID: string | null;
+    createdAt: string;
+    updatedAt: string;
+  };
 }
 
 export interface AuthCookies {
   Admin?: string;
   TechAdmin?: string;
+  token?: string;
   hasPopupBeenShown?: boolean;
 }
   
@@ -84,7 +149,7 @@ export interface WhiteListData {
 
 export interface IpAddressData {
   success: boolean;
-  IpAddress: string;
+  ip: string;
   message?: string;
 }
 
@@ -120,9 +185,8 @@ export const parseTime = (timeStr: string): number => {
 /* get white list data */
 export const getWhiteListData = async (): Promise<WhiteListData> => {
   try {
-    // console.log(baseUrl.includes("techadmin"))
     const response = await fetch(
-      `${SERVER_URL}/api/v1/getWhiteListData?${baseUrl.includes("techadmin") ? "TechAdminUrl" : "AdminUrl"}=${baseUrl}`
+      `${SERVER_URL}/api/v1/whitelists/single?url=${baseUrl}`
     );
 
     if (!response.ok) {
@@ -139,7 +203,7 @@ export const getWhiteListData = async (): Promise<WhiteListData> => {
 /* get ip address */
 export const getIpAddress = async (): Promise<IpAddressData> => {
   try {
-    const response = await fetch(`${SERVER_URL}/api/v1/fetchIpAddress`);
+    const response = await fetch(`${SERVER_URL}/api/v1/users/fetch-ip`);
     const data = await response.json();
     return data;
   } catch (error) {
@@ -157,8 +221,9 @@ export const loginClient = async (
       password: "***hidden***", // Don't log actual password
     });
 
+    // /api/v1/users/tech-admins/login
     const response = await fetch(
-      `${SERVER_URL}/api/v1/${baseUrl.includes("techadmin") ? "techadmin" : "admin"}/signin`,
+      `${SERVER_URL}/api/v1/${baseUrl.includes("techadmin") ? "users/tech-admins/login" : "users/admins/login"}`,
       {
         method: "POST",
         headers: {
@@ -236,6 +301,28 @@ export const updatePassword = async (
   }
 };
 
+// Direct cookie helper functions
+export const setDirectCookie = (name: string, value: string, maxAgeInSeconds: number = 3600): void => {
+  const cookieString = `${name}=${value}; path=/; max-age=${maxAgeInSeconds}`;
+  document.cookie = cookieString;
+};
+
+export const getDirectCookie = (name: string): string | null => {
+  const cookies = document.cookie.split(';');
+  for (let cookie of cookies) {
+    const [cookieName, cookieValue] = cookie.trim().split('=');
+    if (cookieName === name) {
+      return cookieValue;
+    }
+  }
+  return null;
+};
+
+export const removeDirectCookie = (name: string): void => {
+  document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+  console.log(`🗑️ Direct cookie removed: ${name}`);
+};
+
 export const authenticate = async (
   data: LoginResponse,
   next: () => void,
@@ -244,21 +331,11 @@ export const authenticate = async (
   if (typeof window !== "undefined") {
     const rawExpireTime = import.meta.env.VITE_COOKIE_EXPIRE_TIME || "1h";
     const maxAgeInSeconds = parseTime(rawExpireTime);
+    const authCookieKey = getAuthCookieKey();
 
-    setCookie(
-      baseUrl.includes("techadmin") ? "TechAdmin" : "Admin",
-      data.token,
-      {
-        maxAge: maxAgeInSeconds,
-        path: "/",
-        secure: window.location.protocol === "https:",
-        sameSite: "strict",
-      }
-    );
-    setCookie("hasPopupBeenShown", false, {
-      maxAge: maxAgeInSeconds,
-      path: "/",
-    });
+    // Store only the main token cookie
+    setDirectCookie(authCookieKey, data.data.token, maxAgeInSeconds);
+    setDirectCookie("hasPopupBeenShown", "false", maxAgeInSeconds);
 
     next();
   }
@@ -269,12 +346,26 @@ export const logout = (
   removeCookie: (name: string, options?: any) => void,
   navigate: (path: string, options?: any) => void
 ): void => {
+  // Disconnect socket if connected
   try {
-    removeCookie(baseUrl.includes("techadmin") ? "TechAdmin" : "Admin", {
-      path: "/",
-    });
+    const socketService = require("@/utils/socketService").default;
+    socketService.disconnect();
+  } catch (error) {
+    console.log("Socket service not available during logout");
+  }
+  try {
+    const authCookieKey = getAuthCookieKey();
+    
+    // Remove main cookies
+    removeCookie(authCookieKey, { path: "/" });
     removeCookie("hasPopupBeenShown", { path: "/" });
     removeCookie("token", { path: "/" });
+    
+    // Also remove directly
+    removeDirectCookie(authCookieKey);
+    removeDirectCookie("hasPopupBeenShown");
+    removeDirectCookie("token");
+    
     navigate("/sign-in", { replace: true });
   } catch (error) {
     console.error("Logout error:", error);
@@ -284,12 +375,14 @@ export const logout = (
 };
 
 /* Check if user is authenticated */
-export const isAuthenticated = (cookies: AuthCookies): boolean => {
+export const isAuthenticated = (cookies?: AuthCookies): boolean => {
   if (typeof window === "undefined") {
     return false;
   }
 
-  const token = cookies[baseUrl.includes("techadmin") ? "TechAdmin" : "Admin"];
+  const authCookieKey = getAuthCookieKey();
+  const token = cookies?.[authCookieKey] || getDirectCookie(authCookieKey);
+  
   if (!token || token === "undefined") {
     return false;
   }
@@ -297,31 +390,49 @@ export const isAuthenticated = (cookies: AuthCookies): boolean => {
   try {
     const decoded = jwtDecode<DecodedToken>(token);
     const currentTime = Date.now() / 1000;
-    return decoded.exp > currentTime;
+    const isValid = decoded.exp > currentTime;
+    return isValid;
   } catch (error) {
-    console.error("Token validation error:", error);
+    console.error("❌ Token validation error:", error);
     return false;
   }
 };
 
 /* Get decoded token data */
 export const getDecodedTokenData = (
-  cookies: AuthCookies
+  cookies?: AuthCookies
 ): DecodedToken | null => {
   if (typeof window === "undefined") {
     return null;
   }
 
-  const token = cookies[
-    baseUrl.includes("techadmin") ? "TechAdmin" : "Admin"
-  ] as string;
+  const authCookieKey = getAuthCookieKey();
+  const token = cookies?.[authCookieKey] || getDirectCookie(authCookieKey);
+  
+  console.log("🔍 getDecodedTokenData - Token check:", {
+    authCookieKey,
+    tokenFromCookies: token ? `${token.substring(0, 20)}...` : null,
+    allCookies: cookies
+  });
 
   if (!token || token === "undefined") {
+    console.log("🍪 No token found in getDecodedTokenData");
     return null;
   }
 
+  console.log("🔍 getDecodedTokenData - About to decode token:", {
+    tokenLength: token.length,
+    tokenStart: token.substring(0, 50) + "..."
+  });
+
   try {
-    return jwtDecode<DecodedToken>(token);
+    const decoded = jwtDecode<DecodedToken>(token);
+    console.log("🍪 Token decoded successfully:", {
+      decoded,
+      user: decoded?.user,
+      loginId: decoded?.user?.PersonalDetails?.loginId
+    });
+    return decoded;
   } catch (error) {
     console.error("Token decode error:", error);
     return null;

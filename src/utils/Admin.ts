@@ -1,3 +1,6 @@
+import { getUserTypeFromToken } from "@/helper/auth";
+import { AuthCookies } from "@/helper/auth";
+
 interface AdminType {
   name: string;
   allowedTypes?: string[];
@@ -58,3 +61,15 @@ export const AdminList: AdminType[] = [
     allowedTypes: ["Client"],
   },
 ];
+
+// Helper function to get allowed user types for current user
+export const getAllowedUserTypes = (cookies: AuthCookies): string[] => {
+  const userType = getUserTypeFromToken(cookies);
+  if (!userType) return [];
+  
+  const adminConfig = AdminList.find(admin => 
+    admin.name.toLowerCase() === userType.toLowerCase()
+  );
+  
+  return adminConfig?.allowedTypes || [];
+};

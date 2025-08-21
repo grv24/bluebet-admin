@@ -243,12 +243,17 @@ const AddClient: React.FC = () => {
   );
 
   //decoded token data
-  const {
-    userId,
-    __type: userType,
-    commissionSettings,
-    commissionLenaYaDena,
-  } = getDecodedTokenData(cookies) || {};
+  const decodedData = getDecodedTokenData(cookies);
+  const userId = decodedData?.user?.id;
+  const userType = decodedData?.user?.__type;
+  const commissionSettings = {
+    percentageWise: decodedData?.user?.percentageWiseCommission || false,
+    partnerShipWise: decodedData?.user?.partnerShipWiseCommission || false,
+  };
+  const commissionLenaYaDena = {
+    commissionLena: decodedData?.user?.commissionLena || false,
+    commissionDena: decodedData?.user?.commissionDena || false,
+  };
 
   // Get current sport settings
   const { data: currentSportsData } = useQuery({
