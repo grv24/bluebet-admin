@@ -8,14 +8,13 @@ import { depositBalance } from "@/helper/user";
 export interface ClientRow {
   userName: string;
   balance: number;
-  
   creditRef: string;
   ust: boolean;
   bst: boolean;
   exposureLimit: number;
   defaultPercent: number;
   accountType: string;
-  _id?: string;
+  _id?: string; // This will be userId from the new structure
 }
 
 interface DepositModalProps {
@@ -40,7 +39,7 @@ const DepositModal: React.FC<DepositModalProps> = ({
 
   const upline: any = getDecodedTokenData(cookies) || {};
   const token = cookies[baseUrl.includes("techadmin") ? "TechAdmin" : "Admin"];
-  const uplineBalance = Number(upline?.AccountDetails?.Balance || 0);
+  const uplineBalance = Number(upline?.user?.AccountDetails?.Balance || 0);
 // console.log(user,'user')
   if (!open || !user) return null;
 
@@ -69,8 +68,8 @@ const DepositModal: React.FC<DepositModalProps> = ({
       const res = await depositBalance({
         token,
         amount: enteredAmount,
-        downlineUserId: user?._id || "",
-        uplineUserId: upline?.userId,
+        downlineUserId: user?._id || "", // This is now userId from the new structure
+        uplineUserId: upline?.user?.userId || upline?.userId,
         transactionPassword: password,
         remark,
       });
@@ -109,7 +108,7 @@ const DepositModal: React.FC<DepositModalProps> = ({
           {/* Balance Display */}
           <div className="grid grid-cols-2 gap-x-4 gap-y-3 mb-2 items-center">
             <label className="text-sm font-normal text-left pr-2">
-              {upline?.PersonalDetails?.userName}
+              {upline?.user?.PersonalDetails?.userName}
             </label>
             <div className="flex gap-2">
               <input

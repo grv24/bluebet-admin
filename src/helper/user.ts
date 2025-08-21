@@ -33,12 +33,12 @@ export const createNewUser = async ({
 }) => {
   const apiEndpoint = {
     Admin: `${SERVER_URL}/api/v1/users/admins/new-account`,
-    MiniAdmin: `${SERVER_URL}/api/v1/createminiadmin`,
-    SuperMaster: `${SERVER_URL}/api/v1/createsupermaster`,
-    Master: `${SERVER_URL}/api/v1/createmaster`,
-    SuperAgent: `${SERVER_URL}/api/v1/createsuperagent`,
-    Agent: `${SERVER_URL}/api/v1/createagent`,
-    Client: `${SERVER_URL}/api/v1/createclient`,
+    MiniAdmin: `${SERVER_URL}/api/v1/users/mini-admins/new-account`,
+    SuperMaster: `${SERVER_URL}/api/v1/users/super-masters/new-account`,
+    Master: `${SERVER_URL}/api/v1/users/masters/new-account`,
+    SuperAgent: `${SERVER_URL}/api/v1/users/super-agents/new-account`,
+    Agent: `${SERVER_URL}/api/v1/users/agents/new-account`,
+    Client: `${SERVER_URL}/api/v1/users/clients/new-account`,
   }[userType];
 
   if (!apiEndpoint) {

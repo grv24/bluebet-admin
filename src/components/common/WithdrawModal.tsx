@@ -21,7 +21,7 @@ const WithdrawModal = ({ open, onClose, user, title }: WithdrawModalProps) => {
     const [cookies] = useCookies(["Admin", "TechAdmin"]);
 
     const upline: any = getDecodedTokenData(cookies) || {};
-    const uplineBalance = Number(upline?.AccountDetails?.Balance || 0);
+    const uplineBalance = Number(upline?.user?.AccountDetails?.Balance || 0);
 
     if (!open || !user) return null;
 
@@ -50,8 +50,8 @@ const WithdrawModal = ({ open, onClose, user, title }: WithdrawModalProps) => {
         await withdrawChips({
           cookies,
           amount: enteredAmount,
-          downlineUserId: user?._id || "",
-          uplineUserId: upline?.userId,
+          downlineUserId: user?._id || "", // This is now userId from the new structure
+          uplineUserId: upline?.user?.userId || upline?.userId,
           transactionPassword: password,
         });
 
@@ -84,7 +84,7 @@ const WithdrawModal = ({ open, onClose, user, title }: WithdrawModalProps) => {
             {/* Balances Grid - two column grid like form */}
             <div className="grid grid-cols-2 gap-x-4 gap-y-3 mb-2 items-center">
               {/* Upline */}
-              <label className="text-sm font-normal text-left pr-2">{upline?.PersonalDetails?.userName}</label>
+              <label className="text-sm font-normal text-left pr-2">{upline?.user?.PersonalDetails?.userName}</label>
               <div className="flex gap-2">
                 <input
                   className="bg-gray-200 border border-gray-400 text-sm rounded w-full h-10 px-2 text-right"
