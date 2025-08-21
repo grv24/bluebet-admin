@@ -50,22 +50,35 @@ interface ClientRow {
  * Represents the structure of user data returned from the server
  */
 interface APIUser {
-  _id?: string;           // Database ID
-  PersonalDetails?: {     // Personal information
-    loginId?: string;     // Login identifier
-    userName?: string;    // Display name
+  userId: string;         // User ID
+  PersonalDetails: {      // Personal information
+    loginId: string;      // Login identifier
+    userName: string;     // Display name
+    user_password: string; // User password
+    countryCode: string | null; // Country code
+    mobile: string | null; // Mobile number
+    idIsActive: boolean;  // Whether user is active
+    isAutoRegisteredUser: boolean; // Whether user was auto-registered
   };
-  AccountDetails?: {      // Financial account information
-    Balance?: number;     // Current balance
-    creditReference?: number; // Credit reference number
-    ExposureLimit?: number;   // Maximum exposure limit
-    Exposure?: number;        // Current exposure
-    profitLoss?: number;      // Profit/loss amount
+  AccountDetails: {       // Financial account information
+    liability: number;    // Liability amount
+    Balance: number;      // Current balance
+    profitLoss: number;   // Profit/loss amount
+    freeChips: number;    // Free chips amount
+    totalSettledAmount: number; // Total settled amount
+    Exposure: number;     // Current exposure
+    ExposureLimit: number; // Maximum exposure limit
+    creditRef: number;    // Credit reference number
   };
-  userLocked?: boolean;   // Whether user account is locked
-  bettingLocked?: boolean; // Whether betting is locked
-  defaultPercent?: number; // Default percentage setting
-  __type?: string;        // User type (e.g., "Client", "Agent")
+  userLocked: boolean;    // Whether user account is locked
+  bettingLocked: boolean; // Whether betting is locked
+  fancyLocked: boolean;   // Whether fancy betting is locked
+  __type: string;         // User type (e.g., "Client", "Agent")
+  allowedNoOfUsers: number; // Allowed number of users
+  createdUsersCount: number; // Created users count
+  remarks: string;        // User remarks
+  createdAt: string;      // Creation date
+  updatedAt: string;      // Last update date
 }
 
 /**
@@ -73,10 +86,9 @@ interface APIUser {
  * Represents the paginated response from the downline list API
  */
 interface DownlineListResponse {
-  users: APIUser[];       // Array of user objects
-  totalUsers: number;     // Total number of users
-  totalPages: number;     // Total number of pages
-  currentPage: number;    // Current page number
+  success: boolean;       // API success status
+  count: number;         // Total number of users
+  users: APIUser[];      // Array of user objects
 }
 
 /**
@@ -323,27 +335,27 @@ const ClientList: React.FC = () => {
     }
     console.log(downlineData.users, "downlineData");
     return downlineData.users.map((user: APIUser): ClientRow => {
-      const balance = user.AccountDetails?.Balance || 0;
-      const creditRefNum = user.AccountDetails?.creditReference || 0;
+      const balance = user.AccountDetails.Balance || 0;
+      const creditRefNum = user.AccountDetails.creditRef || 0;
       return {
         userName:
-          user.PersonalDetails?.loginId ||
-          user.PersonalDetails?.userName ||
+          user.PersonalDetails.loginId ||
+          user.PersonalDetails.userName ||
           "N/A",
         creditRef: creditRefNum ? creditRefNum.toLocaleString() : "0",
         balance,
         // Client P/L = Balance - Credit Reference
         clientPL: formatNumber(balance - creditRefNum),
-        exposure: user.AccountDetails?.Exposure || 0,
+        exposure: user.AccountDetails.Exposure || 0,
         // Available Balance = Balance
         availableBalance: balance,
         // Interpret as ACTIVE states (true means active)
         ust: user.userLocked === true ? false : true,
         bst: user.bettingLocked === true ? false : true,
-        exposureLimit: user.AccountDetails?.ExposureLimit || 0,
-        defaultPercent: user.defaultPercent || 0,
+        exposureLimit: user.AccountDetails.ExposureLimit || 0,
+        defaultPercent: 0, // Not available in new structure
         accountType: user.__type || "User",
-        _id: user._id || "",
+        _id: user.userId || "",
       };
     });
   }, [downlineData?.users]);
@@ -371,13 +383,13 @@ const ClientList: React.FC = () => {
   // Pagination metadata
   const paginationInfo = useMemo(
     () => ({
-      totalPages: downlineData?.totalPages || 0,
-      totalUsers: downlineData?.totalUsers || 0,
-      currentPage: downlineData?.currentPage || page,
-      hasNextPage: page < (downlineData?.totalPages || 0),
+      totalPages: Math.ceil((downlineData?.count || 0) / pageSize),
+      totalUsers: downlineData?.count || 0,
+      currentPage: page,
+      hasNextPage: page < Math.ceil((downlineData?.count || 0) / pageSize),
       hasPrevPage: page > 1,
     }),
-    [downlineData, page]
+    [downlineData?.count, page, pageSize]
   );
 
   // Memoized handlers for better performance
@@ -501,7 +513,7 @@ const ClientList: React.FC = () => {
   const navigate = useNavigate();
 
   // Enhanced error state
-  if (error) {
+  if (error || (downlineData && !downlineData.success)) {
     return (
       <div className="p-4 bg-[#fafafa] min-h-screen">
         <div className="flex flex-col justify-center items-center h-64 space-y-4">
