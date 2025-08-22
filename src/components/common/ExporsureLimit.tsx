@@ -54,7 +54,7 @@ const ExporsureLimit: React.FC<ExporsureLimitProps> = ({
       exposureLimitChange({
         cookies: cookieBag,
         userId: user?._id || "",
-        exposureLimit,
+        newLimit:exposureLimit,
         transactionPassword,
         userType: user?.__type || "",
       }),

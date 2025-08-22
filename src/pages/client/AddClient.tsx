@@ -116,12 +116,24 @@ const useLoginIdCheck = (whiteListId: string) => {
 
   // Lazy socket initialization - creates socket only when needed
   const createSocketConnection = useCallback(() => {
-    const socket = io(import.meta.env.VITE_SERVER_URL);
+    const socketUrl = import.meta.env.VITE_SERVER_URL;
+    console.log("🔌 Creating socket connection to:", socketUrl);
+
+    const socket = io(socketUrl);
+
+    // Setup connection event handlers
+    socket.on("connect", () => {
+      console.log("✅ Socket connected:", socket.id);
+    });
+
+    socket.on("connect_error", (error) => {
+      console.error("❌ Socket connection error:", error);
+    });
 
     // Setup one-time event listener for this check
     const handleLoginIdCheck = (exists: boolean) => {
+      console.log("📨 Received loginIdCheck response:", exists);
       setUserExists(exists);
-      console.log(exists, "exists");
       setIsCheckingUserId(false);
       // Auto-cleanup after receiving response
       socket.off("loginIdCheck", handleLoginIdCheck);
@@ -175,7 +187,7 @@ const useLoginIdCheck = (whiteListId: string) => {
         };
 
         // Emit the check request
-        socket.emit("checkLoginId", loginId.trim(), whiteListId);
+        socket.emit("checkLoginId", { loginId: loginId.trim(), whiteListId });
       }, CONSTANTS.CHECK_DEBOUNCE_MS);
     },
     [userExists, whiteListId, createSocketConnection, cleanup]
@@ -303,11 +315,11 @@ const AddClient: React.FC = () => {
   const currentUserAllowedTypes = useMemo(() => {
     const userType = decodedData?.user?.__type;
     if (!userType) return [];
-    
-    const adminConfig = AdminList.find(admin => 
-      admin.name.toLowerCase() === userType.toLowerCase()
+
+    const adminConfig = AdminList.find(
+      (admin) => admin.name.toLowerCase() === userType.toLowerCase()
     );
-    
+
     return adminConfig?.allowedTypes || [];
   }, [decodedData?.user?.__type]);
 
@@ -569,7 +581,11 @@ const AddClient: React.FC = () => {
   const onSubmit = useCallback(
     async (data: FormData) => {
       // Validate form inputs
-      const validationError = validateFormInputs(data, userExists, currentUserAllowedTypes);
+      const validationError = validateFormInputs(
+        data,
+        userExists,
+        currentUserAllowedTypes
+      );
       if (validationError) {
         toast.error(validationError);
         return;
@@ -615,6 +631,7 @@ const AddClient: React.FC = () => {
           userLocked: false,
           isPanelCommission: true,
 
+          creditRef: data.creditReference,
           // Send updated sports settings with modified commission/partnership values
           ...(data.accountType !== "Client" && {
             // sportsSettings: updatedSportsSettings,
@@ -627,15 +644,15 @@ const AddClient: React.FC = () => {
           }),
           remarks: `creating account for ${data.clientName}`,
 
-          ...(data.accountType !== "Client" && {
-            // AccountDetails: {
-            creditRef: data.creditReference,
-            // },
-          }),
+          // ...(data.accountType !== "Client" && {
+          //   // AccountDetails: {
+          //   creditRef: data.creditReference,
+          //   // },
+          // }),
           // Include exposureLimit for Client accounts
           ...(data.accountType === "Client" && {
             // AccountDetails: {
-            creditRef: data.exposureLimit || 0,
+            exposureLimit: data.exposureLimit,
             // },
           }),
           transactionPassword: data.transactionPassword,

@@ -1,4 +1,4 @@
-import { SERVER_URL } from "./auth";
+import { SERVER_URL, baseUrl } from "./auth";
 import { apiRequest } from "@/utils/api";
 
 export interface ChangePasswordRequest {
@@ -159,11 +159,31 @@ export const changeOwnPassword = async (
   newPassword: string,
   cookies: any
 ): Promise<ChangePasswordResponse> => {
-  return apiRequest("/api/v1/changeOwnPassword", cookies, {
-    method: "PATCH",
-    body: JSON.stringify({ currentPassword, newPassword }),
-  });
+  try {
+    const hostname = new URL(baseUrl).hostname; // e.g. "admin.bluebet9.com"
+    const subdomain = hostname.split(".")[0];  // "admin" or "techadmin"
+
+    let rolePath = "";
+    if (subdomain.toLowerCase() === "admin") {
+      rolePath = "admins";
+    } else if (subdomain.toLowerCase() === "techadmin") {
+      rolePath = "tech-admins";
+    } else {
+      throw new Error("Unknown role: cannot determine endpoint");
+    }
+
+    const endpoint = `/api/v1/users/${rolePath}/change-own-password`;
+
+    return apiRequest(endpoint, cookies, {
+      method: "PATCH",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  } catch (error) {
+    console.error("Error in changeOwnPassword:", error);
+    throw error;
+  }
 };
+
 
 //downline pwd change
 export const changeDownlinePassword = async (
@@ -174,12 +194,12 @@ export const changeDownlinePassword = async (
   userType: string
 ): Promise<ChangePasswordResponse> => {
   return apiRequest(
-    `/api/v1/changeDownlinePassword/${downlineUserId}`,
+    `/api/v1/users/change-password-downline`,
     cookies,
     {
       method: "PATCH",
       body: JSON.stringify({
-        downlineUserId,
+        userId: downlineUserId,
         newPassword,
         transactionPassword,
         userType,
@@ -217,13 +237,13 @@ export const withdrawChips = async ({
 export const exposureLimitChange = async ({
   cookies,
   userId,
-  exposureLimit,
+  newLimit,
   transactionPassword,
   userType,
 }: {
   cookies: any;
   userId: string;
-  exposureLimit: number;
+  newLimit: number;
   transactionPassword: string;
   userType: string;
 }) => {
@@ -231,7 +251,7 @@ export const exposureLimitChange = async ({
     method: "PATCH",
     body: JSON.stringify({
       userId,
-      exposureLimit,
+      newLimit,
       transactionPassword,
       userType,
     }),

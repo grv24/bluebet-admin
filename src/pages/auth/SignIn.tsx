@@ -57,7 +57,7 @@ const SignIn = () => {
           getDecodedTokenData({ [cookieKey]: responseData.data.token } as any) || {};
 
         // If id is not active, DO NOT set Admin/TechAdmin cookie; store temporary token and redirect
-        if (decodedData.user?.isActive === false) {
+        if (responseData?.data?.isActive === false) {
           toast.success("Please change your password", { removeDelay: 2000 });
           setCookie("token" as any, responseData.data.token, { path: "/" });
           navigate("/auth/change-password", { replace: true });
@@ -223,7 +223,7 @@ const SignIn = () => {
 
     if (isAuthenticated(authCookies)) {
       console.log("✅ User already authenticated, redirecting to clients");
-      navigate("/clients", { replace: true });
+      // navigate("/clients", { replace: true });
     } else {
       console.log("❌ User not authenticated, staying on sign-in page");
     }

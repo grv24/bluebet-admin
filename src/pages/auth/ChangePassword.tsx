@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { useCookies } from "react-cookie";
 import { Navigate, useNavigate } from "react-router-dom";
 import useChangePasswordMutation from "../../hooks/useChangePasswordMutation";
+import { baseUrl } from "@/helper/auth";
 
 interface ChangePasswordFormInputs {
   currentPassword: string;
@@ -77,7 +78,7 @@ const ChangePassword = () => {
           if (responseData?.success) {
             toast.success("Password changed successfully!");
             navigate("/transaction-password", {
-              state: { transactionPassword: responseData?.transactionPassword },
+              state: { transactionPassword: responseData?.data?.transactionPassword },
             });
           } else {
             const errorMessage =
@@ -94,6 +95,7 @@ const ChangePassword = () => {
       }
     );
   };
+  console.log(baseUrl, "baseUrl");
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-start bg-gradient-to-b from-[var(--bg-primary)] to-[var(--bg-secondary)] w-full">

@@ -74,9 +74,12 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
+  isActive: boolean;
+  user: any;
   status: boolean;
   message: string;
   data: {
+    isActive: boolean;
     token: string;
   };
 }

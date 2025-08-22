@@ -6,6 +6,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useCookies } from "react-cookie";
 import { useMutation } from "@tanstack/react-query";
 import { changeDownlinePassword } from "@/helper/user";
+import { baseUrl } from "@/helper/auth";
 
 interface PasswordModalProps {
   open: boolean;
@@ -66,6 +67,7 @@ const PasswordModal: React.FC<PasswordModalProps> = ({
       setFormSuccess("");
     },
   });
+  console.log(baseUrl, "baseUrl");
   if (!open || !user) return null;
 
   return (
