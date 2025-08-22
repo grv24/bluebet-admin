@@ -68,7 +68,7 @@ const CreditModal: React.FC<CreditModalProps> = ({
   });
 
   if (!open || !user) return null;
-console.log(user.creditRef,'user')
+// console.log(user.creditRef,'user')
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
       <div className="relative bg-white rounded-lg shadow-lg w-full max-w-xl p-0 animate-fadein">

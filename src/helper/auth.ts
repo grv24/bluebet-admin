@@ -44,9 +44,9 @@ export const getUserTypeFromToken = (cookies: AuthCookies): "admin" | "techadmin
 export const debugCookies = (cookies: AuthCookies): void => {
   console.log("🍪 Cookie Debug Info:", {
     allCookies: cookies,
-    adminCookie: cookies.Admin ? `${cookies.Admin.substring(0, 20)}...` : "null",
-    techAdminCookie: cookies.TechAdmin ? `${cookies.TechAdmin.substring(0, 20)}...` : "null",
-    hasPopupBeenShown: cookies.hasPopupBeenShown,
+    adminCookie: cookies?.Admin ? `${cookies?.Admin?.substring(0, 20)}...` : "null",
+    techAdminCookie: cookies?.TechAdmin ? `${cookies?.TechAdmin?.substring(0, 20)}...` : "null",
+    hasPopupBeenShown: cookies?.hasPopupBeenShown,
     currentUrl: window.location.href,
     hostname: window.location.hostname,
     protocol: window.location.protocol,

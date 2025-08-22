@@ -276,7 +276,7 @@ export const changeCreditReference = async ({
     method: "PATCH",
     body: JSON.stringify({
       userId,
-      creditReference,
+      newCreditRef: creditReference,
       transactionPassword,
       userType,
     }),
@@ -300,14 +300,14 @@ export const changeUserStatus = async ({
   userType: string;
 }) => {
   return apiRequest(
-    `/api/v1/users/change-user-lock-and-bet-lock/${userId}`,
+    `/api/v1/users/lock`,
     cookies,
     {
       method: "PATCH",
       body: JSON.stringify({
         userId,
-        lockBet,
-        lockUser,
+        betLockValue: lockBet,
+        userLockValue: lockUser,
         transactionPassword,
         userType,
       }),
