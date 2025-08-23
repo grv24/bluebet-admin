@@ -505,77 +505,7 @@ const AddClient: React.FC = () => {
     console.log("Allowed Account Types:", currentUserAllowedTypes);
   }
 
-  // Function to convert modified panel values back to original sports settings format
-  const convertToOriginalSportsSettings = useCallback(
-    (
-      originalSportsSettings: any,
-      newCommissionOwn: number,
-      newCommissionTotal: number,
-      newPartnershipOwn: number,
-      newPartnershipTotal: number,
-      newPartnershipDownline: number
-    ) => {
-      if (
-        !originalSportsSettings ||
-        Object.keys(originalSportsSettings).length === 0
-      ) {
-        return {};
-      }
 
-      const updatedSportsSettings = JSON.parse(
-        JSON.stringify(originalSportsSettings)
-      ); // Deep copy
-
-      // Get current user key from mapping
-      const currentUserKey =
-        USER_TYPE_MAP[userType || ""] || userType?.toLowerCase();
-
-      // Update each sport setting with new commission and partnership values
-      Object.keys(updatedSportsSettings).forEach((sportKey) => {
-        if (sportKey === "success" || sportKey === "status") return;
-
-        const setting = updatedSportsSettings[sportKey];
-
-        // Update match commission
-        if (setting.matchCommission !== undefined) {
-          setting.matchCommission = newCommissionOwn;
-        }
-
-        // Update partnership
-        if (setting.partnership !== undefined) {
-          setting.partnership = newPartnershipOwn;
-        }
-      });
-
-      // Log the exact structure being created for verification
-      console.log("🏈 Sports Settings Conversion Complete:", {
-        userType,
-        currentUserKey,
-        userId,
-        inputValues: {
-          newCommissionOwn,
-          newCommissionTotal,
-          newPartnershipOwn,
-          newPartnershipTotal,
-          newPartnershipDownline,
-        },
-      });
-
-      // Log each sport's structure to verify format
-      Object.keys(updatedSportsSettings).forEach((sportKey) => {
-        if (sportKey === "success" || sportKey === "status") return;
-
-        const sport = updatedSportsSettings[sportKey];
-        console.log(`📊 ${sportKey} Structure:`, {
-          matchCommission: sport.matchCommission,
-          partnership: sport.partnership,
-        });
-      });
-
-      return updatedSportsSettings;
-    },
-    [userType, userId]
-  );
 
   // Optimized onSubmit with useCallback
   const onSubmit = useCallback(
@@ -604,23 +534,6 @@ const AddClient: React.FC = () => {
 
       setIsLoading(true);
       try {
-        // Calculate updated commission and partnership values based on form inputs
-        const updatedCommissionOwn = data.ourCommission || 0;
-        const updatedCommissionTotal = commissionCalculations.total;
-        const updatedPartnershipOwn = data.ourPartnership || 0;
-        const updatedPartnershipTotal = partnershipCalculations.total;
-        const updatedPartnershipDownline = partnershipCalculations.downline;
-
-        // Convert modified values back to original sports settings format
-        const updatedSportsSettings = convertToOriginalSportsSettings(
-          currentSportsData?.data,
-          updatedCommissionOwn,
-          updatedCommissionTotal,
-          updatedPartnershipOwn,
-          updatedPartnershipTotal,
-          updatedPartnershipDownline
-        );
-
         const formData = {
           // personal detail
           userName: data.clientName.trim(),
@@ -630,17 +543,22 @@ const AddClient: React.FC = () => {
           bettingLocked: false,
           userLocked: false,
           isPanelCommission: true,
-
           creditRef: data.creditReference,
-          // Send updated sports settings with modified commission/partnership values
+          // Send original sports settings as they are without modifications
           ...(data.accountType !== "Client" && {
-            // sportsSettings: updatedSportsSettings,
-            casinoSettings: updatedSportsSettings?.casinoSettings,
-            cricketSettings: updatedSportsSettings?.cricketSettings,
-            tennisSettings: updatedSportsSettings?.tennisSettings,
-            soccerSettings: updatedSportsSettings?.soccerSettings,
+            casinoSettings: currentSportsData?.data?.casinoSettings,
+            cricketSettings: currentSportsData?.data?.cricketSettings,
+            tennisSettings: currentSportsData?.data?.tennisSettings,
+            soccerSettings: currentSportsData?.data?.soccerSettings,
             internationalCasinoSettings:
-              updatedSportsSettings?.internationalCasinoSettings,
+              currentSportsData?.data?.internationalCasinoSettings,
+            // Partnership and Commission fields
+            partnership: data.ourPartnership || 0,
+            partnershipToUserId: userId || "",
+            partnershipToType: userType || "",
+            commissionToUserId: userId || "",
+            commissionToType: userType || "",
+            matchCommission: data.ourCommission || 0,
           }),
           remarks: `creating account for ${data.clientName}`,
 
@@ -651,9 +569,7 @@ const AddClient: React.FC = () => {
           // }),
           // Include exposureLimit for Client accounts
           ...(data.accountType === "Client" && {
-            // AccountDetails: {
             exposureLimit: data.exposureLimit,
-            // },
           }),
           transactionPassword: data.transactionPassword,
         };
@@ -691,7 +607,6 @@ const AddClient: React.FC = () => {
       currentSportsData,
       commissionSettings,
       commissionLenaYaDena,
-      convertToOriginalSportsSettings,
       userType,
       userId,
     ]
