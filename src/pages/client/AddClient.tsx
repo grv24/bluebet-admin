@@ -553,12 +553,12 @@ const AddClient: React.FC = () => {
             internationalCasinoSettings:
               currentSportsData?.data?.internationalCasinoSettings,
             // Partnership and Commission fields
-            partnership: data.ourPartnership || 0,
+            commissionUpline: data.ourPartnership || 0,
             partnershipToUserId: userId || "",
             partnershipToType: userType || "",
             commissionToUserId: userId || "",
             commissionToType: userType || "",
-            matchCommission: data.ourCommission || 0,
+            partnershipUpline: data.ourCommission || 0,
           }),
           remarks: `creating account for ${data.clientName}`,
 

@@ -73,23 +73,48 @@ const SignIn = () => {
               const decodedToken = getDecodedTokenData({ [cookieKey]: responseData.data.token } as any);
               const userType = getUserType();
               
-              console.log("🔍 Login success - attempting socket connection:", {
+              console.log("🔍 [DEBUG] Login success - attempting socket connection:", {
                 decodedToken: decodedToken?.user,
                 userType,
-                loginId: decodedToken?.user?.PersonalDetails?.loginId
+                loginId: decodedToken?.user?.PersonalDetails?.loginId,
+                token: responseData.data.token ? 'present' : 'missing',
+                cookieKey
               });
               
               // Connect to Socket.IO
               if (decodedToken?.user?.PersonalDetails?.loginId) {
-                // console.log("🔌 Starting socket connection...");
+                console.log("🔌 [DEBUG] Starting socket connection...");
                 const status = socketService.getConnectionStatus();
+                console.log("🔌 [DEBUG] Current socket status:", status);
+                
                 if (!status.isConnected && !status.isConnecting) {
-                  await socketService.connect(decodedToken.user.PersonalDetails.loginId, userType);
-                  // console.log("🔌 Socket connected successfully");
-                  // console.log("🔌 Socket status after connection:", socketService.isSocketConnected());
+                  console.log("🔌 [DEBUG] Attempting to connect socket with:", {
+                    loginId: decodedToken.user.PersonalDetails.loginId,
+                    userType
+                  });
+                  
+                  try {
+                    await socketService.connect(decodedToken.user.PersonalDetails.loginId, userType);
+                    console.log("🔌 [DEBUG] Socket connected successfully");
+                    console.log("🔌 [DEBUG] Socket status after connection:", socketService.isSocketConnected());
+                    console.log("🔌 [DEBUG] Final connection status:", socketService.getConnectionStatus());
+                  } catch (socketError) {
+                    console.error("🔌 [DEBUG] Socket connection failed:", socketError);
+                    console.error("🔌 [DEBUG] Socket error details:", {
+                      message: (socketError as any)?.message,
+                      stack: (socketError as any)?.stack,
+                      loginId: decodedToken.user.PersonalDetails.loginId,
+                      userType
+                    });
+                  }
+                } else {
+                  console.log("🔌 [DEBUG] Socket already connected or connecting, skipping connection attempt");
                 }
               } else {
-                // console.error("🔌 No loginId found in token, cannot connect socket");
+                console.error("🔌 [DEBUG] No loginId found in token, cannot connect socket", {
+                  decodedToken: decodedToken?.user,
+                  personalDetails: decodedToken?.user?.PersonalDetails
+                });
               }
               
               toast.success("Login successful!", { duration: 500 });
@@ -98,8 +123,8 @@ const SignIn = () => {
                 navigate("/clients");
               }, 100);
             } catch (socketError) {
-              console.error("🔌 Socket connection failed:", socketError);
-              console.error("🔌 Socket error details:", {
+              console.error("🔌 [DEBUG] Socket connection failed in outer catch:", socketError);
+              console.error("🔌 [DEBUG] Socket error details:", {
                 message: (socketError as any)?.message,
                 stack: (socketError as any)?.stack
               });
@@ -162,8 +187,9 @@ const SignIn = () => {
 
   // Setup Socket.IO force logout handler
   useEffect(() => {
+    console.log("🔌 [DEBUG] Setting up force logout handler");
     socketService.onForceLogout((data: ForceLogoutData) => {
-      console.log("🚨 Force logout triggered:", data);
+      console.log("🚨 [DEBUG] Force logout triggered:", data);
       
       // Show force logout modal
       setForceLogoutData(data);
@@ -194,19 +220,22 @@ const SignIn = () => {
         removeDirectCookie(`${authCookieKey}_chunks`);
       }
       
-      console.log("🧹 All cookies cleared after force logout");
+      console.log("🧹 [DEBUG] All cookies cleared after force logout");
       
       // Disconnect socket
+      console.log("🔌 [DEBUG] Disconnecting socket due to force logout");
       socketService.disconnect();
       
       // Force reload to clear all state
       setTimeout(() => {
+        console.log("🔄 [DEBUG] Force reloading page after force logout");
         window.location.href = "/sign-in";
       }, 1000);
     });
 
     // Cleanup on unmount
     return () => {
+      console.log("🔌 [DEBUG] Cleaning up force logout handler on unmount");
       socketService.onForceLogout(() => {});
     };
   }, [setCookie]);
@@ -222,10 +251,10 @@ const SignIn = () => {
     debugCookies(authCookies);
 
     if (isAuthenticated(authCookies)) {
-      console.log("✅ User already authenticated, redirecting to clients");
+      console.log("✅ [DEBUG] User already authenticated, redirecting to clients");
       // navigate("/clients", { replace: true });
     } else {
-      console.log("❌ User not authenticated, staying on sign-in page");
+      console.log("❌ [DEBUG] User not authenticated, staying on sign-in page");
     }
   }, [cookies.Admin, cookies.TechAdmin, cookies.hasPopupBeenShown, navigate]);
 
@@ -259,7 +288,7 @@ const SignIn = () => {
       hostUrl: baseUrl,
     };
 
-    console.log("🔑 Attempting login with data:", {
+    console.log("🔑 [DEBUG] Attempting login with data:", {
       ...loginData,
       password: "***hidden***", // Don't log actual password
     });

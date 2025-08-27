@@ -93,6 +93,7 @@ class SocketService {
    */
   connect(userId: string, userType: 'admin' | 'techadmin'): Promise<void> {
     return new Promise((resolve, reject) => {
+      let socketUrl: string = '';
       try {
         // console.log('🔌 Starting socket connection...', { userId, userType });
         
@@ -100,28 +101,53 @@ class SocketService {
         this.disconnect();
 
         // Create new socket connection using environment variable
-        const socketUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:4000';
-        // console.log('🔌 Connecting to socket URL:', socketUrl);
+        socketUrl = import.meta.env.VITE_SERVER_URL || 'http://195.35.20.50'
+        console.log('🔌 [DEBUG] Socket URL:', socketUrl);
+        console.log('🔌 [DEBUG] Environment variables:', {
+          VITE_SERVER_URL: import.meta.env.VITE_SERVER_URL,
+          NODE_ENV: import.meta.env.NODE_ENV,
+          MODE: import.meta.env.MODE
+        });
+        
+        console.log('🔌 [DEBUG] Creating socket connection with config:', {
+          socketUrl,
+          transports: ['polling', 'websocket'],
+          upgrade: true,
+          rememberUpgrade: false,
+          timeout: 20000,
+          forceNew: true,
+          secure: false,
+          rejectUnauthorized: false
+        });
         
         this.socket = io(socketUrl, {
-          transports: ['websocket', 'polling'],
-          timeout: 10000, // Reduced timeout for faster connection
+          transports: ['polling', 'websocket'],
+          upgrade: true,
+          rememberUpgrade: false,
+          timeout: 20000,
           forceNew: true,
-          autoConnect: true,
-          reconnection: true,
-          reconnectionAttempts: 3,
-          reconnectionDelay: 1000,
-          reconnectionDelayMax: 5000,
+          secure: false,
+          rejectUnauthorized: false,
         });
 
         this._currentUser = { userId, userType };
         // Set initial connection state to connecting to prevent disconnected flash
         this._isConnected = true;
-        // console.log('🔌 Socket instance created:', this.socket.id);
+        console.log('🔌 [DEBUG] Socket instance created:', {
+          socketId: this.socket?.id,
+          userId,
+          userType,
+          isConnected: this._isConnected
+        });
 
         // Connection event handlers
         this.socket.on('connect', () => {
-          // console.log('🔌 Socket connected successfully:', this.socket?.id);
+          console.log('🔌 [DEBUG] Socket connected successfully:', {
+            socketId: this.socket?.id,
+            userId,
+            userType,
+            reconnectAttempts: this.reconnectAttempts
+          });
           this._isConnected = true;
           this.reconnectAttempts = 0;
           
@@ -132,7 +158,7 @@ class SocketService {
             socketId: this.socket?.id,
             timestamp: new Date().toISOString(),
           };
-          // console.log('🔌 Emitting login event:', loginData);
+          console.log('🔌 [DEBUG] Emitting login event:', loginData);
           this.socket?.emit('login', loginData);
 
           // Listen for any event to debug
@@ -142,18 +168,28 @@ class SocketService {
 
           // Start heartbeat
           this.startHeartbeat();
-          // console.log('🔌 Socket connection complete');
+          console.log('🔌 [DEBUG] Socket connection complete - Promise resolved');
           resolve();
         });
 
         // Handle connecting state
         this.socket.on('connecting', () => {
-          // console.log('🔌 Socket connecting...');
+          console.log('🔌 [DEBUG] Socket connecting...', {
+            socketId: this.socket?.id,
+            userId,
+            userType
+          });
           this._isConnected = false;
         });
 
         this.socket.on('disconnect', (reason) => {
-          // console.log('🔌 Socket disconnected:', reason);
+          console.log('🔌 [DEBUG] Socket disconnected:', {
+            reason,
+            socketId: this.socket?.id,
+            userId,
+            userType,
+            reconnectAttempts: this.reconnectAttempts
+          });
           this._isConnected = false;
           this.stopHeartbeat();
 
@@ -168,28 +204,36 @@ class SocketService {
         });
 
         this.socket.on('connect_error', (error) => {
-          // console.error('🔌 Socket connection error:', error);
-          // console.error('🔌 Error details:', {
-          //   message: error.message,
-          //   description: (error as any).description,
-          //   context: (error as any).context,
-          //   type: (error as any).type
-          // });
+          console.error('🔌 [DEBUG] Socket connection error:', {
+            message: error.message,
+            description: (error as any).description,
+            context: (error as any).context,
+            type: (error as any).type,
+            socketUrl,
+            userId,
+            userType
+          });
           this._isConnected = false;
           reject(error);
         });
 
         // Force logout event
         this.socket.on('forceLogout', (data: ForceLogoutData) => {
-          // console.log('🚨 Force logout received:', data);
-          // console.log('🚨 Socket ID when force logout received:', this.socket?.id);
-          // console.log('🚨 Current user when force logout received:', this._currentUser);
+          console.log('🚨 [DEBUG] Force logout received:', {
+            data,
+            socketId: this.socket?.id,
+            currentUser: this._currentUser
+          });
           this.handleForceLogout(data);
         });
 
         // Admin login notification event
         this.socket.on('adminLogin', (data: any) => {
-          // console.log('👤 Admin login notification received:', data);
+          console.log('👤 [DEBUG] Admin login notification received:', {
+            data,
+            socketId: this.socket?.id,
+            currentUser: this._currentUser
+          });
           // You can add a callback for admin login notifications if needed
           if (this.adminLoginCallback) {
             this.adminLoginCallback(data);
@@ -198,40 +242,79 @@ class SocketService {
 
         // Heartbeat events
         this.socket.on('ping', () => {
-          // console.log('🔌 Received ping, sending pong');
+          console.log('🔌 [DEBUG] Received ping, sending pong', {
+            socketId: this.socket?.id,
+            timestamp: new Date().toISOString()
+          });
           this.socket?.emit('pong');
         });
 
         // Add more debugging events
         this.socket.on('error', (error) => {
-          // console.error('🔌 Socket error:', error);
+          console.error('🔌 [DEBUG] Socket error:', {
+            error,
+            socketId: this.socket?.id,
+            userId,
+            userType
+          });
         });
 
         this.socket.on('reconnect', (attemptNumber) => {
-          // console.log('🔌 Socket reconnected after', attemptNumber, 'attempts');
+          console.log('🔌 [DEBUG] Socket reconnected after', {
+            attemptNumber,
+            socketId: this.socket?.id,
+            userId,
+            userType
+          });
         });
 
         this.socket.on('reconnect_attempt', (attemptNumber) => {
-          // console.log('🔌 Socket reconnect attempt:', attemptNumber);
+          console.log('🔌 [DEBUG] Socket reconnect attempt:', {
+            attemptNumber,
+            socketId: this.socket?.id,
+            userId,
+            userType
+          });
         });
 
         this.socket.on('reconnect_error', (error) => {
-          // console.error('🔌 Socket reconnect error:', error);
+          console.error('🔌 [DEBUG] Socket reconnect error:', {
+            error,
+            socketId: this.socket?.id,
+            userId,
+            userType
+          });
         });
 
         this.socket.on('reconnect_failed', () => {
-          // console.error('🔌 Socket reconnect failed');
+          console.error('🔌 [DEBUG] Socket reconnect failed', {
+            socketId: this.socket?.id,
+            userId,
+            userType,
+            reconnectAttempts: this.reconnectAttempts
+          });
         });
 
         // Connection timeout
         setTimeout(() => {
           if (!this._isConnected) {
+            console.error('🔌 [DEBUG] Socket connection timeout after 10 seconds', {
+              socketId: this.socket?.id,
+              userId,
+              userType,
+              socketUrl
+            });
             reject(new Error('Socket connection timeout'));
           }
         }, 10000);
 
       } catch (error) {
-        // console.error('🔌 Socket connection failed:', error);
+        console.error('🔌 [DEBUG] Socket connection failed:', {
+          error,
+          userId,
+          userType,
+          socketUrl
+        });
         reject(error);
       }
     });
