@@ -744,10 +744,10 @@ const ClientList: React.FC = () => {
                     {formatNumber(totals.balance)}
                   </td>
                   <td className="border border-[#e0e0e0] text-center py-2 px-2">
-                    {formatNumber(totals.clientPL)}
+                    -
                   </td>
                   <td className="border border-[#e0e0e0] text-center py-2 px-2">
-                    {formatNumber(totals.exposure)}
+                   -
                   </td>
                   <td className="border border-[#e0e0e0] text-center py-2 px-2">
                     {formatNumber(totals.availableBalance)}
@@ -755,10 +755,10 @@ const ClientList: React.FC = () => {
                   <td className="border border-[#e0e0e0] text-center py-2 px-2"></td>
                   <td className="border border-[#e0e0e0] text-center py-2 px-2"></td>
                   <td className="border border-[#e0e0e0] text-center py-2 px-2">
-                    {formatNumber(totals.exposureLimit)}
+               -
                   </td>
                   <td className="border border-[#e0e0e0] text-center py-2 px-2">
-                    {formatNumber(totals.defaultPercent)}
+                  -
                   </td>
                   <td className="border border-[#e0e0e0] py-2 px-2"></td>
                   <td className="border border-[#e0e0e0] py-2 px-2"></td>
@@ -780,7 +780,7 @@ const ClientList: React.FC = () => {
                       {row.balance.toLocaleString()}
                     </td>
                     <td className="px-2 py-2 text-center font-medium align-middle border border-[#e0e0e0]">
-                      {row.clientPL}
+                      -
                     </td>
                     <td className="px-2 py-2 text-center font-medium align-middle border border-[#e0e0e0]">
                       {row.exposure.toLocaleString()}
@@ -859,9 +859,9 @@ const ClientList: React.FC = () => {
                             {action.label}
                           </span>
                         ))}
-                        <span className="bg-[#444] hover:bg-[#333] cursor-pointer text-white rounded px-2 leading-6 font-medium text-xs tracking-wider">
+                        {/* <span className="bg-[#444] hover:bg-[#333] cursor-pointer text-white rounded px-2 leading-6 font-medium text-xs tracking-wider">
                           MORE
-                        </span>
+                        </span> */}
                       </div>
                     </td>
                   </tr>
