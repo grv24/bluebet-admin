@@ -5,6 +5,7 @@ import { ClientRow } from './DepositModal'
 import { useCookies } from 'react-cookie'
 import { baseUrl, getDecodedTokenData } from '@/helper/auth'
 import { withdrawChips } from '@/helper/user'
+import toast from 'react-hot-toast'
 
 interface WithdrawModalProps {
     open: boolean;
@@ -61,7 +62,8 @@ const WithdrawModal = ({ open, onClose, user, title }: WithdrawModalProps) => {
         setPassword("");
         onClose();
       } catch (err: any) {
-        setError(err?.message || "Withdraw failed.");
+        toast.error(err?.message)
+        // setError(err?.message || "Withdraw failed.");
         console.error(err);
       } finally {
         setLoading(false);
