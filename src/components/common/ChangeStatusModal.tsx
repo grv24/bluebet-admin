@@ -5,6 +5,7 @@ import { ClientRow } from "./DepositModal";
 import { useCookies } from "react-cookie";
 import { useMutation } from "@tanstack/react-query";
 import { changeUserStatus } from "@/helper/user";
+import toast from "react-hot-toast";
 
 interface ChangeStatusModalProps {
   open: boolean;
@@ -54,7 +55,8 @@ const ChangeStatusModal: React.FC<ChangeStatusModalProps> = ({ open, onClose, us
         userType: user?.__type || "",
       });
       if (!response?.success) {
-        throw new Error(response?.message || "Update failed");
+        toast.error(response?.message)
+        // throw new Error(response?.message || "Update failed");
       }
       return response;
     },
@@ -65,7 +67,8 @@ const ChangeStatusModal: React.FC<ChangeStatusModalProps> = ({ open, onClose, us
       onClose();
     },
     onError: (err: any) => {
-      setError(err?.message || "Request failed. Please try again.");
+      toast.error(err?.message)
+      // setError(err?.message || "Request failed. Please try again.");
     },
   });
 

@@ -4,6 +4,7 @@ import { FaTimes } from "react-icons/fa";
 import { useCookies } from "react-cookie";
 import { baseUrl, getDecodedTokenData } from "@/helper/auth";
 import { depositBalance } from "@/helper/user";
+import toast from "react-hot-toast";
 
 export interface ClientRow {
   __type: string;
@@ -75,14 +76,16 @@ const DepositModal: React.FC<DepositModalProps> = ({
       });
 
       if (res?.success) {
+        toast.success(res?.message)
         setAmount("");
         setRemark("");
         setPassword("");
         onClose(); // close modal
       } else {
-        setError(res?.message || "Deposit failed.");
+        toast.error(res?.error);
       }
     } catch (err) {
+      // toast.error(err)
       setError("An error occurred during deposit.");
       console.error(err);
     } finally {
@@ -208,7 +211,13 @@ const DepositModal: React.FC<DepositModalProps> = ({
                     : "bg-[var(--bg-primary)] hover:opacity-90"
                 }`}
               >
-                {loading ? "Processing..." : <>Submit <FaArrowRight /></>}
+                {loading ? (
+                  "Processing..."
+                ) : (
+                  <>
+                    Submit <FaArrowRight />
+                  </>
+                )}
               </button>
             </div>
           </form>

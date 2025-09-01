@@ -5,6 +5,7 @@ import { ClientRow } from "./DepositModal";
 import { useCookies } from "react-cookie";
 import { useMutation } from "@tanstack/react-query";
 import { changeCreditReference } from "@/helper/user";
+import toast from "react-hot-toast";
 
 interface CreditModalProps {
   open: boolean;
@@ -63,7 +64,8 @@ const CreditModal: React.FC<CreditModalProps> = ({
       onClose();
     },
     onError: (err: any) => {
-      setError(err?.message || "Request failed. Please try again.");
+     toast?.error(err?.message)
+      // setError(err?.message || "Request failed. Please try again.");
     },
   });
 

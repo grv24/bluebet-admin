@@ -7,6 +7,7 @@ import { useCookies } from "react-cookie";
 import { useMutation } from "@tanstack/react-query";
 import { changeDownlinePassword } from "@/helper/user";
 import { baseUrl } from "@/helper/auth";
+import toast from "react-hot-toast";
 
 interface PasswordModalProps {
   open: boolean;
@@ -57,13 +58,15 @@ const PasswordModal: React.FC<PasswordModalProps> = ({
           onClose();
         }, 800);
       } else {
-        setFormError(res?.message || res?.error || "Update failed");
+        toast.error(res?.message || res?.error);
+        // setFormError(res?.message || res?.error || "Update failed");
         setFormSuccess("");
       }
     },
     onError: (err: any) => {
       // console.log(err,'err')
-      setFormError(err?.message || "Request failed");
+      toast.error(err?.message || err?.error);
+      // setFormError(err?.message || "Request failed");
       setFormSuccess("");
     },
   });
@@ -99,18 +102,32 @@ const PasswordModal: React.FC<PasswordModalProps> = ({
               e.preventDefault();
               setFormError("");
               setFormSuccess("");
-              if (!newpassword.trim() || !confirmPassword.trim() || !transactionPassword.trim()) {
+              if (
+                !newpassword.trim() ||
+                !confirmPassword.trim() ||
+                !transactionPassword.trim()
+              ) {
                 setFormError("All fields are required");
                 return;
               }
               // Validate string password strength
-              const hasMinLen = newpassword.length >= 6 && newpassword.length <= 32;
+              const hasMinLen =
+                newpassword.length >= 6 && newpassword.length <= 32;
               const hasLetter = /[A-Za-z]/.test(newpassword);
               const hasNumber = /\d/.test(newpassword);
               const hasNoSpaces = !/\s/.test(newpassword);
               const startsWithCapital = /^[A-Z]/.test(newpassword);
               const hasSpecial = /[^A-Za-z0-9\s]/.test(newpassword);
-              if (!(hasMinLen && hasLetter && hasNumber && hasSpecial && hasNoSpaces && startsWithCapital)) {
+              if (
+                !(
+                  hasMinLen &&
+                  hasLetter &&
+                  hasNumber &&
+                  hasSpecial &&
+                  hasNoSpaces &&
+                  startsWithCapital
+                )
+              ) {
                 setFormError(passwordRule);
                 return;
               }
@@ -154,16 +171,15 @@ const PasswordModal: React.FC<PasswordModalProps> = ({
               Confirm Password
             </label>
             <div className="flex items-center gap-2">
-
-            <input
-              type={showConfirmPassword ? "text" : "password"}
-              placeholder="Confirm Password"
-              className="border rounded px-3 py-2 h-10 focus:outline-none focus:ring w-full"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              disabled={isPending}
-            />
-            {showConfirmPassword ? (
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm Password"
+                className="border rounded px-3 py-2 h-10 focus:outline-none focus:ring w-full"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                disabled={isPending}
+              />
+              {showConfirmPassword ? (
                 <FaEyeSlash
                   className="w-4 h-4 cursor-pointer"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
@@ -179,24 +195,27 @@ const PasswordModal: React.FC<PasswordModalProps> = ({
               Transaction Password
             </label>
             <div className="flex items-center gap-2">
-
-            <input
-              type={showTransactionPassword ? "text" : "password"}
-              placeholder="Transaction Password"
-              className="border rounded px-3 py-2 h-10 focus:outline-none focus:ring w-full"
-              value={transactionPassword}
-              onChange={(e) => setTransactionPassword(e.target.value)}
-              disabled={isPending}
-            />
-            {showTransactionPassword ? (
+              <input
+                type={showTransactionPassword ? "text" : "password"}
+                placeholder="Transaction Password"
+                className="border rounded px-3 py-2 h-10 focus:outline-none focus:ring w-full"
+                value={transactionPassword}
+                onChange={(e) => setTransactionPassword(e.target.value)}
+                disabled={isPending}
+              />
+              {showTransactionPassword ? (
                 <FaEyeSlash
                   className="w-4 h-4 cursor-pointer"
-                  onClick={() => setShowTransactionPassword(!showTransactionPassword)}
+                  onClick={() =>
+                    setShowTransactionPassword(!showTransactionPassword)
+                  }
                 />
               ) : (
                 <FaEye
                   className="w-4 h-4 cursor-pointer"
-                  onClick={() => setShowTransactionPassword(!showTransactionPassword)}
+                  onClick={() =>
+                    setShowTransactionPassword(!showTransactionPassword)
+                  }
                 />
               )}
             </div>
@@ -215,7 +234,9 @@ const PasswordModal: React.FC<PasswordModalProps> = ({
                 type="submit"
                 disabled={isPending}
                 className={`flex items-center gap-2 leading-8 px-4 cursor-pointer rounded uppercase text-white font-medium text-sm w-full md:w-auto ${
-                  isPending ? "bg-gray-400 cursor-not-allowed" : "bg-[var(--bg-primary)] hover:opacity-90"
+                  isPending
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-[var(--bg-primary)] hover:opacity-90"
                 }`}
               >
                 {isPending ? (

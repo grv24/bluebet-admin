@@ -5,6 +5,7 @@ import { FaTimes } from "react-icons/fa";
 import { useCookies } from "react-cookie";
 import { useMutation } from "@tanstack/react-query";
 import { exposureLimitChange } from "@/helper/user";
+import toast from "react-hot-toast";
 
 interface ExporsureLimitProps {
   open: boolean;
@@ -66,6 +67,7 @@ const ExporsureLimit: React.FC<ExporsureLimitProps> = ({
       onClose();
     },
     onError: (err: any) => {
+      toast.error(err?.message);
       setFormError(err?.message || "Request failed. Please try again.");
     },
   });
