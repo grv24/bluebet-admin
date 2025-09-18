@@ -83,13 +83,26 @@ interface APIUser {
 }
 
 /**
+ * Interface for pagination data
+ * Represents pagination information from the API
+ */
+interface PaginationData {
+  total: number;         // Total number of users
+  page: number;          // Current page number
+  limit: number;         // Items per page
+  totalPages: number;    // Total number of pages
+}
+
+/**
  * Interface for API response containing downline user list
  * Represents the paginated response from the downline list API
  */
 interface DownlineListResponse {
   success: boolean;       // API success status
-  count: number;         // Total number of users
-  users: APIUser[];      // Array of user objects
+  data: {                 // Response data wrapper
+    pagination: PaginationData; // Pagination information
+    users: APIUser[];      // Array of user objects
+  };
 }
 
 /**
@@ -331,11 +344,11 @@ const ClientList: React.FC = () => {
   console.log(modalState, "modalState");
   // Optimized data transformation with error handling
   const transformedData = useMemo<ClientRow[]>(() => {
-    if (!downlineData?.users || !Array.isArray(downlineData.users)) {
+    if (!downlineData?.data?.users || !Array.isArray(downlineData.data.users)) {
       return [];
     }
-    console.log(downlineData.users, "downlineData");
-    return downlineData.users.map((user: APIUser): ClientRow => {
+    console.log(downlineData.data.users, "downlineData");
+    return downlineData.data.users.map((user: APIUser): ClientRow => {
       const balance = user.AccountDetails.Balance || 0;
       const creditRefNum = user.AccountDetails.creditRef || 0;
       return {
@@ -360,7 +373,7 @@ const ClientList: React.FC = () => {
         __type: user.__type || "User",
       };
     });
-  }, [downlineData?.users]);
+  }, [downlineData?.data?.users]);
 
   // Tab filtering: Active = userActive && betActive; Deactive = otherwise
   const tabFilteredData = useMemo<ClientRow[]>(() => {
@@ -385,13 +398,13 @@ const ClientList: React.FC = () => {
   // Pagination metadata
   const paginationInfo = useMemo(
     () => ({
-      totalPages: Math.ceil((downlineData?.count || 0) / pageSize),
-      totalUsers: downlineData?.count || 0,
+      totalPages: downlineData?.data?.pagination?.totalPages || 0,
+      totalUsers: downlineData?.data?.pagination?.total || 0,
       currentPage: page,
-      hasNextPage: page < Math.ceil((downlineData?.count || 0) / pageSize),
+      hasNextPage: page < (downlineData?.data?.pagination?.totalPages || 0),
       hasPrevPage: page > 1,
     }),
-    [downlineData?.count, page, pageSize]
+    [downlineData?.data?.pagination, page]
   );
 
   // Memoized handlers for better performance

@@ -314,3 +314,15 @@ export const changeUserStatus = async ({
     }
   );
 };
+
+
+
+export const getUserCurrentBet = async ({
+  cookies
+}: {
+  cookies: any;
+}) => {
+  return apiRequest("/api/v1/sports/bets/downline", cookies, {
+    method: "GET",
+  });
+};
