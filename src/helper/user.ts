@@ -345,3 +345,25 @@ export const getUserCurrentBet = async ({
     method: "GET",
   });
 };
+
+
+
+// account summary
+// /api/v1/balance/dashboard/ed4a6a1f-7694-467a-8a94-0144930e9175/admin
+export const getAccountSummary = async ({
+  cookies,
+  userId,
+  userType,
+}: {
+  cookies: any;
+  userId: string;
+  userType: string;
+}) => {
+  return apiRequest(`/api/v1/balance/dashboard/${userId}/${userType}`, cookies, {
+    method: "GET",
+    body: JSON.stringify({
+      userId,
+      userType,
+    }),
+  });
+};

@@ -20,6 +20,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useDrawerMetrics } from "@/components/context/DrawerMetricsContext";
 import socketService, { ForceLogoutData } from "@/utils/socketService";
 import toast from "react-hot-toast";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 /**
  * Page size options for pagination
@@ -143,6 +146,202 @@ const getTotalCreditRef = (data: ClientRow[]): number => {
 const formatNumber = (num: number): string => num.toLocaleString("en-IN");
 
 /**
+ * Export data to PDF with better formatting
+ * 
+ * @param data - Array of client data to export
+ * @param totals - Totals object for summary
+ * @param activeTab - Current active tab (active/deactive)
+ */
+const exportToPDF = (data: ClientRow[], totals: any, activeTab: string) => {
+  try {
+    console.log("📄 Starting PDF export with data:", data.length, "records");
+    
+    const doc = new jsPDF('landscape', 'mm', 'a4');
+    
+    // Add title
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Account List Report', 14, 20);
+    
+    // Add subtitle
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Report Date: ${new Date().toLocaleDateString()}`, 14, 30);
+    doc.text(`Tab: ${activeTab === 'active' ? 'Active Users' : 'Deactivate Users'}`, 14, 35);
+    doc.text(`Total Records: ${data.length}`, 14, 40);
+    
+    // Prepare table data
+    const tableData = data.map((row, index) => [
+      index + 1,
+      row.userName,
+      row.creditRef,
+      row.balance.toLocaleString(),
+      row.clientPL || '-',
+      row.exposure.toLocaleString(),
+      row.availableBalance.toLocaleString(),
+      row.ust ? 'Active' : 'Inactive',
+      row.bst ? 'Active' : 'Inactive',
+      row.exposureLimit.toLocaleString(),
+      row.defaultPercent.toString(),
+      row.accountType
+    ]);
+    
+    // Add totals row
+    tableData.push([
+      'TOTAL',
+      '',
+      formatNumber(totals.balance),
+      formatNumber(totals.balance),
+      '-',
+      '-',
+      formatNumber(totals.availableBalance),
+      '',
+      '',
+      '-',
+      '-',
+      ''
+    ]);
+    
+    // Table headers
+    const headers = [
+      'S.No',
+      'User Name',
+      'Credit Ref',
+      'Balance',
+      'Client(P/L)',
+      'Exposure',
+      'Available Balance',
+      'U Status',
+      'B Status',
+      'Exposure Limit',
+      'Default (%)',
+      'Account Type'
+    ];
+    
+    console.log("📊 Creating PDF table with headers:", headers.length, "columns");
+    
+    // Create table
+    autoTable(doc, {
+      head: [headers],
+      body: tableData,
+      startY: 50,
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+        overflow: 'linebreak',
+        halign: 'center'
+      },
+      headStyles: {
+        fillColor: [66, 139, 202],
+        textColor: 255,
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245]
+      },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 15 },
+        1: { halign: 'left', cellWidth: 25 },
+        2: { halign: 'right', cellWidth: 20 },
+        3: { halign: 'right', cellWidth: 20 },
+        4: { halign: 'right', cellWidth: 20 },
+        5: { halign: 'right', cellWidth: 20 },
+        6: { halign: 'right', cellWidth: 25 },
+        7: { halign: 'center', cellWidth: 15 },
+        8: { halign: 'center', cellWidth: 15 },
+        9: { halign: 'right', cellWidth: 20 },
+        10: { halign: 'center', cellWidth: 15 },
+        11: { halign: 'center', cellWidth: 20 }
+      }
+    });
+    
+    // Save the PDF
+    const fileName = `Account_List_${activeTab}_${new Date().toISOString().split('T')[0]}.pdf`;
+    console.log("💾 Saving PDF with filename:", fileName);
+    doc.save(fileName);
+    
+    toast.success('PDF exported successfully!');
+  } catch (error: any) {
+    console.error('❌ PDF export error:', error);
+    console.error('❌ Error details:', {
+      message: error?.message || 'Unknown error',
+      stack: error?.stack,
+      dataLength: data?.length,
+      totals: totals,
+      activeTab: activeTab
+    });
+    toast.error(`Failed to export PDF: ${error?.message || 'Unknown error'}`);
+  }
+};
+
+/**
+ * Export data to Excel with better formatting
+ * 
+ * @param data - Array of client data to export
+ * @param totals - Totals object for summary
+ * @param activeTab - Current active tab (active/deactive)
+ */
+const exportToExcel = (data: ClientRow[], totals: any, activeTab: string) => {
+  try {
+    // Prepare worksheet data
+    const worksheetData = [
+      // Header row
+      ['S.No', 'User Name', 'Credit Ref', 'Balance', 'Client(P/L)', 'Exposure', 'Available Balance', 'U Status', 'B Status', 'Exposure Limit', 'Default (%)', 'Account Type'],
+      // Data rows
+      ...data.map((row, index) => [
+        index + 1,
+        row.userName,
+        row.creditRef,
+        row.balance,
+        row.clientPL || '-',
+        row.exposure,
+        row.availableBalance,
+        row.ust ? 'Active' : 'Inactive',
+        row.bst ? 'Active' : 'Inactive',
+        row.exposureLimit,
+        row.defaultPercent,
+        row.accountType
+      ]),
+      // Totals row
+      ['TOTAL', '', totals.balance, totals.balance, '-', '-', totals.availableBalance, '', '', '-', '-', '']
+    ];
+    
+    // Create workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    
+    // Set column widths
+    const columnWidths = [
+      { wch: 8 },   // S.No
+      { wch: 20 },  // User Name
+      { wch: 15 },  // Credit Ref
+      { wch: 15 },  // Balance
+      { wch: 15 },  // Client(P/L)
+      { wch: 15 },  // Exposure
+      { wch: 18 },  // Available Balance
+      { wch: 12 },  // U Status
+      { wch: 12 },  // B Status
+      { wch: 15 },  // Exposure Limit
+      { wch: 12 },  // Default (%)
+      { wch: 15 }   // Account Type
+    ];
+    worksheet['!cols'] = columnWidths;
+    
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Account List');
+    
+    // Save the Excel file
+    const fileName = `Account_List_${activeTab}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+    
+    toast.success('Excel file exported successfully!');
+  } catch (error: any) {
+    console.error('Excel export error:', error);
+    toast.error(`Failed to export Excel file: ${error?.message || 'Unknown error'}`);
+  }
+};
+
+/**
  * Props interface for Deposit Modal Component
  * Defines the properties required for the deposit modal functionality
  */
@@ -180,6 +379,8 @@ const ClientList: React.FC = () => {
   const [socketStatus, setSocketStatus] = useState(() =>
     socketService.getImmediateConnectionStatus()
   );
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [isExportingExcel, setIsExportingExcel] = useState(false);
 
   console.log("my data", getDecodedTokenData(cookies)?.user?.AccountDetails?.Balance);
 
@@ -484,6 +685,31 @@ const ClientList: React.FC = () => {
     );
   }, [filteredData]);
 
+  // Export handlers
+  const handleExportPDF = useCallback(async () => {
+    if (isExportingPDF) return;
+    
+    setIsExportingPDF(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for UI feedback
+      exportToPDF(filteredData, totals, activeTab);
+    } finally {
+      setIsExportingPDF(false);
+    }
+  }, [filteredData, totals, activeTab, isExportingPDF]);
+
+  const handleExportExcel = useCallback(async () => {
+    if (isExportingExcel) return;
+    
+    setIsExportingExcel(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for UI feedback
+      exportToExcel(filteredData, totals, activeTab);
+    } finally {
+      setIsExportingExcel(false);
+    }
+  }, [filteredData, totals, activeTab, isExportingExcel]);
+
   // Drawer metrics updater side-effect
   const { setGroups } = useDrawerMetrics();
   useEffect(() => {
@@ -605,11 +831,29 @@ const ClientList: React.FC = () => {
       </div>
 
       <div className="flex flex-wrap gap-1 mb-2">
-        <button className="flex cursor-pointer items-center gap-2 px-3 leading-8 rounded font-medium text-white text-xs bg-[#cb0606] hover:opacity-90 transition">
-          <FaFilePdf className="w-3 h-3" /> PDF
+        <button 
+          className={`flex cursor-pointer items-center gap-2 px-3 leading-8 rounded font-medium text-white text-xs transition ${
+            isExportingPDF 
+              ? 'bg-gray-400 cursor-not-allowed' 
+              : 'bg-[#cb0606] hover:opacity-90'
+          }`}
+          onClick={handleExportPDF}
+          disabled={isExportingPDF || filteredData.length === 0}
+        >
+          <FaFilePdf className="w-3 h-3" /> 
+          {isExportingPDF ? 'Exporting...' : 'PDF'}
         </button>
-        <button className="flex cursor-pointer items-center gap-2 px-3 leading-8 rounded font-medium text-white text-xs bg-[#217346] hover:opacity-90 transition">
-          <FaFileExcel className="w-3 h-3" /> Excel
+        <button 
+          className={`flex cursor-pointer items-center gap-2 px-3 leading-8 rounded font-medium text-white text-xs transition ${
+            isExportingExcel 
+              ? 'bg-gray-400 cursor-not-allowed' 
+              : 'bg-[#217346] hover:opacity-90'
+          }`}
+          onClick={handleExportExcel}
+          disabled={isExportingExcel || filteredData.length === 0}
+        >
+          <FaFileExcel className="w-3 h-3" /> 
+          {isExportingExcel ? 'Exporting...' : 'Excel'}
         </button>
       </div>
       <div className="flex flex-wrap items-center gap-2 mb-3">

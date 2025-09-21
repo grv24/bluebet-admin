@@ -15,7 +15,7 @@ const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
       <main>
         {!isTransactionPassword ? (
           <DrawerMetricsProvider>
-            {/* <Drawer /> */}
+            <Drawer />
             {children}
           </DrawerMetricsProvider>
         ) : (
