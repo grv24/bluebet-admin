@@ -153,6 +153,25 @@ export const depositBalance = async ({
   }
 };
 
+///api/v1/users/admins/own-balance
+export const getOwnBalance = async ({
+  token,
+  userId,
+  cookies,
+  }: {
+  token: string;
+  userId: string;
+  cookies: any;
+}) => {
+  return apiRequest(`/api/v1/users/own-balance`, cookies, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+
 //change own password
 export const changeOwnPassword = async (
   currentPassword: string,

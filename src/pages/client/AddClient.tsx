@@ -33,6 +33,11 @@ interface FormData {
   minBet: number;
   maxBet: number;
   delay: number;
+  // Commission settings
+  commissionLena: boolean;
+  commissionDena: boolean;
+  percentageWiseCommission: boolean;
+  partnerShipWiseCommission: boolean;
 }
 
 // Constants for better maintainability
@@ -60,6 +65,21 @@ const USER_TYPE_MAP: Record<string, string> = {
 // Display label mapper for account types
 const getAccountTypeLabel = (type: string): string =>
   type === "Client" ? "User" : type;
+
+// Default commission rates by user type (from guide)
+const getDefaultCommissionRates = (userType: string) => {
+  const defaultRates: { [key: string]: { panel: number; match: number; session: number } } = {
+    techAdmin: { panel: 1.5, match: 1.0, session: 0.8 },
+    admin: { panel: 1.0, match: 0.8, session: 0.6 },
+    miniAdmin: { panel: 0.5, match: 0.5, session: 0.4 },
+    superMaster: { panel: 0.5, match: 0.5, session: 0.4 },
+    master: { panel: 1.0, match: 0.8, session: 0.6 },
+    superAgent: { panel: 1.0, match: 0.8, session: 0.6 },
+    agent: { panel: 2.0, match: 1.5, session: 1.2 },
+    client: { panel: 0, match: 0, session: 0 }
+  };
+  return defaultRates[userType] || defaultRates.client;
+};
 
 // Types for better type safety
 interface CommissionCalculations {
@@ -228,6 +248,11 @@ const AddClient: React.FC = () => {
       minBet: 0,
       maxBet: 0,
       delay: CONSTANTS.DEFAULT_DELAY,
+      // Commission settings defaults
+      commissionLena: true,
+      commissionDena: false,
+      percentageWiseCommission: true,
+      partnerShipWiseCommission: false,
     },
   });
 
@@ -326,25 +351,28 @@ const AddClient: React.FC = () => {
   // Get panel data from sports settings with error handling
   const panelData = useMemo(() => {
     try {
-      // Extract commission and partnership values from the new sports settings structure
+      // Extract commission and partnership values from the sports settings structure
       const sportsSettings = currentSportsData?.data || {};
+      
+      // Get commission values from commissionOwn field
       const commissionValues = Object.values(sportsSettings)
         ?.filter(
           (setting: any) =>
             setting &&
             typeof setting === "object" &&
-            setting.matchCommission !== undefined
+            setting.commissionOwn !== undefined
         )
-        ?.map((setting: any) => setting.matchCommission);
+        ?.map((setting: any) => setting.commissionOwn);
 
+      // Get partnership values from partnershipOwn field
       const partnershipValues = Object.values(sportsSettings)
         .filter(
           (setting: any) =>
             setting &&
             typeof setting === "object" &&
-            setting.partnership !== undefined
+            setting.partnershipOwn !== undefined
         )
-        ?.map((setting: any) => setting.partnership);
+        ?.map((setting: any) => setting.partnershipOwn);
 
       // Calculate averages for panel data
       const avgCommission =
@@ -362,6 +390,14 @@ const AddClient: React.FC = () => {
               0
             ) / partnershipValues.length
           : 0;
+
+      console.log("Panel Data Debug:", {
+        sportsSettings,
+        commissionValues,
+        partnershipValues,
+        avgCommission,
+        avgPartnership
+      });
 
       return {
         panelCommission: {
@@ -412,21 +448,23 @@ const AddClient: React.FC = () => {
     }
   }, [panelData, setValue]);
 
-  // Calculate commission values - only "our" is user input, "downline" is fixed, "total" is calculated
+  // Calculate commission values - CORRECTED LOGIC
   const commissionCalculations = useMemo((): CommissionCalculations => {
-    const panelTotal = panelData?.panelCommission?.total || 0; // Original panel total (for reference)
+    const panelTotal = 100; // Total commission pool is always 100%
     const parentOwn = panelData?.panelCommission?.own || 0; // What parent currently has
-    const upline = panelTotal - parentOwn; // Commission passed to parent user (fixed)
-    const downline = 0; // Commission passed to child user (fixed at 0)
     const our = ourCommission || 0; // What current user keeps (user input - editable)
-    const total = upline + downline + our; // Total adjusts based on our input only
+    
+    // CORRECTED: Upline gets the remaining after we take our share
+    const upline = Math.max(0, panelTotal - our); // Commission passed to parent user
+    const downline = 0; // Commission passed to child user (fixed at 0)
+    const total = upline + downline + our; // Should always equal panelTotal (100%)
     const own = our; // Own is same as our
 
-    // Validation: basic checks
-    const isValidAllocation = our >= 0; // Our should be non-negative
-    const maxOurAllowed = CONSTANTS.MAX_COMMISSION; // Set a reasonable maximum for our
+    // Validation: our should not exceed total pool
+    const maxOurAllowed = panelTotal; // Maximum "our" allowed is 100%
+    const isValidAllocation = our >= 0 && our <= maxOurAllowed;
 
-    console.log("Commission Calc Debug:", {
+    console.log("Commission Calc Debug (CORRECTED):", {
       panelTotal,
       parentOwn,
       upline,
@@ -434,37 +472,49 @@ const AddClient: React.FC = () => {
       our,
       total,
       own,
-      formula: `total = ${upline} + ${downline} + ${our} = ${total}`,
-      constraints: `our ≥ 0`,
+      formula: `upline (${upline}) + downline (${downline}) + our (${our}) = ${total}`,
+      constraints: `our ≥ 0 && our ≤ ${maxOurAllowed}`,
       isValidAllocation,
       maxOurAllowed,
+      note: "Upline = Total Pool - Our Share"
     });
 
     return {
-      upline: upline, // Commission passed to parent user (fixed)
+      upline: upline, // Commission passed to parent user (calculated)
       downline: downline, // Commission passed to child user (fixed)
       our: our, // What current user keeps (user input - editable)
       own: own, // Same as our
-      total: total, // Calculated total (upline + downline + our)
-      panelTotal: panelTotal, // Original panel total
+      total: total, // Should always equal 100%
+      panelTotal: panelTotal, // Original panel total (100%)
       parentOwn: parentOwn, // What parent currently has
       isValidAllocation: isValidAllocation, // Validation flag
-      maxOurAllowed: maxOurAllowed, // Maximum "our" allowed
+      maxOurAllowed: maxOurAllowed, // Maximum "our" allowed (100%)
     };
   }, [panelData?.panelCommission, ourCommission]);
 
   // Calculate partnership values using the correct formula: upline + our + downline = total
   const partnershipCalculations = useMemo((): PartnershipCalculations => {
     // Base values from panel
-    const previousDownline = panelData?.panelPartnership?.own || 0; // treat this bucket as 100% available
-    const total = panelData?.panelPartnership?.total || 0;
+    const previousDownline = panelData?.panelPartnership?.own || 100; // Default to 100 if no panel data
+    const total = panelData?.panelPartnership?.total || 100; // Default to 100 if no panel data
     const ourPercent = Math.max(0, ourPartnership || 0); // input as percentage of previousDownline
-    const upline = total - previousDownline; // fixed part that goes to upline
+    const upline = Math.max(0, total - previousDownline); // fixed part that goes to upline
 
     // Convert percent to absolute share from the previousDownline bucket
     const ourAbsolute = (previousDownline * ourPercent) / 100;
     const newDownline = Math.max(0, previousDownline - ourAbsolute);
     const downlineChange = newDownline - previousDownline; // negative means reduced
+
+    console.log("Partnership Calc Debug:", {
+      previousDownline,
+      total,
+      ourPercent,
+      upline,
+      ourAbsolute,
+      newDownline,
+      downlineChange,
+      formula: `upline (${upline}) + our (${ourAbsolute}) + downline (${newDownline}) = ${upline + ourAbsolute + newDownline}`,
+    });
 
     return {
       upline,
@@ -493,6 +543,19 @@ const AddClient: React.FC = () => {
       checkLoginId(value);
     },
     [setValue, checkLoginId]
+  );
+
+  // Handle account type change to set default commission rates
+  const handleAccountTypeChange = useCallback(
+    (accountType: string) => {
+      setValue("accountType", accountType);
+      if (accountType !== "Client") {
+        const defaultRates = getDefaultCommissionRates(accountType.toLowerCase());
+        setValue("ourCommission", defaultRates.panel);
+        setValue("ourPartnership", 0); // Start with 0 for partnership
+      }
+    },
+    [setValue]
   );
 
   // Memoized user ID for tech admin
@@ -552,13 +615,37 @@ const AddClient: React.FC = () => {
             soccerSettings: currentSportsData?.data?.soccerSettings,
             internationalCasinoSettings:
               currentSportsData?.data?.internationalCasinoSettings,
-            // Partnership and Commission fields
-            commissionUpline: data.ourPartnership || 0,
+            // Commission and Partnership fields - FIXED MAPPING
+            commissionUpline: data.ourCommission || 0,    // ✅ Commission goes to commission
+            partnershipUpline: data.ourPartnership || 0,  // ✅ Partnership goes to partnership
             partnershipToUserId: userId || "",
             partnershipToType: userType || "",
             commissionToUserId: userId || "",
             commissionToType: userType || "",
-            partnershipUpline: data.ourCommission || 0,
+            // Commission settings
+            commissionLena: data.commissionLena,
+            commissionDena: data.commissionDena,
+            percentageWiseCommission: data.percentageWiseCommission,
+            partnerShipWiseCommission: data.partnerShipWiseCommission,
+            // Structured commission rates
+            commissionRates: {
+              panel: {
+                soccer: data.ourCommission || 0,
+                cricket: data.ourCommission || 0,
+                tennis: data.ourCommission || 0,
+                matka: data.ourCommission || 0,
+                casino: data.ourCommission || 0,
+                internationalCasino: data.ourCommission || 0
+              },
+              match: {
+                soccer: data.ourCommission || 0,
+                cricket: data.ourCommission || 0,
+                tennis: data.ourCommission || 0
+              },
+              session: {
+                cricket: data.ourCommission || 0
+              }
+            }
           }),
           remarks: `creating account for ${data.clientName}`,
 
@@ -609,6 +696,7 @@ const AddClient: React.FC = () => {
       commissionLenaYaDena,
       userType,
       userId,
+      currentUserAllowedTypes,
     ]
   );
 
@@ -762,6 +850,7 @@ const AddClient: React.FC = () => {
                 <select
                   {...register("accountType", {
                     required: "Please select an account type",
+                    onChange: (e) => handleAccountTypeChange(e.target.value),
                   })}
                   className="w-full text-gray-500 border border-gray-300 rounded px-3 py-2 text-xs mb-2"
                 >
@@ -1028,6 +1117,8 @@ const AddClient: React.FC = () => {
                 )}
               </div>
             </div>
+            
+           
           </React.Fragment>
         )}
         {/* Min Max Bet */}

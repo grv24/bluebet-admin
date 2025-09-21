@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa6";
 import { FaTimes } from "react-icons/fa";
 import { useCookies } from "react-cookie";
 import { baseUrl, getDecodedTokenData } from "@/helper/auth";
-import { depositBalance } from "@/helper/user";
+import { depositBalance, getOwnBalance } from "@/helper/user";
 import toast from "react-hot-toast";
 
 export interface ClientRow {
@@ -37,11 +37,46 @@ const DepositModal: React.FC<DepositModalProps> = ({
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [balanceLoading, setBalanceLoading] = useState(false);
+  const [currentBalance, setCurrentBalance] = useState(0);
   const [cookies] = useCookies(["Admin", "TechAdmin"]);
 
   const upline: any = getDecodedTokenData(cookies) || {};
   const token = cookies[baseUrl.includes("techadmin") ? "TechAdmin" : "Admin"];
-  const uplineBalance = Number(upline?.user?.AccountDetails?.Balance || 0);
+  const userId = upline?.user?.userId || "";
+  
+  // Fallback to token balance if API fails
+  const uplineBalance = currentBalance || Number(upline?.user?.AccountDetails?.Balance || 0);
+
+  // Fetch current balance when modal opens
+  useEffect(() => {
+    const fetchBalance = async () => {
+      if (!open || !userId || !token) return;
+      
+      setBalanceLoading(true);
+      try {
+        const response: any = await getOwnBalance({
+          token,
+          userId,
+          cookies,
+        });
+        
+        if (response?.status && response?.balance !== undefined) {
+          setCurrentBalance(response.balance);
+        } else {
+          console.warn("Failed to fetch balance, using token balance");
+        }
+      } catch (error) {
+        console.error("Error fetching balance:", error);
+        // Keep using token balance as fallback
+      } finally {
+        setBalanceLoading(false);
+      }
+    };
+
+    fetchBalance();
+  }, [open, userId, token, cookies]);
+
   if (!open || !user) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -116,12 +151,12 @@ const DepositModal: React.FC<DepositModalProps> = ({
             <div className="flex gap-2">
               <input
                 className="bg-gray-200 border border-gray-400 text-sm rounded w-full h-10 px-2 text-right"
-                value={uplineBalance}
+                value={balanceLoading ? "Loading..." : uplineBalance.toLocaleString()}
                 readOnly
               />
               <input
                 className="bg-gray-200 border text-sm border-gray-400 rounded w-full h-10 px-2 text-right"
-                value={uplineBalance - Number(amount)}
+                value={balanceLoading ? "Loading..." : (uplineBalance - Number(amount)).toLocaleString()}
                 readOnly
               />
             </div>
@@ -159,13 +194,13 @@ const DepositModal: React.FC<DepositModalProps> = ({
             <input
               type="number"
               min="0"
-              disabled={loading}
-              placeholder="Enter Amount"
+              disabled={loading || balanceLoading}
+              placeholder={balanceLoading ? "Loading balance..." : "Enter Amount"}
               className="border rounded text-sm px-3 text-gray-500 py-2 h-10 focus:outline-none focus:ring w-full"
               value={amount}
               onChange={(e) => {
                 const val = Number(e.target.value);
-                if (val <= uplineBalance) {
+                if (val <= uplineBalance && !balanceLoading) {
                   setAmount(e.target.value);
                 }
               }}
@@ -204,15 +239,17 @@ const DepositModal: React.FC<DepositModalProps> = ({
               </button>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || balanceLoading}
                 className={`flex items-center gap-2 leading-8 px-4 rounded uppercase text-white font-medium text-sm ${
-                  loading
+                  loading || balanceLoading
                     ? "bg-gray-400 cursor-not-allowed"
                     : "bg-[var(--bg-primary)] hover:opacity-90"
                 }`}
               >
                 {loading ? (
                   "Processing..."
+                ) : balanceLoading ? (
+                  "Loading..."
                 ) : (
                   <>
                     Submit <FaArrowRight />

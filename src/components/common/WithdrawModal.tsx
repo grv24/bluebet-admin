@@ -1,10 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { FaTimes } from 'react-icons/fa'
 import { FaArrowLeft, FaArrowRight } from 'react-icons/fa'
 import { ClientRow } from './DepositModal'
 import { useCookies } from 'react-cookie'
 import { baseUrl, getDecodedTokenData } from '@/helper/auth'
-import { withdrawChips } from '@/helper/user'
+import { withdrawChips, getOwnBalance } from '@/helper/user'
 import toast from 'react-hot-toast'
 
 interface WithdrawModalProps {
@@ -19,10 +19,45 @@ const WithdrawModal = ({ open, onClose, user, title }: WithdrawModalProps) => {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [balanceLoading, setBalanceLoading] = useState(false);
+    const [currentBalance, setCurrentBalance] = useState(0);
     const [cookies] = useCookies(["Admin", "TechAdmin"]);
 
     const upline: any = getDecodedTokenData(cookies) || {};
-    const uplineBalance = Number(upline?.user?.AccountDetails?.Balance || 0);
+    const token = cookies[baseUrl.includes("techadmin") ? "TechAdmin" : "Admin"];
+    const userId = upline?.user?.userId || "";
+    
+    // Fallback to token balance if API fails
+    const uplineBalance = currentBalance || Number(upline?.user?.AccountDetails?.Balance || 0);
+
+    // Fetch current balance when modal opens
+    useEffect(() => {
+        const fetchBalance = async () => {
+            if (!open || !userId || !token) return;
+            
+            setBalanceLoading(true);
+            try {
+                const response: any = await getOwnBalance({
+                    token,
+                    userId,
+                    cookies,
+                });
+                
+                if (response?.status && response?.balance !== undefined) {
+                    setCurrentBalance(response.balance);
+                } else {
+                    console.warn("Failed to fetch balance, using token balance");
+                }
+            } catch (error) {
+                console.error("Error fetching balance:", error);
+                // Keep using token balance as fallback
+            } finally {
+                setBalanceLoading(false);
+            }
+        };
+
+        fetchBalance();
+    }, [open, userId, token, cookies]);
 
     if (!open || !user) return null;
 
@@ -90,12 +125,12 @@ const WithdrawModal = ({ open, onClose, user, title }: WithdrawModalProps) => {
               <div className="flex gap-2">
                 <input
                   className="bg-gray-200 border border-gray-400 text-sm rounded w-full h-10 px-2 text-right"
-                  value={uplineBalance}
+                  value={balanceLoading ? "Loading..." : uplineBalance.toLocaleString()}
                   readOnly
                 />
                 <input
                   className="bg-gray-200 border text-sm border-gray-400 rounded w-full h-10 px-2 text-right"
-                  value={uplineBalance + Number(amount)}
+                  value={balanceLoading ? "Loading..." : (uplineBalance + Number(amount)).toLocaleString()}
                   readOnly
                 />
               </div>
@@ -128,8 +163,8 @@ const WithdrawModal = ({ open, onClose, user, title }: WithdrawModalProps) => {
               <input
                 type="number"
                 min="0"
-                placeholder="Enter Amount"
-                disabled={loading}
+                placeholder={balanceLoading ? "Loading balance..." : "Enter Amount"}
+                disabled={loading || balanceLoading}
                 className="border rounded text-sm px-3 text-gray-500 py-2 h-10 focus:outline-none focus:ring w-full"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
@@ -168,12 +203,12 @@ const WithdrawModal = ({ open, onClose, user, title }: WithdrawModalProps) => {
                 </button>
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || balanceLoading}
                   className={`flex items-center gap-2 leading-8 px-4 cursor-pointer rounded uppercase text-white font-medium text-sm ${
-                    loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[var(--bg-primary)] hover:opacity-90'
+                    loading || balanceLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[var(--bg-primary)] hover:opacity-90'
                   }`}
                 >
-                  {loading ? 'Processing...' : <>Submit <FaArrowRight /></>}
+                  {loading ? 'Processing...' : balanceLoading ? 'Loading...' : <>Submit <FaArrowRight /></>}
                 </button>
               </div>
             </form>
