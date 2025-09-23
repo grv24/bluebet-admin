@@ -568,7 +568,7 @@ const ClientList: React.FC = () => {
         bst: user.bettingLocked === true ? false : true,
         exposureLimit: user.AccountDetails.ExposureLimit || 0,
         defaultPercent: 0, // Not available in new structure
-        accountType: user.__type || "User",
+        accountType: user.__type === "client" ? "User" : user.__type || "User",
         _id: user.userId || "",
         __type: user.__type || "User",
       };
