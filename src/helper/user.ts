@@ -158,7 +158,7 @@ export const getOwnBalance = async ({
   token,
   userId,
   cookies,
-  }: {
+}: {
   token: string;
   userId: string;
   cookies: any;
@@ -171,7 +171,6 @@ export const getOwnBalance = async ({
   });
 };
 
-
 //change own password
 export const changeOwnPassword = async (
   currentPassword: string,
@@ -180,7 +179,7 @@ export const changeOwnPassword = async (
 ): Promise<ChangePasswordResponse> => {
   try {
     const hostname = new URL(baseUrl).hostname; // e.g. "admin.bluebet9.com"
-    const subdomain = hostname.split(".")[0];  // "admin" or "techadmin"
+    const subdomain = hostname.split(".")[0]; // "admin" or "techadmin"
 
     let rolePath = "";
     if (subdomain.toLowerCase() === "admin") {
@@ -203,7 +202,6 @@ export const changeOwnPassword = async (
   }
 };
 
-
 //downline pwd change
 export const changeDownlinePassword = async (
   downlineUserId: string,
@@ -212,19 +210,15 @@ export const changeDownlinePassword = async (
   cookies: any,
   userType: string
 ): Promise<ChangePasswordResponse> => {
-  return apiRequest(
-    `/api/v1/users/change-password-downline`,
-    cookies,
-    {
-      method: "PATCH",
-      body: JSON.stringify({
-        userId: downlineUserId,
-        newPassword,
-        transactionPassword,
-        userType,
-      }),
-    }
-  );
+  return apiRequest(`/api/v1/users/change-password-downline`, cookies, {
+    method: "PATCH",
+    body: JSON.stringify({
+      userId: downlineUserId,
+      newPassword,
+      transactionPassword,
+      userType,
+    }),
+  });
 };
 
 //withdraw chips
@@ -318,52 +312,27 @@ export const changeUserStatus = async ({
   transactionPassword: string;
   userType: string;
 }) => {
-  return apiRequest(
-    `/api/v1/users/lock`,
-    cookies,
-    {
-      method: "PATCH",
-      body: JSON.stringify({
-        userId,
-        betLockValue: lockBet,
-        userLockValue: lockUser,
-        transactionPassword,
-        userType,
-      }),
-    }
-  );
+  return apiRequest(`/api/v1/users/lock`, cookies, {
+    method: "PATCH",
+    body: JSON.stringify({
+      userId,
+      betLockValue: lockBet,
+      userLockValue: lockUser,
+      transactionPassword,
+      userType,
+    }),
+  });
 };
 
-
-
-export const getUserCurrentBet = async ({
-  cookies
-}: {
-  cookies: any;
-}) => {
+export const getUserCurrentBet = async ({ cookies }: { cookies: any }) => {
   return apiRequest("/api/v1/sports/bets/downline", cookies, {
     method: "GET",
   });
 };
 
-
-
 // account summary
-// /api/v1/balance/dashboard/ed4a6a1f-7694-467a-8a94-0144930e9175/admin
-export const getAccountSummary = async ({
-  cookies,
-  userId,
-  userType,
-}: {
-  cookies: any;
-  userId: string;
-  userType: string;
-}) => {
-  return apiRequest(`/api/v1/balance/dashboard/${userId}/${userType}`, cookies, {
+export const getAccountSummary = async ({ cookies }: { cookies: any }) => {
+  return apiRequest(`/api/v1/admin-balance/balance-dashboard`, cookies, {
     method: "GET",
-    body: JSON.stringify({
-      userId,
-      userType,
-    }),
   });
 };

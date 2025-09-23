@@ -58,6 +58,9 @@ class SocketService {
   /** Callback function for admin login notifications */
   private adminLoginCallback: ((data: any) => void) | null = null;
 
+  /** Callback function for casino join notifications */
+  private casinoJoinCallback: ((data: any) => void) | null = null;
+
   /** Internal connection status flag */
   private _isConnected = false;
   
@@ -237,6 +240,19 @@ class SocketService {
           // You can add a callback for admin login notifications if needed
           if (this.adminLoginCallback) {
             this.adminLoginCallback(data);
+          }
+        });
+
+        // Casino join event handler
+        this.socket.on('joinCasino', (data: any) => {
+          console.log('🎰 [DEBUG] Join casino event received:', {
+            data,
+            socketId: this.socket?.id,
+            currentUser: this._currentUser
+          });
+          // Handle casino join logic here
+          if (this.casinoJoinCallback) {
+            this.casinoJoinCallback(data);
           }
         });
 
@@ -440,6 +456,18 @@ class SocketService {
    */
   onAdminLogin(callback: (data: any) => void): void {
     this.adminLoginCallback = callback;
+  }
+
+  /**
+   * Sets callback function for casino join notifications
+   * 
+   * Registers a callback that will be executed when the server sends
+   * casino join events.
+   * 
+   * @param callback - Function to execute when casino join event is received
+   */
+  onCasinoJoin(callback: (data: any) => void): void {
+    this.casinoJoinCallback = callback;
   }
 
   /**

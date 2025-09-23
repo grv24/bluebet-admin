@@ -25,43 +25,25 @@ const Drawer: React.FC<TopDrawerProps> = ({ items, groups, defaultOpen = false }
   const userId = upline?.user?.userId || "";
   const userType = upline?.user?.userType || "";
   
-  // Debug logging for user data extraction
-  console.log("🔍 Drawer - Upline data:", upline);
-  console.log("🔍 Drawer - User ID:", userId);
-  console.log("🔍 Drawer - User Type:", userType);
-  console.log("🔍 Drawer - User object:", upline?.user);
-
   // Use React Query to fetch balance dashboard data
   const { data: balanceData, isLoading: loading, error, refetch } = useQuery({
-    queryKey: ['balanceDashboard', userId, userType],
+    queryKey: ['balanceDashboard'],
     queryFn: async () => {
-      console.log("🚀 Query function called with:", { userId, userType });
+      console.log("🚀 Calling getAccountSummary API...");
       
-      if (!userId || !userType) {
-        console.log("❌ Query disabled - missing userId or userType");
-        return null;
-      }
+      const response: any = await getAccountSummary({ cookies });
       
-      console.log("📡 Making API call to getAccountSummary...");
-      const response: any = await getAccountSummary({
-        cookies,
-        userId,
-        userType,
-      });
-      
-      console.log("📊 Balance Dashboard API Response:", response);
-      console.log("👤 User ID:", userId, "User Type:", userType);
+      console.log("📊 API Response:", response);
       
       if (response?.success && response?.data) {
-        console.log("✅ Balance Data:", response.data);
-        console.log("💰 Upper Level Credit Reference:", response.data.upperLevelCreditReference);
+        console.log("✅ Balance Dashboard Data:", response.data);
         return response.data;
       } else {
         console.error("❌ API Response Error:", response);
         throw new Error("Failed to fetch balance dashboard data");
       }
     },
-    enabled: !!userId && !!userType, // Only run query if userId and userType exist
+    enabled: true, // Always enabled since API only needs cookies
     refetchInterval: false, // No automatic refetching
     refetchIntervalInBackground: false, // Don't refetch in background
     staleTime: 0, // Data is immediately stale
@@ -71,6 +53,11 @@ const Drawer: React.FC<TopDrawerProps> = ({ items, groups, defaultOpen = false }
     retry: 3, // Retry failed requests 3 times
     retryDelay: 1000, // Wait 1 second between retries
   });
+
+  // Debug logging
+  console.log("🔍 Drawer Debug:", { upline, userId, userType, cookies });
+  console.log("📊 Balance Data:", balanceData);
+  console.log("🔄 Query State:", { loading, error });
 
   // Refetch data when drawer opens (no caching, fresh data every time)
   const handleDrawerToggle = () => {
@@ -83,32 +70,9 @@ const Drawer: React.FC<TopDrawerProps> = ({ items, groups, defaultOpen = false }
     }
   };
 
-  // Manual API test - let's try calling the API directly
-  const testApiCall = async () => {
-    console.log("🧪 Testing API call manually...");
-    try {
-      const response = await getAccountSummary({
-        cookies,
-        userId: "test-user-id", // Let's try with a test ID
-        userType: "admin",
-      });
-      console.log("🧪 Manual API test result:", response);
-    } catch (error) {
-      console.error("🧪 Manual API test error:", error);
-    }
-  };
 
-  // Test API call on component mount
-  useEffect(() => {
-    testApiCall();
-  }, []);
 
-  // Debug logging
-  console.log("📊 Current balanceData:", balanceData);
-  console.log("💰 Upper Level Credit Reference value:", balanceData?.upperLevelCreditReference);
-  console.log("🔄 Query state:", { loading, error, enabled: !!userId && !!userType });
-
-  // Default 3-column groups to match the screenshot layout
+  // Default 3-column groups using fetched API data (matching the dashboard layout)
   const defaultGroups: DrawerItem[][] = useMemo(
     () => [
       [
@@ -130,10 +94,15 @@ const Drawer: React.FC<TopDrawerProps> = ({ items, groups, defaultOpen = false }
     [balanceData]
   );
 
-  // Normalize into 3 groups: prefer explicit groups, else auto-group items, else defaults
+  // Normalize into groups: prioritize API data, then explicit groups, then items, then defaults
   const groupedMetrics: DrawerItem[][] = useMemo(() => {
+    // Always use API data if available
+    if (balanceData) {
+      return defaultGroups;
+    }
+    // Fallback to other sources
     if (groups && groups.length > 0) return groups;
-    if (ctx?.groups) return ctx.groups;
+    if (ctx?.groups && ctx.groups.length > 0) return ctx.groups;
     if (items && items.length > 0) {
       const cols: DrawerItem[][] = [[], [], []];
       items.forEach((it, idx) => {
@@ -142,16 +111,19 @@ const Drawer: React.FC<TopDrawerProps> = ({ items, groups, defaultOpen = false }
       return cols;
     }
     return defaultGroups;
-  }, [groups, items, defaultGroups, ctx?.groups]);
+  }, [balanceData, groups, items, defaultGroups, ctx?.groups]);
+
+  // Debug logging for grouped metrics
+  console.log("📋 Grouped Metrics:", groupedMetrics);
 
   return (
     <section className="relative z-10 select-none">
       {/* Collapsible container */}
-      <div
-        className={`overflow-hidden transition-[max-height] duration-500 ease-in-out bg-[var(--bg-secondary)] text-[var(--text-secondary)] ${
-          isOpen ? "max-h-[250px]" : "max-h-[40px]"
-        }`}
-      >
+        <div
+          className={`overflow-hidden transition-[max-height] duration-500 ease-in-out bg-[var(--bg-secondary)] text-[var(--text-secondary)] ${
+            isOpen ? "max-h-[250px]" : "max-h-[40px]"
+          }`}
+        >
         {/* Control bar with centered toggle */}
         <div className="h-[40px] flex items-center justify-center">
           <button

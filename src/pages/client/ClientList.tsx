@@ -17,7 +17,6 @@ import {
 } from "@/helper/auth";
 import { getDownlineList } from "@/helper/user";
 import { useQuery } from "@tanstack/react-query";
-import { useDrawerMetrics } from "@/components/context/DrawerMetricsContext";
 import socketService, { ForceLogoutData } from "@/utils/socketService";
 import toast from "react-hot-toast";
 import jsPDF from "jspdf";
@@ -710,46 +709,7 @@ const ClientList: React.FC = () => {
     }
   }, [filteredData, totals, activeTab, isExportingExcel]);
 
-  // Drawer metrics updater side-effect
-  const { setGroups } = useDrawerMetrics();
-  useEffect(() => {
-    // Compute summary metrics similar to screenshot
-    const totalCreditRefNum = filteredData.reduce(
-      (s, r) => s + Number(r.creditRef.replace(/,/g, "")) || 0,
-      0
-    );
-    const totalBalance = filteredData.reduce((s, r) => s + (r.balance || 0), 0);
-    const availableBalance = totalBalance; // per new rule
-    const clientPLTotal = filteredData.reduce(
-      (s, r) =>
-        s + (Number((r.clientPL || "0").toString().replace(/,/g, "")) || 0),
-      0
-    );
-
-    const downLevelCreditRef = totalCreditRefNum; // placeholder: using same total for demo
-    const downLevelPL = clientPLTotal; // aggregate
-
-    setGroups([
-      [
-        { label: "Upper Level Credit Referance", value: 0 },
-        { label: "Total Master Balance", value: totalBalance },
-        { label: "Available Balance", value: availableBalance },
-      ],
-      [
-        { label: "Down level Occupy Balance", value: 0 },
-        { label: "Upper Level", value: 0 },
-        {
-          label: "Available Balance With Profit/Loss",
-          value: availableBalance,
-        },
-      ],
-      [
-        { label: "Down Level Credit Referance", value: downLevelCreditRef },
-        { label: "Down Level Profit/Loss", value: downLevelPL },
-        { label: "My Profit/Loss", value: 0 },
-      ],
-    ]);
-  }, [filteredData, setGroups]);
+  // Remove manual drawer metrics calculation - let Drawer component use API data directly
 
   const navigate = useNavigate();
 
