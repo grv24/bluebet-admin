@@ -332,7 +332,9 @@ const AddClient: React.FC = () => {
   } = watchedValues;
 
   // Use custom hook for login ID checking
-  const whiteListId = whitelistData?.whiteListData?._id || "";
+  const whiteListId = whitelistData?.data?.id || "";
+
+ 
   const { userExists, isCheckingUserId, checkLoginId, resetState } =
     useLoginIdCheck(whiteListId);
 
@@ -354,8 +356,8 @@ const AddClient: React.FC = () => {
       // Extract commission and partnership values from the sports settings structure
       const sportsSettings = currentSportsData?.data || {};
       
-      // Get commission values from commissionOwn field
-      const commissionValues = Object.values(sportsSettings)
+      // Get commission values from commissionOwn and commissionUpline fields
+      const commissionOwnValues = Object.values(sportsSettings)
         ?.filter(
           (setting: any) =>
             setting &&
@@ -364,8 +366,17 @@ const AddClient: React.FC = () => {
         )
         ?.map((setting: any) => setting.commissionOwn);
 
-      // Get partnership values from partnershipOwn field
-      const partnershipValues = Object.values(sportsSettings)
+      const commissionUplineValues = Object.values(sportsSettings)
+        ?.filter(
+          (setting: any) =>
+            setting &&
+            typeof setting === "object" &&
+            setting.commissionUpline !== undefined
+        )
+        ?.map((setting: any) => setting.commissionUpline);
+
+      // Get partnership values from partnershipOwn and partnershipUpline fields
+      const partnershipOwnValues = Object.values(sportsSettings)
         .filter(
           (setting: any) =>
             setting &&
@@ -374,39 +385,70 @@ const AddClient: React.FC = () => {
         )
         ?.map((setting: any) => setting.partnershipOwn);
 
+      const partnershipUplineValues = Object.values(sportsSettings)
+        .filter(
+          (setting: any) =>
+            setting &&
+            typeof setting === "object" &&
+            setting.partnershipUpline !== undefined
+        )
+        ?.map((setting: any) => setting.partnershipUpline);
+
       // Calculate averages for panel data
-      const avgCommission =
-        commissionValues.length > 0
-          ? commissionValues.reduce(
+      const avgCommissionOwn =
+        commissionOwnValues.length > 0
+          ? commissionOwnValues.reduce(
               (sum: number, val: number) => sum + val,
               0
-            ) / commissionValues.length
+            ) / commissionOwnValues.length
           : 0;
 
-      const avgPartnership =
-        partnershipValues.length > 0
-          ? partnershipValues.reduce(
+      const avgCommissionUpline =
+        commissionUplineValues.length > 0
+          ? commissionUplineValues.reduce(
               (sum: number, val: number) => sum + val,
               0
-            ) / partnershipValues.length
+            ) / commissionUplineValues.length
+          : 0;
+
+      const avgPartnershipOwn =
+        partnershipOwnValues.length > 0
+          ? partnershipOwnValues.reduce(
+              (sum: number, val: number) => sum + val,
+              0
+            ) / partnershipOwnValues.length
+          : 0;
+
+      const avgPartnershipUpline =
+        partnershipUplineValues.length > 0
+          ? partnershipUplineValues.reduce(
+              (sum: number, val: number) => sum + val,
+              0
+            ) / partnershipUplineValues.length
           : 0;
 
       console.log("Panel Data Debug:", {
         sportsSettings,
-        commissionValues,
-        partnershipValues,
-        avgCommission,
-        avgPartnership
+        commissionOwnValues,
+        commissionUplineValues,
+        partnershipOwnValues,
+        partnershipUplineValues,
+        avgCommissionOwn,
+        avgCommissionUpline,
+        avgPartnershipOwn,
+        avgPartnershipUpline
       });
 
       return {
         panelCommission: {
-          own: avgCommission,
-          total: avgCommission,
+          own: avgCommissionOwn,
+          upline: avgCommissionUpline,
+          total: avgCommissionOwn + avgCommissionUpline,
         },
         panelPartnership: {
-          own: avgPartnership,
-          total: avgPartnership,
+          own: avgPartnershipOwn,
+          upline: avgPartnershipUpline,
+          total: avgPartnershipOwn + avgPartnershipUpline,
         },
       };
     } catch (error) {
@@ -438,7 +480,7 @@ const AddClient: React.FC = () => {
   useEffect(() => {
     if (panelData?.panelCommission) {
       setPanelCommission(panelData.panelCommission);
-      // Initialize ourCommission field with panel's own value
+      // Initialize ourCommission field with panel's own value (commissionOwn from sports settings)
       setValue("ourCommission", panelData.panelCommission.own || 0);
     }
     if (panelData?.panelPartnership) {
@@ -448,57 +490,57 @@ const AddClient: React.FC = () => {
     }
   }, [panelData, setValue]);
 
-  // Calculate commission values - CORRECTED LOGIC
+  // Calculate commission values - SIMPLIFIED LOGIC (Only Upline + Our)
   const commissionCalculations = useMemo((): CommissionCalculations => {
-    const panelTotal = 100; // Total commission pool is always 100%
-    const parentOwn = panelData?.panelCommission?.own || 0; // What parent currently has
-    const our = ourCommission || 0; // What current user keeps (user input - editable)
+    const parentOwn = panelData?.panelCommission?.own || 0; // What current user keeps (commissionOwn)
+    const parentUpline = panelData?.panelCommission?.upline || 0; // What goes to upline (commissionUpline)
+    const our = ourCommission || 0; // What current user wants to keep (user input - editable)
     
-    // CORRECTED: Upline gets the remaining after we take our share
-    const upline = Math.max(0, panelTotal - our); // Commission passed to parent user
-    const downline = 0; // Commission passed to child user (fixed at 0)
-    const total = upline + downline + our; // Should always equal panelTotal (100%)
+    // SIMPLIFIED: Only Upline (fixed) + Our (editable)
+    const upline = parentUpline; // Upline commission from sports settings (fixed)
+    const downline = 0; // Not used in commission calculation
+    const total = upline + our; // Total = Upline + Our (not 100%)
     const own = our; // Own is same as our
 
-    // Validation: our should not exceed total pool
-    const maxOurAllowed = panelTotal; // Maximum "our" allowed is 100%
-    const isValidAllocation = our >= 0 && our <= maxOurAllowed;
+    // Validation: our should be non-negative
+    const isValidAllocation = our >= 0;
+    const maxOurAllowed = 100; // No specific limit for commission
 
-    console.log("Commission Calc Debug (CORRECTED):", {
-      panelTotal,
-      parentOwn,
-      upline,
-      downline,
-      our,
+    console.log("Commission Calc Debug (SIMPLIFIED):", {
+      parentOwn: `From sports settings: ${parentOwn}`,
+      parentUpline: `From sports settings: ${parentUpline}`,
+      upline: `Fixed: ${upline}`,
+      our: `User Input: ${our}`,
       total,
       own,
-      formula: `upline (${upline}) + downline (${downline}) + our (${our}) = ${total}`,
-      constraints: `our ≥ 0 && our ≤ ${maxOurAllowed}`,
+      formula: `upline (${upline}) + our (${our}) = ${total}`,
+      constraints: `our ≥ 0 (commission can exceed 100%)`,
       isValidAllocation,
       maxOurAllowed,
-      note: "Upline = Total Pool - Our Share"
+      note: "Only Upline (fixed) + Our (editable), no downline calculation"
     });
 
     return {
-      upline: upline, // Commission passed to parent user (calculated)
-      downline: downline, // Commission passed to child user (fixed)
+      upline: upline, // Commission passed to parent user (from sports settings)
+      downline: downline, // Not used (0)
       our: our, // What current user keeps (user input - editable)
       own: own, // Same as our
-      total: total, // Should always equal 100%
-      panelTotal: panelTotal, // Original panel total (100%)
-      parentOwn: parentOwn, // What parent currently has
+      total: total, // Total = Upline + Our
+      panelTotal: upline + our, // Dynamic total
+      parentOwn: parentOwn, // What current user currently has
       isValidAllocation: isValidAllocation, // Validation flag
-      maxOurAllowed: maxOurAllowed, // Maximum "our" allowed (100%)
+      maxOurAllowed: maxOurAllowed, // No specific limit
     };
   }, [panelData?.panelCommission, ourCommission]);
 
-  // Calculate partnership values using the correct formula: upline + our + downline = total
+  // Calculate partnership values using actual sports settings data
   const partnershipCalculations = useMemo((): PartnershipCalculations => {
     // Base values from panel
-    const previousDownline = panelData?.panelPartnership?.own || 100; // Default to 100 if no panel data
-    const total = panelData?.panelPartnership?.total || 100; // Default to 100 if no panel data
+    const previousDownline = panelData?.panelPartnership?.own || 100; // What current user has (partnershipOwn)
+    const parentUpline = panelData?.panelPartnership?.upline || 0; // What goes to upline (partnershipUpline)
+    const total = panelData?.panelPartnership?.total || 100; // Total partnership pool
     const ourPercent = Math.max(0, ourPartnership || 0); // input as percentage of previousDownline
-    const upline = Math.max(0, total - previousDownline); // fixed part that goes to upline
+    const upline = parentUpline; // Fixed upline partnership from sports settings
 
     // Convert percent to absolute share from the previousDownline bucket
     const ourAbsolute = (previousDownline * ourPercent) / 100;
@@ -506,10 +548,11 @@ const AddClient: React.FC = () => {
     const downlineChange = newDownline - previousDownline; // negative means reduced
 
     console.log("Partnership Calc Debug:", {
-      previousDownline,
+      previousDownline: `From sports settings: ${previousDownline}`,
+      parentUpline: `From sports settings: ${parentUpline}`,
       total,
       ourPercent,
-      upline,
+      upline: `Fixed: ${upline}`,
       ourAbsolute,
       newDownline,
       downlineChange,
@@ -926,17 +969,6 @@ const AddClient: React.FC = () => {
                 </div>
                 <div className=" bg-white flex justify-between items-center border-white font-normal text-xs">
                   <h2 className="text-xs font-normal w-1/2 px-4 leading-8">
-                    Downline
-                  </h2>
-                  <input
-                    type="text"
-                    value={commissionCalculations.downline.toFixed(2)}
-                    disabled
-                    className="w-full border-gray-300 px-4 text-xs leading-8 border-l"
-                  />
-                </div>
-                <div className=" bg-[#0000000d] flex justify-between items-center border-white font-normal text-xs">
-                  <h2 className="text-xs font-normal w-1/2 px-4 leading-8">
                     Our
                   </h2>
                   <input
@@ -975,8 +1007,10 @@ const AddClient: React.FC = () => {
                       ⚠️ Invalid input! Our value must be non-negative.
                     </p>
                     <p className="text-red-500 text-xs mt-1">
-                      Maximum "Our" allowed:{" "}
-                      {commissionCalculations.maxOurAllowed}%
+                      Current allocation: Upline: {commissionCalculations.upline}% + Our: {commissionCalculations.our}% = {commissionCalculations.total.toFixed(2)}%
+                    </p>
+                    <p className="text-gray-500 text-xs mt-1">
+                      Note: Commission total = Upline (fixed) + Our (editable)
                     </p>
                   </div>
                 )}
@@ -1296,16 +1330,13 @@ const AddClient: React.FC = () => {
                         <span className="font-medium text-gray-700">
                           Commission Distribution:
                         </span>
-                        <div className="mt-1 space-y-1">
-                          <div>Upline: {commissionCalculations.upline}%</div>
-                          <div>
-                            Downline: {commissionCalculations.downline}%
+                          <div className="mt-1 space-y-1">
+                            <div>Upline: {commissionCalculations.upline}% (Fixed from sports settings)</div>
+                            <div>Our: {commissionCalculations.our}% (Your input)</div>
+                            <div className="border-t pt-1 px-2 py-1">
+                              Total: {commissionCalculations.total.toFixed(2)}% (Upline + Our)
+                            </div>
                           </div>
-                          <div>Our: {commissionCalculations.our}%</div>
-                          <div className="border-t pt-1 px-2 py-1">
-                            Total : {commissionCalculations.total}%
-                          </div>
-                        </div>
                       </div>
                     )}
                     {panelPartnership && (

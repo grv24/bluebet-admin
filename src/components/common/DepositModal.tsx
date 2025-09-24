@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa6";
-import { FaTimes } from "react-icons/fa";
+import { FaTimes, FaEye, FaEyeSlash } from "react-icons/fa";
 import { useCookies } from "react-cookie";
 import { baseUrl, getDecodedTokenData } from "@/helper/auth";
 import { depositBalance, getOwnBalance } from "@/helper/user";
@@ -39,6 +39,7 @@ const DepositModal: React.FC<DepositModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [currentBalance, setCurrentBalance] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
   const [cookies] = useCookies(["Admin", "TechAdmin"]);
 
   const upline: any = getDecodedTokenData(cookies) || {};
@@ -202,30 +203,46 @@ const DepositModal: React.FC<DepositModalProps> = ({
                 const val = Number(e.target.value);
                 if (val <= uplineBalance && !balanceLoading) {
                   setAmount(e.target.value);
+                  // Auto-set remark when amount is entered
+                  if (e.target.value && val > 0) {
+                    setRemark(`${e.target.value} is deposited to your account`);
+                  } else {
+                    setRemark("");
+                  }
                 }
               }}
             />
 
             <label className="text-sm font-normal text-left pr-2">Remark</label>
             <textarea
-              disabled={loading}
-              className="border rounded px-3 py-2 h-10 min-h-[40px] text-sm text-gray-500 focus:outline-none focus:ring resize-none w-full"
-              placeholder="Enter Remark"
+              disabled={true}
+              className="bg-gray-200 border border-gray-400 rounded px-3 py-2 h-10 min-h-[40px] text-sm text-gray-500 resize-none w-full"
+              placeholder="Auto-generated remark"
               value={remark}
-              onChange={(e) => setRemark(e.target.value)}
+              readOnly
             />
 
             <label className="text-sm font-normal text-left pr-2">
               Transaction Password
             </label>
-            <input
-              type="password"
-              disabled={loading}
-              className="border rounded px-3 py-2 h-10 text-sm text-gray-500 focus:outline-none focus:ring w-full"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter Transaction Password"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                disabled={loading}
+                className="border rounded px-3 py-2 h-10 text-sm text-gray-500 focus:outline-none focus:ring w-full pr-10"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter Transaction Password"
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                onClick={() => setShowPassword(!showPassword)}
+                disabled={loading}
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
 
             <div></div>
             <div className="flex justify-end gap-3 mt-2">

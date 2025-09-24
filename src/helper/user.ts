@@ -331,8 +331,111 @@ export const getUserCurrentBet = async ({ cookies }: { cookies: any }) => {
 };
 
 // account summary
-export const getAccountSummary = async ({ cookies }: { cookies: any }) => {
-  return apiRequest(`/api/v1/admin-balance/balance-dashboard`, cookies, {
+export const getAccountSummary = async ({ cookies, userId ,userType}: { cookies: any, userId: string, userType: string }) => {
+  return apiRequest(`/api/v1/balance/dashboard/${userId}/${userType}`, cookies, {
     method: "GET",
+  });
+};
+
+// payment gateway
+export const getPaymentGateways = async ({ cookies }: { cookies: any }): Promise<{
+  success: boolean;
+  data: Array<{
+    id: string;
+    gatewayMethod: string;
+    gatewayImage: string;
+    qrImage: string;
+    gatewayDetails: string;
+    isActive: boolean;
+    createdBy: string;
+    createdByType: string;
+    groupId: string | null;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+}> => {
+  return apiRequest("/api/v1/payment/paymentgateway/created/getall", cookies, {
+    method: "GET",
+  });
+};
+
+// payment request history
+export const getPaymentRequests = async ({ cookies }: { cookies: any }): Promise<{
+  success: boolean;
+  data: Array<{
+    id: string;
+    transactionNo: string;
+    paymentProof: string;
+    amount: string;
+    balance: string;
+    ipAddress: string;
+    status: string;
+    reason: string | null;
+    uplineId: string;
+    uplineType: string;
+    clientId: string;
+    clientType: string;
+    gatewayId: string;
+    gatewayMethod: {
+      gatewayMethod: string;
+      gatewayDetails: string;
+    };
+    groupId: string | null;
+    loginId: string;
+    processedBy: string | null;
+    processedByType: string | null;
+    processedAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+    gateway: {
+      id: string;
+      gatewayMethod: string;
+      gatewayImage: string;
+      qrImage: string;
+      gatewayDetails: string;
+      isActive: boolean;
+      createdBy: string;
+      createdByType: string;
+      groupId: string | null;
+      createdAt: string;
+      updatedAt: string;
+    };
+  }>;
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}> => {
+  return apiRequest("/api/v1/payment/recievingDepositRequest", cookies, {
+    method: "GET",
+  });
+};
+
+// update deposit request status
+export const updateDepositRequest = async ({
+  requestId,
+  transactionPassword,
+  status,
+  reason,
+  cookies,
+}: {
+  requestId: string;
+  transactionPassword: string;
+  status: "Approved" | "Rejected";
+  reason: string;
+  cookies: any;
+}): Promise<{
+  success: boolean;
+  message: string;
+}> => {
+  return apiRequest(`/api/v1/payment/updateDepositRequest/${requestId}`, cookies, {
+    method: "PUT",
+    body: JSON.stringify({
+      transactionPassword,
+      status,
+      reason,
+    }),
   });
 };

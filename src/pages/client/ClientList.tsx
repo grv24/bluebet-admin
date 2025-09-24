@@ -18,6 +18,7 @@ import {
 import { getDownlineList } from "@/helper/user";
 import { useQuery } from "@tanstack/react-query";
 import socketService, { ForceLogoutData } from "@/utils/socketService";
+import useWhiteListData from "@/hooks/useWhiteListData";
 import toast from "react-hot-toast";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -511,6 +512,9 @@ const ClientList: React.FC = () => {
   const userId = decodedData?.user?.userId;
   const userType = decodedData?.user?.__type;
 
+  // Get whitelist data for payment gateway status
+  const { data: whitelistData } = useWhiteListData();
+
   // Get downline list data with optimized query key
   const {
     data: downlineData,
@@ -753,12 +757,22 @@ const ClientList: React.FC = () => {
             </div>
           </div>
         </div>
-        <button
-          className="px-4 leading-8 rounded cursor-pointer tracking-tight font-medium text-white text-sm bg-[var(--bg-primary)] hover:opacity-90 transition"
-          onClick={() => navigate("/add-client")}
-        >
-          Add Account
-        </button>
+        <div className="flex gap-2">
+          <button
+            className="px-4 leading-8 rounded cursor-pointer tracking-tight font-medium text-white text-sm bg-[var(--bg-primary)] hover:opacity-90 transition"
+            onClick={() => navigate("/add-client")}
+          >
+            Add Account
+          </button>
+          {whitelistData?.data?.isPaymentGatewayEnabled && (
+            <button
+              className="px-4 leading-8 rounded cursor-pointer tracking-tight font-medium text-white text-sm bg-green-600 hover:opacity-90 transition"
+              onClick={() => navigate("/payment-gateway")}
+            >
+              Payment Gateway
+            </button>
+          )}
+        </div>
       </div>
       {/* Top tabs like screenshot: Active Users / Deactivate Users */}
       <div className="flex items-center gap-6 mb-3 border-b border-gray-200">

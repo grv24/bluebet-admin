@@ -23,15 +23,15 @@ const Drawer: React.FC<TopDrawerProps> = ({ items, groups, defaultOpen = false }
 
   const upline: any = getDecodedTokenData(cookies) || {};
   const userId = upline?.user?.userId || "";
-  const userType = upline?.user?.userType || "";
+  const userType = upline?.user?.userType || upline?.user?.__type || "";
   
   // Use React Query to fetch balance dashboard data
   const { data: balanceData, isLoading: loading, error, refetch } = useQuery({
-    queryKey: ['balanceDashboard'],
+    queryKey: ['balanceDashboard', userId, userType],
     queryFn: async () => {
       console.log("🚀 Calling getAccountSummary API...");
       
-      const response: any = await getAccountSummary({ cookies });
+      const response: any = await getAccountSummary({ cookies, userId, userType });
       
       console.log("📊 API Response:", response);
       
@@ -76,19 +76,19 @@ const Drawer: React.FC<TopDrawerProps> = ({ items, groups, defaultOpen = false }
   const defaultGroups: DrawerItem[][] = useMemo(
     () => [
       [
-        { label: "Upper Level Credit Referance", value: balanceData?.upperLevelCreditReference || 0 },
+        { label: "Upper Level Credit Reference", value: balanceData?.upperLevelCreditReference || 0 },
         { label: "Total Master Balance", value: balanceData?.totalMasterBalance || 0 },
         { label: "Available Balance", value: balanceData?.availableBalance || 0 },
       ],
       [
-        { label: "Down level Occupy Balance", value: balanceData?.downLevelOccupyBalance || 0 },
+        { label: "Down Level Occupy Balance", value: balanceData?.downLevelOccupyBalance || 0 },
         { label: "Upper Level", value: balanceData?.upperLevel || 0 },
         { label: "Available Balance With Profit/Loss", value: balanceData?.availableBalanceWithProfitLoss || 0 },
       ],
       [
-        { label: "Down Level Credit Referance", value: balanceData?.downLevelCreditReference || 0 },
+        { label: "Down Level Credit Reference", value: balanceData?.downLevelCreditReference || 0 },
         { label: "Down Level Profit/Loss", value: balanceData?.downLevelProfitLoss || 0 },
-        { label: "My Profit/Loss", value: balanceData?.myProfitLoss || 0 },
+        { label: "My Profit/Loss", value: balanceData?.commissionEarned || 0 },
       ],
     ],
     [balanceData]

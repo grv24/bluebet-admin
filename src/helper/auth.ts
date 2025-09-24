@@ -146,7 +146,50 @@ export interface AuthCookies {
   
 export interface WhiteListData {
   success: boolean;
-  whiteListData?: any;
+  data?: {
+    id: string;
+    isDomainWhiteListedForSportScore: boolean;
+    isDomainWhiteListedForSportVideos: boolean;
+    isDomainWhiteListedForCasinoVideos: boolean;
+    isDomainWhiteListedForIntCasinoGames: boolean;
+    TechAdminUrl: string;
+    AdminUrl: string;
+    ClientUrl: string[];
+    CommonName: string;
+    websiteTitle: string;
+    websiteMetaTags: any;
+    primaryBackground: string;
+    primaryBackground90: string;
+    secondaryBackground: string;
+    secondaryBackground70: string;
+    secondaryBackground85: string;
+    textPrimary: string;
+    textSecondary: string;
+    panelSettings: any;
+    matchOdd: string[];
+    matchOddOptions: any;
+    bookMakerOdd: string[];
+    normalOdd: string[];
+    refundOptionIsActive: boolean;
+    refundPercentage: number;
+    refundLimit: number;
+    minDeposit: number;
+    autoSignUpFeature: boolean;
+    autoSignUpAssignedUplineId: any;
+    whatsappNumber: boolean;
+    googleAnalyticsTrackingId: string;
+    loginWithDemoIdFeature: boolean;
+    isActive: boolean;
+    Logo: string;
+    paymentGatewayPermissions: any[];
+    createdById: string;
+    createdAt: string;
+    updatedAt: string;
+    isPaymentGatewayEnabled: boolean;
+    allClientUrls: string[];
+  };
+  userType?: string;
+  panelSettings?: any;
   message?: string;
 }
 

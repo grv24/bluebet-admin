@@ -19,6 +19,7 @@ import {
   AddClient,
   AuthChangePassword,
   TransactionPassword,
+  PaymentGateway,
 } from "@/pages";
 import type { Route } from "./types";
 import { Navigate } from "react-router-dom";
@@ -172,6 +173,13 @@ export const routes: Route[] = [
     layout: "public",
     private: false,
     title: `Transaction Password | ${title}`,
+  },
+  {
+    path: "/payment-gateway",
+    component: PaymentGateway,
+    layout: "private",
+    private: true,
+    title: `Payment Gateway | ${title}`,
   },
   {
     path: "*",
