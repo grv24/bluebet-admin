@@ -120,6 +120,7 @@ interface ModalState {
   credit: ClientRow | null;       // Credit modal with client data
   password: ClientRow | null;     // Password modal with client data
   changeStatus: ClientRow | null; // Status change modal with client data
+  paymentGateway: ClientRow | null; // Payment gateway permissions modal with client data
 }
 
 /**
@@ -398,6 +399,16 @@ const ClientList: React.FC = () => {
   });
   const [gatewayImageFile, setGatewayImageFile] = useState<File | null>(null);
   const [qrImageFile, setQrImageFile] = useState<File | null>(null);
+  const [showPaymentGatewayPermissionsModal, setShowPaymentGatewayPermissionsModal] = useState(false);
+  const [isGrantingPermissions, setIsGrantingPermissions] = useState(false);
+  const [gatewayPermissionsForm, setGatewayPermissionsForm] = useState({
+    gatewayId: '',
+    canCreateGateway: false,
+    canManageGateway: false,
+    canAssignGateway: false,
+    canProcessRequests: false,
+    notes: ''
+  });
 
   console.log("my data", getDecodedTokenData(cookies)?.user?.AccountDetails?.Balance);
 
@@ -516,6 +527,7 @@ const ClientList: React.FC = () => {
     credit: null,
     password: null,
     changeStatus: null,
+    paymentGateway: null,
   });
 
   // Memoized auth token to avoid recalculation
@@ -565,7 +577,8 @@ const ClientList: React.FC = () => {
       !modalState.exposureLimit &&
       !modalState.credit &&
       !modalState.password &&
-      !modalState.changeStatus,
+      !modalState.changeStatus &&
+      !modalState.paymentGateway,
     staleTime: 30000, // Cache for 30 seconds
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
   });
@@ -663,6 +676,9 @@ const ClientList: React.FC = () => {
 
   // Modal handlers with consolidated state management
   const openModal = useCallback((type: keyof ModalState, user: ClientRow) => {
+    if (type === 'paymentGateway') {
+      setShowPaymentGatewayPermissionsModal(true);
+    }
     setModalState((prev) => ({ ...prev, [type]: user }));
   }, []);
 
@@ -846,6 +862,88 @@ const ClientList: React.FC = () => {
       email: '',
       minAmount: '',
       maxAmount: ''
+    });
+  };
+
+  // Grant Payment Gateway Permissions API function
+  const grantPaymentGatewayPermissions = async (adminId: string, permissions: any) => {
+    const baseUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:7080';
+    const apiUrl = `${baseUrl}/api/v1/payment-permissions/grant-admin-permissions/${adminId}`;
+
+    console.log('Granting payment gateway permissions:', { adminId, apiUrl, permissions });
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        gatewayId: permissions.gatewayId,
+        permissions: {
+          canCreateGateway: permissions.canCreateGateway,
+          canManageGateway: permissions.canManageGateway,
+          canAssignGateway: permissions.canAssignGateway,
+          canProcessRequests: permissions.canProcessRequests
+        },
+        notes: permissions.notes
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Grant Permissions Error:', response.status, errorText);
+      throw new Error(`Failed to grant permissions: ${response.status} ${errorText}`);
+    }
+
+    return response.json();
+  };
+
+  const handleGrantPermissions = async () => {
+    if (!modalState.paymentGateway) {
+      toast.error("No admin selected");
+      return;
+    }
+
+    // Gateway selection is now optional
+
+    setIsGrantingPermissions(true);
+    try {
+      console.log('Starting permission grant...');
+      const result = await grantPaymentGatewayPermissions(
+        modalState.paymentGateway._id || '', 
+        gatewayPermissionsForm
+      );
+      console.log('Permission grant result:', result);
+      
+      toast.success("Payment gateway permissions granted successfully!");
+      setShowPaymentGatewayPermissionsModal(false);
+      setGatewayPermissionsForm({
+        gatewayId: '',
+        canCreateGateway: false,
+        canManageGateway: false,
+        canAssignGateway: false,
+        canProcessRequests: false,
+        notes: ''
+      });
+    } catch (error: any) {
+      console.error("Error granting permissions:", error);
+      const errorMessage = error?.message || "Failed to grant permissions. Please try again.";
+      toast.error(errorMessage);
+    } finally {
+      setIsGrantingPermissions(false);
+    }
+  };
+
+  const handleClosePaymentGatewayPermissionsModal = () => {
+    setShowPaymentGatewayPermissionsModal(false);
+    setGatewayPermissionsForm({
+      gatewayId: '',
+      canCreateGateway: false,
+      canManageGateway: false,
+      canAssignGateway: false,
+      canProcessRequests: false,
+      notes: ''
     });
   };
 
@@ -1224,11 +1322,20 @@ const ClientList: React.FC = () => {
                             modalType: "changeStatus" as keyof ModalState,
                             tooltip: "Status",
                           },
+                          // Add PG button only for non-client users and if user has canAssignGateway permission
+                          ...(row.accountType !== "User" && paymentGatewayPermissions?.data?.permissions?.canAssignGateway ? [{
+                            label: "PG",
+                            modalType: "paymentGateway" as keyof ModalState,
+                            tooltip: "Payment Gateway Permissions",
+                            className: "bg-green-600 hover:bg-green-700"
+                          }] : [])
                         ].map((action) => (
                           <span
                             key={action.label}
                             title={action.tooltip}
-                            className="bg-[#444] hover:bg-[#333] cursor-pointer text-white rounded px-2 leading-6 font-medium text-xs tracking-wider transition-colors"
+                            className={`cursor-pointer text-white rounded px-2 leading-6 font-medium text-xs tracking-wider transition-colors ${
+                              (action as any).className || "bg-[#444] hover:bg-[#333]"
+                            }`}
                             onClick={() => openModal(action.modalType, row)}
                           >
                             {action.label}
@@ -1516,6 +1623,138 @@ const ClientList: React.FC = () => {
                 disabled={isCreatingGateway}
               >
                 {isCreatingGateway ? "Creating..." : "Create Gateway"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Gateway Permissions Modal */}
+      {showPaymentGatewayPermissionsModal && modalState.paymentGateway && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Grant Payment Gateway Permissions
+              </h3>
+              <button
+                onClick={handleClosePaymentGatewayPermissionsModal}
+                className="text-gray-400 hover:text-gray-600"
+                disabled={isGrantingPermissions}
+              >
+                <FaTimes className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="mb-4 p-3 bg-gray-50 rounded">
+              <p className="text-sm text-gray-600">
+                <strong>Admin:</strong> {modalState.paymentGateway.userName}
+              </p>
+              <p className="text-sm text-gray-600">
+                <strong>Account Type:</strong> {modalState.paymentGateway.accountType}
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              {/* Gateway Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Gateway
+                </label>
+                <select
+                  value={gatewayPermissionsForm.gatewayId}
+                  onChange={(e) => setGatewayPermissionsForm({...gatewayPermissionsForm, gatewayId: e.target.value})}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isGrantingPermissions}
+                >
+                  <option value="">Select a gateway (optional)</option>
+                  <option value="gateway-uuid-1">Gateway 1 (UPI)</option>
+                  <option value="gateway-uuid-2">Gateway 2 (Bank Transfer)</option>
+                  {/* Add more gateways as needed */}
+                </select>
+              </div>
+
+              {/* Permissions */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Permissions
+                </label>
+                <div className="space-y-3">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={gatewayPermissionsForm.canCreateGateway}
+                      onChange={(e) => setGatewayPermissionsForm({...gatewayPermissionsForm, canCreateGateway: e.target.checked})}
+                      className="mr-3"
+                      disabled={isGrantingPermissions}
+                    />
+                    <span className="text-sm text-gray-700">Can Create Gateway</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={gatewayPermissionsForm.canManageGateway}
+                      onChange={(e) => setGatewayPermissionsForm({...gatewayPermissionsForm, canManageGateway: e.target.checked})}
+                      className="mr-3"
+                      disabled={isGrantingPermissions}
+                    />
+                    <span className="text-sm text-gray-700">Can Manage Gateway</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={gatewayPermissionsForm.canAssignGateway}
+                      onChange={(e) => setGatewayPermissionsForm({...gatewayPermissionsForm, canAssignGateway: e.target.checked})}
+                      className="mr-3"
+                      disabled={isGrantingPermissions}
+                    />
+                    <span className="text-sm text-gray-700">Can Assign Gateway</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={gatewayPermissionsForm.canProcessRequests}
+                      onChange={(e) => setGatewayPermissionsForm({...gatewayPermissionsForm, canProcessRequests: e.target.checked})}
+                      className="mr-3"
+                      disabled={isGrantingPermissions}
+                    />
+                    <span className="text-sm text-gray-700">Can Process Requests</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Notes
+                </label>
+                <textarea
+                  value={gatewayPermissionsForm.notes}
+                  onChange={(e) => setGatewayPermissionsForm({...gatewayPermissionsForm, notes: e.target.value})}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Add notes about these permissions..."
+                  rows={3}
+                  disabled={isGrantingPermissions}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleClosePaymentGatewayPermissionsModal}
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                disabled={isGrantingPermissions}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleGrantPermissions}
+                className={`flex-1 px-4 py-2 text-sm font-medium text-white rounded-md transition-colors ${
+                  isGrantingPermissions ? "opacity-50 cursor-not-allowed bg-gray-400" : "bg-green-600 hover:bg-green-700"
+                }`}
+                disabled={isGrantingPermissions}
+              >
+                {isGrantingPermissions ? "Granting..." : "Grant Permissions"}
               </button>
             </div>
           </div>
