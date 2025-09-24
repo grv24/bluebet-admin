@@ -395,13 +395,8 @@ const AddClient: React.FC = () => {
         ?.map((setting: any) => setting.partnershipUpline);
 
       // Calculate averages for panel data
-      const avgCommissionOwn =
-        commissionOwnValues.length > 0
-          ? commissionOwnValues.reduce(
-              (sum: number, val: number) => sum + val,
-              0
-            ) / commissionOwnValues.length
-          : 0;
+      const avgCommissionOwn =0
+       
 
       const avgCommissionUpline =
         commissionUplineValues.length > 0
