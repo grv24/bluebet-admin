@@ -18,11 +18,12 @@ import {
 import { getDownlineList } from "@/helper/user";
 import { useQuery } from "@tanstack/react-query";
 import socketService, { ForceLogoutData } from "@/utils/socketService";
-import useWhiteListData from "@/hooks/useWhiteListData";
+import usePaymentGatewayPermissions from "@/hooks/usePaymentGatewayPermissions";
 import toast from "react-hot-toast";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
+import { FaTimes } from "react-icons/fa";
 
 /**
  * Page size options for pagination
@@ -381,6 +382,22 @@ const ClientList: React.FC = () => {
   );
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [isExportingExcel, setIsExportingExcel] = useState(false);
+  const [showCreateGatewayModal, setShowCreateGatewayModal] = useState(false);
+  const [isCreatingGateway, setIsCreatingGateway] = useState(false);
+  const [createGatewayForm, setCreateGatewayForm] = useState({
+    gatewayMethod: 'UPI',
+    upiId: '',
+    accountNumber: '',
+    ifscCode: '',
+    bankName: '',
+    accountHolder: '',
+    phoneNumber: '',
+    email: '',
+    minAmount: '',
+    maxAmount: ''
+  });
+  const [gatewayImageFile, setGatewayImageFile] = useState<File | null>(null);
+  const [qrImageFile, setQrImageFile] = useState<File | null>(null);
 
   console.log("my data", getDecodedTokenData(cookies)?.user?.AccountDetails?.Balance);
 
@@ -512,8 +529,16 @@ const ClientList: React.FC = () => {
   const userId = decodedData?.user?.userId;
   const userType = decodedData?.user?.__type;
 
-  // Get whitelist data for payment gateway status
-  const { data: whitelistData } = useWhiteListData();
+  // Get payment gateway permissions for button visibility
+  const { data: paymentGatewayPermissions } = usePaymentGatewayPermissions();
+  
+  // Check if any payment gateway permission is true
+  const hasPaymentGatewayAccess = paymentGatewayPermissions?.data?.permissions && (
+    paymentGatewayPermissions.data.permissions.canCreateGateway ||
+    paymentGatewayPermissions.data.permissions.canManageGateway ||
+    paymentGatewayPermissions.data.permissions.canAssignGateway ||
+    paymentGatewayPermissions.data.permissions.canProcessRequests
+  );
 
   // Get downline list data with optimized query key
   const {
@@ -713,6 +738,117 @@ const ClientList: React.FC = () => {
     }
   }, [filteredData, totals, activeTab, isExportingExcel]);
 
+  // Create Gateway API function
+  const createGateway = async (formData: any, gatewayImageFile: File, qrImageFile: File) => {
+    const formDataToSend = new FormData();
+    formDataToSend.append('gatewayMethod', formData.gatewayMethod);
+    formDataToSend.append('gatewayDetails', JSON.stringify({
+      upiId: formData.upiId,
+      accountNumber: formData.accountNumber,
+      ifscCode: formData.ifscCode,
+      bankName: formData.bankName,
+      accountHolder: formData.accountHolder,
+      phoneNumber: formData.phoneNumber,
+      email: formData.email,
+      minAmount: parseInt(formData.minAmount),
+      maxAmount: parseInt(formData.maxAmount)
+    }));
+    formDataToSend.append('gatewayImage', gatewayImageFile);
+    formDataToSend.append('qrImage', qrImageFile);
+
+    const baseUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:7080';
+    const apiUrl = `${baseUrl}/api/v1/payment/createpaymentgateway`;
+
+    console.log('Creating gateway:', { apiUrl, formData });
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: formDataToSend
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Gateway Creation Error:', response.status, errorText);
+      throw new Error(`Failed to create gateway: ${response.status} ${errorText}`);
+    }
+
+    return response.json();
+  };
+
+  const handleCreateGateway = async () => {
+    // Validate required fields
+    if (!createGatewayForm.gatewayMethod || !createGatewayForm.upiId || !createGatewayForm.accountNumber) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    if (!gatewayImageFile || !qrImageFile) {
+      toast.error("Please select both gateway image and QR code image");
+      return;
+    }
+
+    // Validate file sizes (5MB limit)
+    if (gatewayImageFile.size > 5 * 1024 * 1024) {
+      toast.error("Gateway image size must be less than 5MB");
+      return;
+    }
+    if (qrImageFile.size > 5 * 1024 * 1024) {
+      toast.error("QR image size must be less than 5MB");
+      return;
+    }
+
+    setIsCreatingGateway(true);
+    try {
+      console.log('Starting gateway creation...');
+      const result = await createGateway(createGatewayForm, gatewayImageFile, qrImageFile);
+      console.log('Gateway creation result:', result);
+      
+      toast.success("Payment gateway created successfully!");
+      setShowCreateGatewayModal(false);
+      setGatewayImageFile(null);
+      setQrImageFile(null);
+      setCreateGatewayForm({
+        gatewayMethod: 'UPI',
+        upiId: '',
+        accountNumber: '',
+        ifscCode: '',
+        bankName: '',
+        accountHolder: '',
+        phoneNumber: '',
+        email: '',
+        minAmount: '',
+        maxAmount: ''
+      });
+    } catch (error: any) {
+      console.error("Error creating gateway:", error);
+      const errorMessage = error?.message || "Failed to create gateway. Please try again.";
+      toast.error(errorMessage);
+    } finally {
+      setIsCreatingGateway(false);
+    }
+  };
+
+  const handleCloseCreateGatewayModal = () => {
+    setShowCreateGatewayModal(false);
+    setGatewayImageFile(null);
+    setQrImageFile(null);
+    setCreateGatewayForm({
+      gatewayMethod: 'UPI',
+      upiId: '',
+      accountNumber: '',
+      ifscCode: '',
+      bankName: '',
+      accountHolder: '',
+      phoneNumber: '',
+      email: '',
+      minAmount: '',
+      maxAmount: ''
+    });
+  };
+
   // Remove manual drawer metrics calculation - let Drawer component use API data directly
 
   const navigate = useNavigate();
@@ -764,12 +900,20 @@ const ClientList: React.FC = () => {
           >
             Add Account
           </button>
-          {whitelistData?.data?.isPaymentGatewayEnabled && (
+          {hasPaymentGatewayAccess && (
             <button
               className="px-4 leading-8 rounded cursor-pointer tracking-tight font-medium text-white text-sm bg-green-600 hover:opacity-90 transition"
               onClick={() => navigate("/payment-gateway")}
             >
               Payment Gateway
+            </button>
+          )}
+          {paymentGatewayPermissions?.data?.permissions?.canCreateGateway && (
+            <button
+              className="px-4 leading-8 rounded cursor-pointer tracking-tight font-medium text-white text-sm bg-blue-600 hover:opacity-90 transition"
+              onClick={() => setShowCreateGatewayModal(true)}
+            >
+              Create Gateway
             </button>
           )}
         </div>
@@ -1137,6 +1281,246 @@ const ClientList: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Create Gateway Modal */}
+      {showCreateGatewayModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Create Payment Gateway
+              </h3>
+              <button
+                onClick={handleCloseCreateGatewayModal}
+                className="text-gray-400 hover:text-gray-600"
+                disabled={isCreatingGateway}
+              >
+                <FaTimes className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Gateway Method */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Gateway Method *
+                </label>
+                <select
+                  value={createGatewayForm.gatewayMethod}
+                  onChange={(e) => setCreateGatewayForm({...createGatewayForm, gatewayMethod: e.target.value})}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isCreatingGateway}
+                >
+                  <option value="UPI">UPI</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Wallet">Wallet</option>
+                </select>
+              </div>
+
+              {/* UPI Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    UPI ID *
+                  </label>
+                  <input
+                    type="text"
+                    value={createGatewayForm.upiId}
+                    onChange={(e) => setCreateGatewayForm({...createGatewayForm, upiId: e.target.value})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="example@paytm"
+                    disabled={isCreatingGateway}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Account Number *
+                  </label>
+                  <input
+                    type="text"
+                    value={createGatewayForm.accountNumber}
+                    onChange={(e) => setCreateGatewayForm({...createGatewayForm, accountNumber: e.target.value})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="1234567890"
+                    disabled={isCreatingGateway}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    IFSC Code
+                  </label>
+                  <input
+                    type="text"
+                    value={createGatewayForm.ifscCode}
+                    onChange={(e) => setCreateGatewayForm({...createGatewayForm, ifscCode: e.target.value})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="SBIN0001234"
+                    disabled={isCreatingGateway}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Bank Name
+                  </label>
+                  <input
+                    type="text"
+                    value={createGatewayForm.bankName}
+                    onChange={(e) => setCreateGatewayForm({...createGatewayForm, bankName: e.target.value})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="State Bank of India"
+                    disabled={isCreatingGateway}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Account Holder
+                  </label>
+                  <input
+                    type="text"
+                    value={createGatewayForm.accountHolder}
+                    onChange={(e) => setCreateGatewayForm({...createGatewayForm, accountHolder: e.target.value})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Account Holder Name"
+                    disabled={isCreatingGateway}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Phone Number
+                  </label>
+                  <input
+                    type="text"
+                    value={createGatewayForm.phoneNumber}
+                    onChange={(e) => setCreateGatewayForm({...createGatewayForm, phoneNumber: e.target.value})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="+91 9876543210"
+                    disabled={isCreatingGateway}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={createGatewayForm.email}
+                    onChange={(e) => setCreateGatewayForm({...createGatewayForm, email: e.target.value})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="support@example.com"
+                    disabled={isCreatingGateway}
+                  />
+                </div>
+              </div>
+
+              {/* Amount Limits */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Minimum Amount
+                  </label>
+                  <input
+                    type="number"
+                    value={createGatewayForm.minAmount}
+                    onChange={(e) => setCreateGatewayForm({...createGatewayForm, minAmount: e.target.value})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="100"
+                    disabled={isCreatingGateway}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Maximum Amount
+                  </label>
+                  <input
+                    type="number"
+                    value={createGatewayForm.maxAmount}
+                    onChange={(e) => setCreateGatewayForm({...createGatewayForm, maxAmount: e.target.value})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="50000"
+                    disabled={isCreatingGateway}
+                  />
+                </div>
+              </div>
+
+              {/* File Uploads */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Gateway Image *
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setGatewayImageFile(file);
+                      }
+                    }}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isCreatingGateway}
+                  />
+                  {gatewayImageFile && (
+                    <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm text-green-700">
+                      Selected: {gatewayImageFile.name}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    QR Code Image *
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setQrImageFile(file);
+                      }
+                    }}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isCreatingGateway}
+                  />
+                  {qrImageFile && (
+                    <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm text-green-700">
+                      Selected: {qrImageFile.name}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="text-sm text-gray-600">
+                <p className="mb-2">File Requirements:</p>
+                <ul className="list-disc list-inside space-y-1 text-xs">
+                  <li>Image format: JPG, PNG, or GIF</li>
+                  <li>Recommended size: 256x256 pixels or larger</li>
+                  <li>File size: Maximum 5MB per file</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleCloseCreateGatewayModal}
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                disabled={isCreatingGateway}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateGateway}
+                className={`flex-1 px-4 py-2 text-sm font-medium text-white rounded-md transition-colors ${
+                  isCreatingGateway ? "opacity-50 cursor-not-allowed bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
+                }`}
+                disabled={isCreatingGateway}
+              >
+                {isCreatingGateway ? "Creating..." : "Create Gateway"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

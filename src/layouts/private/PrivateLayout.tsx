@@ -7,13 +7,15 @@ import { useLocation } from "react-router-dom";
 const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const isTransactionPassword = location.pathname === "/transaction-password" || location.pathname === "/transaction-password/";
+  const isClient = location.pathname === "/clients";
+  
 
   return (
     <React.Fragment>
       {!isTransactionPassword && <Header />}
       {/* <main className="md:flex md:gap-0.5"> */}
       <main>
-        {!isTransactionPassword ? (
+        {isClient? (
           <DrawerMetricsProvider>
             <Drawer />
             {children}

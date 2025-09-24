@@ -413,6 +413,35 @@ export const getPaymentRequests = async ({ cookies }: { cookies: any }): Promise
   });
 };
 
+// payment gateway permissions
+export const getPaymentGatewayPermissions = async ({ cookies }: { cookies: any }): Promise<{
+  success: boolean;
+  data: {
+    userId: string;
+    userType: string;
+    userName: string;
+    groupId: string | null;
+    hasDepositWithdrawAccess: boolean;
+    permissions: {
+      canCreateGateway: boolean;
+      canManageGateway: boolean;
+      canAssignGateway: boolean;
+      canProcessRequests: boolean;
+    };
+    stats: {
+      assignedGatewaysCount: number;
+      createdGatewaysCount: number;
+      hasActiveAssignments: boolean;
+      hasCreatedGateways: boolean;
+    };
+    assignments: any[];
+  };
+}> => {
+  return apiRequest("/api/v1/payment-permissions/my-gateway-permissions", cookies, {
+    method: "GET",
+  });
+};
+
 // update deposit request status
 export const updateDepositRequest = async ({
   requestId,
