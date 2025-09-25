@@ -3,9 +3,9 @@ import { useParams, useLocation } from "react-router-dom";
 import useLiveMatchOdds from "@/hooks/useLiveMatchOdds";
 
 const SportDetail: React.FC = () => {
-  const { sportId, eventId } = useParams();
+  const { sportId:sportName, eventId } = useParams();
 
-  const { competition, date, match, market } = useLocation().state;
+  const { competition, date, match, market, sportId } = useLocation().state;
   const {
     data: matchOdds,
     isLoading,
@@ -36,7 +36,7 @@ const SportDetail: React.FC = () => {
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">
-        Sport Details - Sport: {sportId}, Event ID: {eventId}
+        Sport Details - Sport: {sportName}, Event ID: {eventId}
       </h1>
 
       {matchOdds?.data ? (

@@ -34,7 +34,8 @@ const useLiveMatchOdds = (options: UseLiveMatchOddsOptions) => {
     queryKey: ["liveMatchOdds", options.sportId, options.eventId],
     queryFn: () => fetchLiveMatchOdds(options.sportId, options.eventId, cookies),
     retry: 3,
-    staleTime: 30 * 1000, // 30 seconds for live data
+    staleTime: 10 * 1000, // 10 seconds for live data
+    refetchInterval: 10 * 1000, // 10 seconds for live data
     enabled: !!(options.sportId && options.eventId),
     ...options,
   });

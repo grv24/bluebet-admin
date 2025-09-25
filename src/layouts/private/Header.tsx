@@ -50,7 +50,7 @@ const Header: React.FC = () => {
     const allDynamicSports = cricketData?.data?.children || [];
 
 
-    const renderCompetition = (competition: CricketCompetition, index: number) => {
+    const renderCompetition = (competition: CricketCompetition, index: number, sportName: string) => {
       const competitionId = `comp-${competition.name}`;
       const isExpanded = expandedItems.has(competitionId);
       
@@ -70,7 +70,7 @@ const Header: React.FC = () => {
               {/* Vertical line */}
               <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-200"></div>
               <div className="space-y-1">
-                {competition.children.map((date, dateIndex) => renderDate(date, dateIndex, competition.children.length, competition.name))}
+                {competition.children.map((date, dateIndex) => renderDate(date, dateIndex, competition.children.length, sportName, competition.name))}
               </div>
             </div>
           )}
@@ -78,7 +78,7 @@ const Header: React.FC = () => {
       );
     };
 
-    const renderDate = (date: CricketDate, index: number, totalDates: number, competitionName: string) => {
+    const renderDate = (date: CricketDate, index: number, totalDates: number, sportName: string, competitionName: string) => {
       const dateId = `date-${date.name}`;
       const isExpanded = expandedItems.has(dateId);
       
@@ -98,7 +98,7 @@ const Header: React.FC = () => {
               {/* Vertical line */}
               <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-200"></div>
               <div className="space-y-1">
-                {date.children.map((match, matchIndex) => renderMatch(match, matchIndex, date.children.length, competitionName, date.name))}
+                {date.children.map((match, matchIndex) => renderMatch(match, matchIndex, date.children.length, sportName, competitionName, date.name))}
               </div>
             </div>
           )}
@@ -106,7 +106,7 @@ const Header: React.FC = () => {
       );
     };
 
-    const renderMatch = (match: CricketMatch, index: number, totalMatches: number, competitionName: string, dateName: string) => {
+    const renderMatch = (match: CricketMatch, index: number, totalMatches: number, sportName: string, competitionName: string, dateName: string) => {
       const matchId = `match-${match.gmid}`;
       const isExpanded = expandedItems.has(matchId);
       
@@ -126,7 +126,7 @@ const Header: React.FC = () => {
               {/* Vertical line */}
               <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-200"></div>
               <div className="space-y-1">
-                {match.children.map((market, marketIndex) => renderMarket(market, marketIndex, match.children.length, match.gmid, competitionName, dateName, match.name))}
+                {match.children.map((market, marketIndex) => renderMarket(market, marketIndex, match.children.length, match.gmid, sportName, competitionName, dateName, match.name))}
               </div>
             </div>
           )}
@@ -134,19 +134,20 @@ const Header: React.FC = () => {
       );
     };
 
-    const renderMarket = (market: CricketMarket, index: number, totalMarkets: number, gmid: number, competitionName: string, dateName: string, matchName: string) => {
+    const renderMarket = (market: CricketMarket, index: number, totalMarkets: number, gmid: number, sportName: string, competitionName: string, dateName: string, matchName: string) => {
       return (
         <div key={`market-${market.name}`} className="relative">
           {/* Blue dot */}
           <div className="absolute left-0 top-2 w-2 h-2 bg-blue-500 rounded-full transform -translate-x-1"></div>
           <div className="flex items-center py-1 hover:bg-gray-100 ml-4">
             <span onClick={() => { 
-              navigate(`/sport-details/cricket/${market.gmid}`, {
+              navigate(`/sport-details/${sportName.toLowerCase()}/${market.gmid}`, {
                 state: {
                   competition: competitionName,
                   date: dateName,
                   match: matchName,
-                  market: market.name
+                  market: market.name,
+                  sportId:market.etid
                 }
               }); 
               setIsSportsOpen(false); 
@@ -178,7 +179,7 @@ const Header: React.FC = () => {
                   {/* Vertical line */}
                   <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-200"></div>
                   <div className="space-y-1">
-                    {sport.children.map((competition, index) => renderCompetition(competition, index))}
+                    {sport.children.map((competition, index) => renderCompetition(competition, index, sportName))}
                   </div>
                 </div>
               )}
