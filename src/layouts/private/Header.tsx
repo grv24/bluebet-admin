@@ -2,37 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCookies } from "react-cookie";
 import { baseUrl, getDecodedTokenData, logout } from "@/helper/auth";
+import useCricketTree from "@/hooks/useCricketTree";
+import { CricketCompetition, CricketDate, CricketMatch, CricketMarket } from "@/types/cricket.ts";
 
-const SPORTS_LIST = [
-  "Football",
-  "Tennis",
-  "Mixed Martial Arts",
-  "Cricket",
-  "Golf",
-  "Boxing",
-  "Beach Volleyball",
-  "Table Tennis",
-  "Futsal",
-  "Horse Racing",
-  "E Games",
-  "Basketball",
-  "MotoGP",
-  "Chess",
-  "Volleyball",
-  "Ice Hockey",
-  "Badminton",
-  "Cycling",
-  "Motorbikes",
-  "Athletics",
-  "Basketball 3X3",
-  "Sumo",
-  "Virtual sports",
-  "Handball",
-  "Politics",
-  "Motor Sports",
-  "Baseball",
-  "Rugby Union",
-];
 
 const Header: React.FC = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState<string | null>(null);
@@ -40,12 +12,14 @@ const Header: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(["sport-cricket"]));
   const navigate = useNavigate();
   const [cookies, , removeCookie] = useCookies([
     baseUrl.includes("techadmin") ? "TechAdmin" : "Admin",
     "hasPopupBeenShown",
   ]);  
   const userData = getDecodedTokenData(cookies);
+  const { data: cricketData, isLoading: cricketLoading, error: cricketError } = useCricketTree();
   const handleLogout = () => {
     logout(
       (name: string, options?: any) =>
@@ -57,6 +31,173 @@ const Header: React.FC = () => {
     );
     setIsUserDropdownOpen(false);
     setIsMobileMenuOpen(false);
+  };
+
+  const toggleExpanded = (itemId: string) => {
+    setExpandedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  };
+
+  const renderSportsList = () => {
+    // Get all dynamic sports from API data
+    const allDynamicSports = cricketData?.data?.children || [];
+
+
+    const renderCompetition = (competition: CricketCompetition, index: number) => {
+      const competitionId = `comp-${competition.name}`;
+      const isExpanded = expandedItems.has(competitionId);
+      
+      return (
+        <div key={competitionId} className="relative">
+          {/* Blue dot */}
+          <div className="absolute left-0 top-2 w-2 h-2 bg-blue-500 rounded-full transform -translate-x-1"></div>
+          <div 
+            className="flex items-center cursor-pointer py-1 hover:bg-gray-100 ml-4"
+            onClick={() => toggleExpanded(competitionId)}
+          >
+            <i className={`fa-solid fa-${isExpanded ? 'minus' : 'plus'} text-xs mr-2 text-gray-600`}></i>
+            <span className="text-xs text-gray-800">{competition.name}</span>
+          </div>
+          {isExpanded && (
+            <div className="ml-4 relative">
+              {/* Vertical line */}
+              <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-200"></div>
+              <div className="space-y-1">
+                {competition.children.map((date, dateIndex) => renderDate(date, dateIndex, competition.children.length, competition.name))}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const renderDate = (date: CricketDate, index: number, totalDates: number, competitionName: string) => {
+      const dateId = `date-${date.name}`;
+      const isExpanded = expandedItems.has(dateId);
+      
+      return (
+        <div key={dateId} className="relative">
+          {/* Blue dot */}
+          <div className="absolute left-0 top-2 w-2 h-2 bg-blue-500 rounded-full transform -translate-x-1"></div>
+          <div 
+            className="flex items-center cursor-pointer py-1 hover:bg-gray-100 ml-4"
+            onClick={() => toggleExpanded(dateId)}
+          >
+            <i className={`fa-solid fa-${isExpanded ? 'minus' : 'plus'} text-xs mr-2 text-gray-600`}></i>
+            <span className="text-xs text-gray-800">{date.name}</span>
+          </div>
+          {isExpanded && (
+            <div className="ml-4 relative">
+              {/* Vertical line */}
+              <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-200"></div>
+              <div className="space-y-1">
+                {date.children.map((match, matchIndex) => renderMatch(match, matchIndex, date.children.length, competitionName, date.name))}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const renderMatch = (match: CricketMatch, index: number, totalMatches: number, competitionName: string, dateName: string) => {
+      const matchId = `match-${match.gmid}`;
+      const isExpanded = expandedItems.has(matchId);
+      
+      return (
+        <div key={matchId} className="relative">
+          {/* Blue dot */}
+          <div className="absolute left-0 top-2 w-2 h-2 bg-blue-500 rounded-full transform -translate-x-1"></div>
+          <div 
+            className="flex items-center cursor-pointer py-1 hover:bg-gray-100 ml-4"
+            onClick={() => toggleExpanded(matchId)}
+          >
+            <i className={`fa-solid fa-${isExpanded ? 'minus' : 'plus'} text-xs mr-2 text-gray-600`}></i>
+            <span className="text-xs text-gray-800">{match.name}</span>
+          </div>
+          {isExpanded && (
+            <div className="ml-4 relative">
+              {/* Vertical line */}
+              <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-200"></div>
+              <div className="space-y-1">
+                {match.children.map((market, marketIndex) => renderMarket(market, marketIndex, match.children.length, match.gmid, competitionName, dateName, match.name))}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const renderMarket = (market: CricketMarket, index: number, totalMarkets: number, gmid: number, competitionName: string, dateName: string, matchName: string) => {
+      return (
+        <div key={`market-${market.name}`} className="relative">
+          {/* Blue dot */}
+          <div className="absolute left-0 top-2 w-2 h-2 bg-blue-500 rounded-full transform -translate-x-1"></div>
+          <div className="flex items-center py-1 hover:bg-gray-100 ml-4">
+            <span onClick={() => { 
+              navigate(`/sport-details/cricket/${market.gmid}`, {
+                state: {
+                  competition: competitionName,
+                  date: dateName,
+                  match: matchName,
+                  market: market.name
+                }
+              }); 
+              setIsSportsOpen(false); 
+            }} className="text-xs uppercase text-gray-800 cursor-pointer">{market.name}</span>
+          </div>
+        </div>
+      );
+    };
+
+    return (
+      <div className="space-y-1">
+        {/* All Dynamic Sports from API */}
+        {allDynamicSports.map((sport) => {
+          const sportName = sport.name === "Soccer" ? "Football" : sport.name;
+          const sportId = `sport-${sport.name.toLowerCase()}`;
+          const isExpanded = expandedItems.has(sportId);
+          
+          return (
+            <div key={sport.name} className="relative">
+              <div 
+                className="flex items-center cursor-pointer py-1 hover:bg-gray-100"
+                onClick={() => toggleExpanded(sportId)}
+              >
+                <i className={`fa-solid fa-${isExpanded ? 'minus' : 'plus'} text-xs mr-2 text-gray-600`}></i>
+                <span className="text-xs text-gray-800">{sportName}</span>
+              </div>
+              {isExpanded && sport.children && sport.children.length > 0 && (
+                <div className="ml-4 relative">
+                  {/* Vertical line */}
+                  <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-200"></div>
+                  <div className="space-y-1">
+                    {sport.children.map((competition, index) => renderCompetition(competition, index))}
+                  </div>
+                </div>
+              )}
+              {isExpanded && (!sport.children || sport.children.length === 0) && (
+                <div className="ml-4 text-xs text-gray-500">No competitions available</div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Loading/Error states for Cricket */}
+        {cricketLoading && (
+          <div className="ml-4 text-xs text-gray-500">Loading cricket data...</div>
+        )}
+        {cricketError && (
+          <div className="ml-4 text-xs text-red-500">Error loading cricket data</div>
+        )}
+      </div>
+    );
   };
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -333,17 +474,7 @@ const Header: React.FC = () => {
                 <i className="fa-solid cursor-pointer fa-xmark text-xl me-2"></i>
               </button>
             </div>
-            <ul className="space-y-2">
-              {SPORTS_LIST.map((sport) => (
-                <li
-                  key={sport}
-                  className="flex items-center cursor-pointer justify-start gap-1 text-sm font-normal"
-                >
-                  <span className="text-xs text-gray-600">{sport}</span>
-                  <i className="fa-solid fa-plus text-xs ml-2"></i>
-                </li>
-              ))}
-            </ul>
+            {renderSportsList()}
           </div>
         </React.Fragment>
       )}

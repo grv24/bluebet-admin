@@ -25,4 +25,10 @@ export const AddClient = lazyWithErrorHandling(() => import("./client/AddClient"
 export const TransactionPassword = lazyWithErrorHandling(() => import("./client/TransactionPassword"));
 export const PaymentGateway = lazyWithErrorHandling(() => import("./PaymentGateway"));
 
+
+
+// sports
+export const SportDetail = lazyWithErrorHandling(() => import("./sports/sport-detail"));
+
+
 export const NotFound = lazyWithErrorHandling(() => import("./NotFound"));
