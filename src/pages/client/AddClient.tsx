@@ -1,5 +1,5 @@
 import { getDecodedTokenData, baseUrl } from "@/helper/auth";
-import { createNewUser, getCurrentSportsSettings } from "@/helper/user";
+import { createNewUser, getCurrentSportsSettings, getAccounts } from "@/helper/user";
 import { AdminList } from "@/utils/Admin";
 import React, {
   useState,
@@ -30,6 +30,8 @@ interface FormData {
   transactionPassword: string;
   ourCommission: number;
   ourPartnership: number;
+  downlineCommission: number;
+  downlinePartnership: number;
   minBet: number;
   maxBet: number;
   delay: number;
@@ -103,6 +105,7 @@ interface PartnershipCalculations {
   maxOurAllowed: number;
   isValidAllocation: boolean;
   calculatedSum: number;
+  downlineAbsolute: number;
 }
 
 // Helper functions for validation
@@ -245,6 +248,8 @@ const AddClient: React.FC = () => {
       transactionPassword: "",
       ourCommission: 0,
       ourPartnership: 0,
+      downlineCommission: 0,
+      downlinePartnership: 0,
       minBet: 0,
       maxBet: 0,
       delay: CONSTANTS.DEFAULT_DELAY,
@@ -319,6 +324,17 @@ const AddClient: React.FC = () => {
     enabled: !!userId && !!authToken, // Ensure query runs only if userId and token are available
   });
 
+  // Get accounts data
+  const { data: accountsData, isLoading: isLoadingAccounts, error: accountsError } = useQuery({
+    queryKey: ["getAccounts", { cookies, userId }],
+    queryFn: () =>
+      getAccounts({
+        token: authToken || "",
+        userId: userId || "",
+      }),
+    enabled: !!userId && !!authToken, // Ensure query runs only if userId and token are available
+  });
+
   // Watch form values for reactive updates
   const watchedValues = watch();
   const {
@@ -329,6 +345,8 @@ const AddClient: React.FC = () => {
     accountType,
     ourCommission,
     ourPartnership,
+    downlineCommission,
+    downlinePartnership,
   } = watchedValues;
 
   // Use custom hook for login ID checking
@@ -350,107 +368,56 @@ const AddClient: React.FC = () => {
     return adminConfig?.allowedTypes || [];
   }, [decodedData?.user?.__type]);
 
-  // Get panel data from sports settings with error handling
+  // Get panel data from accounts API response
   const panelData = useMemo(() => {
     try {
-      // Extract commission and partnership values from the sports settings structure
-      const sportsSettings = currentSportsData?.data || {};
+      // Extract commission and partnership values from the accounts API response
+      const accountsResponse = accountsData?.data;
       
-      // Get commission values from commissionOwn and commissionUpline fields
-      const commissionOwnValues = Object.values(sportsSettings)
-        ?.filter(
-          (setting: any) =>
-            setting &&
-            typeof setting === "object" &&
-            setting.commissionOwn !== undefined
-        )
-        ?.map((setting: any) => setting.commissionOwn);
+      if (!accountsResponse?.commissionSettings) {
+        console.warn("No commission settings found in accounts data");
+        return { panelCommission: null, panelPartnership: null };
+      }
 
-      const commissionUplineValues = Object.values(sportsSettings)
-        ?.filter(
-          (setting: any) =>
-            setting &&
-            typeof setting === "object" &&
-            setting.commissionUpline !== undefined
-        )
-        ?.map((setting: any) => setting.commissionUpline);
+      const commissionSettings = accountsResponse.commissionSettings;
+      
+      // Get commission values from commissionSettings
+      const commissionOwn = parseFloat(commissionSettings.commissionOwn || "0");
+      const commissionUpline = parseFloat(commissionSettings.commissionUpline || "0");
+      
+      // Get partnership values from commissionSettings
+      const partnershipOwn = parseFloat(commissionSettings.partnershipOwn || "0");
+      const partnershipUpline = parseFloat(commissionSettings.partnershipUpline || "0");
 
-      // Get partnership values from partnershipOwn and partnershipUpline fields
-      const partnershipOwnValues = Object.values(sportsSettings)
-        .filter(
-          (setting: any) =>
-            setting &&
-            typeof setting === "object" &&
-            setting.partnershipOwn !== undefined
-        )
-        ?.map((setting: any) => setting.partnershipOwn);
-
-      const partnershipUplineValues = Object.values(sportsSettings)
-        .filter(
-          (setting: any) =>
-            setting &&
-            typeof setting === "object" &&
-            setting.partnershipUpline !== undefined
-        )
-        ?.map((setting: any) => setting.partnershipUpline);
-
-      // Calculate averages for panel data
-      const avgCommissionOwn =0
-       
-
-      const avgCommissionUpline =
-        commissionUplineValues.length > 0
-          ? commissionUplineValues.reduce(
-              (sum: number, val: number) => sum + val,
-              0
-            ) / commissionUplineValues.length
-          : 0;
-
-      const avgPartnershipOwn =
-        partnershipOwnValues.length > 0
-          ? partnershipOwnValues.reduce(
-              (sum: number, val: number) => sum + val,
-              0
-            ) / partnershipOwnValues.length
-          : 0;
-
-      const avgPartnershipUpline =
-        partnershipUplineValues.length > 0
-          ? partnershipUplineValues.reduce(
-              (sum: number, val: number) => sum + val,
-              0
-            ) / partnershipUplineValues.length
-          : 0;
-
-      console.log("Panel Data Debug:", {
-        sportsSettings,
-        commissionOwnValues,
-        commissionUplineValues,
-        partnershipOwnValues,
-        partnershipUplineValues,
-        avgCommissionOwn,
-        avgCommissionUpline,
-        avgPartnershipOwn,
-        avgPartnershipUpline
+      console.log("Panel Data Debug (from accounts API):", {
+        commissionSettings,
+        commissionOwn,
+        commissionUpline,
+        partnershipOwn,
+        partnershipUpline,
+        formula: {
+          commission: `Upline: ${commissionUpline}% + Own: ${commissionOwn}% = ${commissionUpline + commissionOwn}%`,
+          partnership: `Upline: ${partnershipUpline}% + Own: ${partnershipOwn}% = ${partnershipUpline + partnershipOwn}%`
+        }
       });
 
       return {
         panelCommission: {
-          own: avgCommissionOwn,
-          upline: avgCommissionUpline,
-          total: avgCommissionOwn + avgCommissionUpline,
+          own: commissionOwn,
+          upline: commissionUpline,
+          total: commissionOwn + commissionUpline,
         },
         panelPartnership: {
-          own: avgPartnershipOwn,
-          upline: avgPartnershipUpline,
-          total: avgPartnershipOwn + avgPartnershipUpline,
+          own: partnershipOwn,
+          upline: partnershipUpline,
+          total: partnershipOwn + partnershipUpline,
         },
       };
     } catch (error) {
       console.warn("Panel validation error:", error);
       return { panelCommission: null, panelPartnership: null };
     }
-  }, [currentSportsData?.data]);
+  }, [accountsData]);
 
   // Debug: Log sports data when it changes
   console.log("Sports Settings Loaded:", {
@@ -459,6 +426,14 @@ const AddClient: React.FC = () => {
       ? Object.keys(currentSportsData.data).length
       : 0,
     validationResult: panelData,
+  });
+
+  // Debug: Log accounts data when it changes
+  console.log("Accounts Data Loaded:", {
+    hasData: !!accountsData,
+    isLoading: isLoadingAccounts,
+    error: accountsError,
+    accountsData: accountsData,
   });
 
   // Panel state management
@@ -475,99 +450,115 @@ const AddClient: React.FC = () => {
   useEffect(() => {
     if (panelData?.panelCommission) {
       setPanelCommission(panelData.panelCommission);
-      // Initialize ourCommission field with panel's own value (commissionOwn from sports settings)
+      // Initialize ourCommission field with panel's own value (commissionOwn from accounts API)
       setValue("ourCommission", panelData.panelCommission.own || 0);
+      // Initialize downlineCommission field with 0 (user will set their desired value)
+      setValue("downlineCommission", 0);
     }
     if (panelData?.panelPartnership) {
       setPanelPartnership(panelData.panelPartnership);
-      // Initialize ourPartnership field with 0 (user will set their desired value)
-      setValue("ourPartnership", 0);
+      // Initialize ourPartnership field with panel's own value (partnershipOwn from accounts API)
+      setValue("ourPartnership", panelData.panelPartnership.own || 0);
+      // Initialize downlinePartnership field with 0 (user will set their desired value)
+      setValue("downlinePartnership", 0);
     }
   }, [panelData, setValue]);
 
-  // Calculate commission values - SIMPLIFIED LOGIC (Only Upline + Our)
+  // Calculate commission values - Using accounts API data with downline constraint
   const commissionCalculations = useMemo((): CommissionCalculations => {
-    const parentOwn = panelData?.panelCommission?.own || 0; // What current user keeps (commissionOwn)
-    const parentUpline = panelData?.panelCommission?.upline || 0; // What goes to upline (commissionUpline)
+    const parentOwn = panelData?.panelCommission?.own || 0; // What current user keeps (commissionOwn from accounts API)
+    const parentUpline = panelData?.panelCommission?.upline || 0; // What goes to upline (commissionUpline from accounts API)
     const our = ourCommission || 0; // What current user wants to keep (user input - editable)
+    const downline = downlineCommission || 0; // What goes to downline (user input - editable)
     
-    // SIMPLIFIED: Only Upline (fixed) + Our (editable)
-    const upline = parentUpline; // Upline commission from sports settings (fixed)
-    const downline = 0; // Not used in commission calculation
-    const total = upline + our; // Total = Upline + Our (not 100%)
+    // Commission calculation: Upline (fixed) + Our (editable) + Downline (editable)
+    const upline = parentUpline; // Upline commission from accounts API (fixed)
+    const total = upline + our + downline; // Total = Upline + Our + Downline
     const own = our; // Own is same as our
 
-    // Validation: our should be non-negative
-    const isValidAllocation = our >= 0;
+    // Validation: our and downline should be non-negative, and downline should not exceed our
+    const isValidDownline = downline <= our;
+    const isValidAllocation = our >= 0 && downline >= 0 && isValidDownline;
     const maxOurAllowed = 100; // No specific limit for commission
 
-    console.log("Commission Calc Debug (SIMPLIFIED):", {
-      parentOwn: `From sports settings: ${parentOwn}`,
-      parentUpline: `From sports settings: ${parentUpline}`,
+    console.log("Commission Calc Debug (with downline constraint):", {
+      parentOwn: `From accounts API: ${parentOwn}`,
+      parentUpline: `From accounts API: ${parentUpline}`,
       upline: `Fixed: ${upline}`,
       our: `User Input: ${our}`,
+      downline: `User Input: ${downline}`,
       total,
       own,
-      formula: `upline (${upline}) + our (${our}) = ${total}`,
-      constraints: `our ≥ 0 (commission can exceed 100%)`,
+      isValidDownline,
+      constraint: `downline (${downline}) <= our (${our})`,
+      formula: `upline (${upline}) + our (${our}) + downline (${downline}) = ${total}`,
+      constraints: `our ≥ 0, downline ≥ 0, downline ≤ our`,
       isValidAllocation,
       maxOurAllowed,
-      note: "Only Upline (fixed) + Our (editable), no downline calculation"
+      note: "Using commissionOwn, commissionUpline from accounts API + downline constraint"
     });
 
     return {
-      upline: upline, // Commission passed to parent user (from sports settings)
-      downline: downline, // Not used (0)
+      upline: upline, // Commission passed to parent user (from accounts API)
+      downline: downline, // Commission passed to downline (user input - editable)
       our: our, // What current user keeps (user input - editable)
       own: own, // Same as our
-      total: total, // Total = Upline + Our
-      panelTotal: upline + our, // Dynamic total
+      total: total, // Total = Upline + Our + Downline
+      panelTotal: upline + our + downline, // Dynamic total
       parentOwn: parentOwn, // What current user currently has
       isValidAllocation: isValidAllocation, // Validation flag
       maxOurAllowed: maxOurAllowed, // No specific limit
     };
-  }, [panelData?.panelCommission, ourCommission]);
+  }, [panelData?.panelCommission, ourCommission, downlineCommission]);
 
-  // Calculate partnership values using actual sports settings data
+  // Calculate partnership values using accounts API data with downline constraint
   const partnershipCalculations = useMemo((): PartnershipCalculations => {
-    // Base values from panel
-    const previousDownline = panelData?.panelPartnership?.own || 100; // What current user has (partnershipOwn)
-    const parentUpline = panelData?.panelPartnership?.upline || 0; // What goes to upline (partnershipUpline)
+    // Base values from accounts API
+    const previousDownline = panelData?.panelPartnership?.own || 100; // What current user has (partnershipOwn from accounts API)
+    const parentUpline = panelData?.panelPartnership?.upline || 0; // What goes to upline (partnershipUpline from accounts API)
     const total = panelData?.panelPartnership?.total || 100; // Total partnership pool
-    const ourPercent = Math.max(0, ourPartnership || 0); // input as percentage of previousDownline
-    const upline = parentUpline; // Fixed upline partnership from sports settings
+    const downlinePercent = Math.max(0, downlinePartnership || 0); // input as percentage of previousDownline
+    const upline = parentUpline; // Fixed upline partnership from accounts API
 
-    // Convert percent to absolute share from the previousDownline bucket
-    const ourAbsolute = (previousDownline * ourPercent) / 100;
-    const newDownline = Math.max(0, previousDownline - ourAbsolute);
+    // Calculate our as partnershipOwn - downlinePartnership
+    const downlineAbsolute = (previousDownline * downlinePercent) / 100;
+    const ourAbsolute = Math.max(0, previousDownline - downlineAbsolute);
+    const ourPercent = previousDownline > 0 ? (ourAbsolute / previousDownline) * 100 : 0;
+    
+    // Constraint: downline should not exceed the total available
+    const isValidDownline = downlinePercent <= 100 && downlineAbsolute <= previousDownline;
+    const newDownline = 0; // No remaining downline since we're using the full pool
     const downlineChange = newDownline - previousDownline; // negative means reduced
 
-    console.log("Partnership Calc Debug:", {
-      previousDownline: `From sports settings: ${previousDownline}`,
-      parentUpline: `From sports settings: ${parentUpline}`,
+    console.log("Partnership Calc Debug (our = partnershipOwn - downline):", {
+      previousDownline: `From accounts API: ${previousDownline}`,
+      parentUpline: `From accounts API: ${parentUpline}`,
       total,
-      ourPercent,
+      downlinePercent,
       upline: `Fixed: ${upline}`,
-      ourAbsolute,
+      ourAbsolute: `Calculated: ${ourAbsolute} (${previousDownline} - ${downlineAbsolute})`,
+      downlineAbsolute,
       newDownline,
       downlineChange,
-      formula: `upline (${upline}) + our (${ourAbsolute}) + downline (${newDownline}) = ${upline + ourAbsolute + newDownline}`,
+      isValidDownline,
+      constraint: `downlinePercent (${downlinePercent}) <= 100% and downlineAbsolute (${downlineAbsolute}) <= previousDownline (${previousDownline})`,
+      formula: `upline (${upline}) + our (${ourAbsolute}) + downline (${downlineAbsolute}) = ${upline + ourAbsolute + downlineAbsolute}`,
+      note: "Our = partnershipOwn - downlinePartnership"
     });
 
     return {
       upline,
       downline: newDownline,
-      our: ourAbsolute, // absolute share taken by current user from the bucket
+      our: ourAbsolute, // calculated as partnershipOwn - downlinePartnership
       total,
       own: previousDownline,
       maxOurAllowed: 100, // percent of the bucket
       isValidAllocation:
-        ourPercent >= 0 && ourPercent <= 100 && newDownline >= 0,
-      calculatedSum: upline + ourAbsolute + newDownline,
-      // @ts-expect-error expose delta for UI note
-      downlineChange,
+        downlinePercent >= 0 && downlinePercent <= 100 && ourAbsolute >= 0 && isValidDownline,
+      calculatedSum: upline + ourAbsolute + downlineAbsolute + newDownline,
+      downlineAbsolute, // absolute share taken by downline from the bucket
     };
-  }, [panelData?.panelPartnership, ourPartnership]);
+  }, [panelData?.panelPartnership, downlinePartnership]);
 
   const remarksText = useMemo(
     () => `creating account for ${watchedValues.clientName || ""}`,
@@ -583,15 +574,11 @@ const AddClient: React.FC = () => {
     [setValue, checkLoginId]
   );
 
-  // Handle account type change to set default commission rates
+  // Handle account type change
   const handleAccountTypeChange = useCallback(
     (accountType: string) => {
       setValue("accountType", accountType);
-      if (accountType !== "Client") {
-        const defaultRates = getDefaultCommissionRates(accountType.toLowerCase());
-        setValue("ourCommission", defaultRates.panel);
-        setValue("ourPartnership", 0); // Start with 0 for partnership
-      }
+      // Don't automatically set commission rates - let user's own commission from API remain
     },
     [setValue]
   );
@@ -602,9 +589,18 @@ const AddClient: React.FC = () => {
   // Development logging - can be removed in production
   if (process.env.NODE_ENV === "development") {
     console.log("Current Sports Data:", currentSportsData);
+    console.log("Accounts Data:", accountsData);
     console.log("User Type:", userType);
     console.log("Allowed Account Types:", currentUserAllowedTypes);
   }
+
+  // Handle accounts API error
+  useEffect(() => {
+    if (accountsError) {
+      console.error("Failed to load accounts:", accountsError);
+      toast.error("Failed to load accounts data");
+    }
+  }, [accountsError]);
 
 
 
@@ -647,43 +643,12 @@ const AddClient: React.FC = () => {
           creditRef: data.creditReference,
           // Send original sports settings as they are without modifications
           ...(data.accountType !== "Client" && {
-            casinoSettings: currentSportsData?.data?.casinoSettings,
-            cricketSettings: currentSportsData?.data?.cricketSettings,
-            tennisSettings: currentSportsData?.data?.tennisSettings,
-            soccerSettings: currentSportsData?.data?.soccerSettings,
-            internationalCasinoSettings:
-              currentSportsData?.data?.internationalCasinoSettings,
-            // Commission and Partnership fields - FIXED MAPPING
-            commissionUpline: data.ourCommission || 0,    // ✅ Commission goes to commission
-            partnershipUpline: data.ourPartnership || 0,  // ✅ Partnership goes to partnership
+            commissionGiven: data.downlineCommission || 0,    // ✅ Downline commission
+            partnershipGiven: data.downlinePartnership || 0,  // ✅ Downline partnership
             partnershipToUserId: userId || "",
             partnershipToType: userType || "",
             commissionToUserId: userId || "",
             commissionToType: userType || "",
-            // Commission settings
-            commissionLena: data.commissionLena,
-            commissionDena: data.commissionDena,
-            percentageWiseCommission: data.percentageWiseCommission,
-            partnerShipWiseCommission: data.partnerShipWiseCommission,
-            // Structured commission rates
-            commissionRates: {
-              panel: {
-                soccer: data.ourCommission || 0,
-                cricket: data.ourCommission || 0,
-                tennis: data.ourCommission || 0,
-                matka: data.ourCommission || 0,
-                casino: data.ourCommission || 0,
-                internationalCasino: data.ourCommission || 0
-              },
-              match: {
-                soccer: data.ourCommission || 0,
-                cricket: data.ourCommission || 0,
-                tennis: data.ourCommission || 0
-              },
-              session: {
-                cricket: data.ourCommission || 0
-              }
-            }
           }),
           remarks: `creating account for ${data.clientName}`,
 
@@ -741,6 +706,33 @@ const AddClient: React.FC = () => {
   return (
     <div className="p-2 sm:p-4 bg-[#fafafa] min-h-screen min-w-fit">
       <h2 className="text-lg font-normal mb-2">Add Account</h2>
+      {isLoadingAccounts && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+          <div className="flex items-center gap-2">
+            <svg
+              className="animate-spin h-4 w-4 text-blue-600"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            <span className="text-blue-700 text-sm">Loading accounts data...</span>
+          </div>
+        </div>
+      )}
       <div className="bg-white rounded-lg shadow p-4 w-full">
         {/* Personal & Account Detail */}
         <div className="flex flex-row gap-4 mb-4 w-full">
@@ -968,6 +960,7 @@ const AddClient: React.FC = () => {
                   </h2>
                   <input
                     type="number"
+                    disabled
                     {...register("ourCommission", {
                       valueAsNumber: true,
                       min: { value: 0, message: "Must be at least 0" },
@@ -985,27 +978,34 @@ const AddClient: React.FC = () => {
                     }`}
                   />
                 </div>
-                <div className=" bg-white flex justify-between items-center border-white font-normal text-xs">
+                <div className=" bg-[#0000000d] flex justify-between items-center border-white font-normal text-xs">
                   <h2 className="text-xs font-normal w-1/2 px-4 leading-8">
-                    Total
+                    Downline
                   </h2>
                   <input
-                    type="text"
-                    value={commissionCalculations.total.toFixed(2)}
-                    disabled
-                    className="w-full border-gray-300 px-4 text-xs leading-8 border-l"
+                    type="number"
+                    {...register("downlineCommission", {
+                      valueAsNumber: true,
+                      min: { value: 0, message: "Must be at least 0" },
+                      max: {
+                        value: commissionCalculations.maxOurAllowed,
+                        message: `Must be at most ${commissionCalculations.maxOurAllowed}%`,
+                      },
+                    })}
+                    min="0"
+                    max={commissionCalculations.maxOurAllowed}
+                    className={`w-full focus:outline-none px-4 text-xs leading-8 border-l ${
+                      commissionCalculations.isValidAllocation
+                        ? "border-gray-300"
+                        : "border-red-300 bg-red-50"
+                    }`}
                   />
                 </div>
                 {!commissionCalculations.isValidAllocation && (
                   <div className="bg-red-50 border border-red-200 rounded px-3 py-2 mt-2">
-                    <p className="text-red-600 text-xs">
-                      ⚠️ Invalid input! Our value must be non-negative.
-                    </p>
-                    <p className="text-red-500 text-xs mt-1">
-                      Current allocation: Upline: {commissionCalculations.upline}% + Our: {commissionCalculations.our}% = {commissionCalculations.total.toFixed(2)}%
-                    </p>
+                    
                     <p className="text-gray-500 text-xs mt-1">
-                      Note: Commission total = Upline (fixed) + Our (editable)
+                      Note: Downline (editable) should be {watch("ourCommission")}% or less
                     </p>
                   </div>
                 )}
@@ -1035,8 +1035,22 @@ const AddClient: React.FC = () => {
                   </h2>
                   <div className="w-full flex items-center">
                     <input
+                      type="text"
+                      value={partnershipCalculations.our.toFixed(2)}
+                      disabled
+                      className="w-full border-gray-300 px-4 text-xs leading-8 border-l"
+                    />
+                    <span className="ml-2 text-xs text-gray-500">%</span>
+                  </div>
+                </div>
+                <div className=" bg-[#0000000d] flex justify-between items-center border-white font-normal text-xs">
+                  <h2 className="text-xs font-normal w-1/2 px-4 leading-8">
+                    Downline
+                  </h2>
+                  <div className="w-full flex items-center">
+                    <input
                       type="number"
-                      {...register("ourPartnership", {
+                      {...register("downlinePartnership", {
                         valueAsNumber: true,
                         min: { value: 0, message: "Must be at least 0" },
                         max: {
@@ -1049,7 +1063,7 @@ const AddClient: React.FC = () => {
                             0,
                             partnershipCalculations.maxOurAllowed
                           );
-                          setValue("ourPartnership", value);
+                          setValue("downlinePartnership", value);
                         },
                       })}
                       min="0"
@@ -1063,203 +1077,14 @@ const AddClient: React.FC = () => {
                     <span className="ml-2 text-xs text-gray-500">%</span>
                   </div>
                 </div>
-                <div className=" bg-[#0000000d] flex justify-between items-center border-white font-normal text-xs">
-                  <h2 className="text-xs font-normal w-1/2 px-4 leading-8">
-                    Downline
-                  </h2>
-                  <input
-                    type="text"
-                    value={partnershipCalculations.downline.toFixed(2)}
-                    disabled
-                    className="w-full focus:outline-none border-gray-300 px-4 text-xs leading-8 border-l"
-                  />
-                </div>
-                <div className=" bg-white flex justify-between items-center border-white font-normal text-xs">
-                  <h2 className="text-xs font-normal w-1/2 px-4 leading-8">
-                    Total
-                  </h2>
-                  <input
-                    type="text"
-                    value={partnershipCalculations.total.toFixed(2)}
-                    disabled
-                    className="w-full border-gray-300 px-4 text-xs leading-8 border-l"
-                  />
-                </div>
-                {/* UX note about how values change */}
-                <div className="mt-2 mx-3 p-2 bg-gray-50 border border-gray-200 rounded text-[11px] text-gray-700">
-                  <div>
-                    <span className="font-medium">How it works</span>: "Our" is
-                    taken as a % of the downline pool.
-                  </div>
-                  <div className="mt-1">
-                    <span className="font-medium">Pool</span>:{" "}
-                    {partnershipCalculations.own}%
-                  </div>
-                  <div>
-                    <span className="font-medium">Our</span>:{" "}
-                    {ourPartnership || 0}% of pool
-                  </div>
-                  <div>
-                    <span className="font-medium">New downline</span>:{" "}
-                    {partnershipCalculations.own} − (
-                    {partnershipCalculations.own} × {ourPartnership || 0}% ÷
-                    100) = {partnershipCalculations.downline.toFixed(2)}%
-                  </div>
-                  <div className="mt-1">
-                    <span className="font-medium">Change</span>:
-                    <span
-                      className={`ml-1 ${
-                        partnershipCalculations.downline -
-                          partnershipCalculations.own <
-                        0
-                          ? "text-red-600"
-                          : "text-green-600"
-                      }`}
-                    >
-                      {partnershipCalculations.downline -
-                        partnershipCalculations.own >=
-                      0
-                        ? "+"
-                        : ""}
-                      {(
-                        partnershipCalculations.downline -
-                        partnershipCalculations.own
-                      ).toFixed(2)}
-                      %
-                    </span>
-                  </div>
-                </div>
-                {!partnershipCalculations.isValidAllocation && (
-                  <div className="bg-red-50 border border-red-200 rounded px-3 py-2 mt-2">
-                    <p className="text-red-600 text-xs">
-                      ⚠️ Invalid input! Our value must be between 0 and{" "}
-                      {partnershipCalculations.maxOurAllowed}.
-                    </p>
-                    <p className="text-red-500 text-xs mt-1">
-                      Formula: Upline ({partnershipCalculations.upline}) + Our (
-                      {partnershipCalculations.our}) + Downline (
-                      {partnershipCalculations.downline}) ={" "}
-                      {partnershipCalculations.calculatedSum} (should equal{" "}
-                      {partnershipCalculations.total})
-                    </p>
-                  </div>
-                )}
+            
               </div>
             </div>
             
            
           </React.Fragment>
         )}
-        {/* Min Max Bet */}
-        {/* {watchedValues.accountType === "Client" && (
-          <div className="mb-4">
-            <div className="bg-[#2d3e50] text-white px-2 leading-8 font-normal text-md mb-2">
-              Min Max Bet
-            </div>
-            <div className="flex flex-col">
-              <div className=" bg-[#0000000d] flex justify-between items-center border-white font-normal text-xs">
-                <h2 className="text-xs font-normal w-1/2 px-4 leading-8">
-                  {" "}
-                  Min Bet
-                </h2>
-                <div className="w-full">
-                  <input
-                    type="text"
-                    value={CONSTANTS.MIN_BET_LIMIT}
-                    disabled
-                    className="w-full border-gray-300 px-4 text-xs leading-8 border-l"
-                  />
-                  <input
-                    type="number"
-                    {...register("minBet", {
-                      valueAsNumber: true,
-                      min: { value: 0, message: "Must be at least 0" },
-                      max: { value: 100, message: "Must be at most 100" },
-                      onChange: (e) => {
-                        const value = clampValue(
-                          Number(e.target.value),
-                          0,
-                          100
-                        );
-                        setValue("minBet", value);
-                      },
-                    })}
-                    min="0"
-                    max="100"
-                    className="w-full focus:outline-none text-gray-400 border-gray-300 px-4 text-xs leading-8 border-l"
-                  />
-                </div>
-              </div>
-              <div className=" bg-white flex justify-between items-center border-white font-normal text-xs">
-                <h2 className="text-xs font-normal w-1/2 px-4 leading-8">
-                  {" "}
-                  Max Bet
-                </h2>
-                <div className="w-full">
-                  <input
-                    type="text"
-                    value={CONSTANTS.MAX_BET_LIMIT}
-                    disabled
-                    className="w-full border-gray-300 px-4 text-xs leading-8 border-l"
-                  />
-                  <input
-                    type="number"
-                    {...register("maxBet", {
-                      valueAsNumber: true,
-                      min: { value: 0, message: "Must be at least 0" },
-                      max: { value: 100, message: "Must be at most 100" },
-                      onChange: (e) => {
-                        const value = clampValue(
-                          Number(e.target.value),
-                          0,
-                          100
-                        );
-                        setValue("maxBet", value);
-                      },
-                    })}
-                    min="0"
-                    max="100"
-                    className="w-full focus:outline-none text-gray-400 border-gray-300 px-4 text-xs leading-8 border-l"
-                  />
-                </div>
-              </div>
-              <div className=" bg-[#0000000d] flex justify-between items-center border-white font-normal text-xs">
-                <h2 className="text-xs font-normal w-1/2 px-4 leading-8">
-                  {" "}
-                  Delay
-                </h2>
-                <div className="w-full">
-                  <input
-                    type="text"
-                    value={CONSTANTS.DEFAULT_DELAY}
-                    disabled
-                    className="w-full border-gray-300 px-4 text-xs leading-8 border-l"
-                  />
-                  <input
-                    type="number"
-                    {...register("delay", {
-                      valueAsNumber: true,
-                      min: { value: 0, message: "Must be at least 0" },
-                      max: { value: 100, message: "Must be at most 100" },
-                      onChange: (e) => {
-                        const value = clampValue(
-                          Number(e.target.value),
-                          0,
-                          100
-                        );
-                        setValue("delay", value);
-                      },
-                    })}
-                    min="0"
-                    max="100"
-                    placeholder={CONSTANTS.DEFAULT_DELAY.toString()}
-                    className="w-full focus:outline-none text-gray-400 border-gray-300 px-4 text-xs leading-8 border-l"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )} */}
+       
         {/* Transaction Password & Button */}
         <div className="flex justify-end">
           <div className="w-1/3">
@@ -1311,58 +1136,7 @@ const AddClient: React.FC = () => {
             </div>
           </div>
         </div>
-        {watchedValues.accountType !== "Client" && (
-          <React.Fragment>
-            {(panelCommission || panelPartnership) && (
-              <div className="my-4">
-                <div className="bg-[#2d3e50] text-white px-2 leading-8 font-normal text-md mb-2">
-                  Panel Settings Summary
-                </div>
-                <div className="bg-gray-50 p-3 rounded border text-xs">
-                  <div className="grid grid-cols-2 gap-4">
-                    {panelCommission && (
-                      <div>
-                        <span className="font-medium text-gray-700">
-                          Commission Distribution:
-                        </span>
-                          <div className="mt-1 space-y-1">
-                            <div>Upline: {commissionCalculations.upline}% (Fixed from sports settings)</div>
-                            <div>Our: {commissionCalculations.our}% (Your input)</div>
-                            <div className="border-t pt-1 px-2 py-1">
-                              Total: {commissionCalculations.total.toFixed(2)}% (Upline + Our)
-                            </div>
-                          </div>
-                      </div>
-                    )}
-                    {panelPartnership && (
-                      <div>
-                        <span className="font-medium text-gray-700">
-                          Partnership Distribution:
-                        </span>
-                        <div className="mt-1 space-y-1">
-                          <div>
-                            Upline: {partnershipCalculations.upline.toFixed(2)}%
-                          </div>
-                          <div>
-                            Your Share: {partnershipCalculations.our.toFixed(2)}
-                            %
-                          </div>
-                          <div>
-                            To Downline:{" "}
-                            {partnershipCalculations.downline.toFixed(2)}%
-                          </div>
-                          <div className="border-t pt-1">
-                            Total: {partnershipCalculations.total}%
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </React.Fragment>
-        )}
+       
       </div>
     </div>
   );

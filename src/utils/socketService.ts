@@ -1,4 +1,6 @@
 import { io, Socket } from 'socket.io-client';
+import { getDecodedTokenData, baseUrl } from '@/helper/auth';
+import toast from "react-hot-toast";
 
 /**
  * Interface for socket user information
@@ -58,8 +60,8 @@ class SocketService {
   /** Callback function for admin login notifications */
   private adminLoginCallback: ((data: any) => void) | null = null;
 
-  /** Callback function for casino join notifications */
-  private casinoJoinCallback: ((data: any) => void) | null = null;
+  /** Set to track registered event listeners to prevent duplicates */
+  private registeredListeners: Set<string> = new Set();
 
   /** Internal connection status flag */
   private _isConnected = false;
@@ -94,23 +96,42 @@ class SocketService {
    * @returns Promise that resolves when connection is established
    * @throws Error if connection fails or authentication is invalid
    */
-  connect(userId: string, userType: 'admin' | 'techadmin'): Promise<void> {
+  connect(userId: string, userType: 'admin' | 'techadmin'): Promise<boolean> {
     return new Promise((resolve, reject) => {
       let socketUrl: string = '';
       try {
-        // console.log('🔌 Starting socket connection...', { userId, userType });
+        console.log('🔌 Starting socket connection...', { userId, userType });
         
         // Disconnect existing connection if any
         this.disconnect();
+        
+        // Clear any existing listeners to prevent duplicates
+        this.registeredListeners.clear();
 
         // Create new socket connection using environment variable
-        socketUrl = import.meta.env.VITE_SERVER_URL || 'http://195.35.20.50'
+        socketUrl = 'https://api.2xbat.com'; // Hardcoded to resolve import.meta.env issues
         console.log('🔌 [DEBUG] Socket URL:', socketUrl);
         console.log('🔌 [DEBUG] Environment variables:', {
-          VITE_SERVER_URL: import.meta.env.VITE_SERVER_URL,
-          NODE_ENV: import.meta.env.NODE_ENV,
-          MODE: import.meta.env.MODE
+          VITE_SERVER_URL: 'https://api.2xbat.com', // Hardcoded
+          NODE_ENV: 'production', // Hardcoded
+          MODE: 'production' // Hardcoded
         });
+
+        // Get authentication token from cookies
+        const getAuthToken = () => {
+          if (typeof document !== 'undefined') {
+            const cookies = document.cookie.split(';');
+            const tokenCookie = cookies.find(cookie => 
+              cookie.trim().startsWith('Admin=') || 
+              cookie.trim().startsWith('TechAdmin=')
+            );
+            return tokenCookie ? tokenCookie.split('=')[1] : null;
+          }
+          return null;
+        };
+
+        const authToken = getAuthToken();
+        console.log('🔌 [DEBUG] Auth token available:', !!authToken);
         
         console.log('🔌 [DEBUG] Creating socket connection with config:', {
           socketUrl,
@@ -119,19 +140,48 @@ class SocketService {
           rememberUpgrade: false,
           timeout: 20000,
           forceNew: true,
-          secure: false,
+          secure: true,
           rejectUnauthorized: false
         });
         
-        this.socket = io(socketUrl, {
+        // Prepare socket options
+        const socketOptions: any = {
           transports: ['polling', 'websocket'],
           upgrade: true,
           rememberUpgrade: false,
           timeout: 20000,
           forceNew: true,
-          secure: false,
+          secure: true,
           rejectUnauthorized: false,
-        });
+          autoConnect: true,
+          reconnection: true,
+          reconnectionAttempts: 5,
+          reconnectionDelay: 1000,
+          reconnectionDelayMax: 5000,
+          maxReconnectionAttempts: 5,
+          withCredentials: false, // Changed to false for CORS
+          extraHeaders: {
+            'Origin': window.location.origin,
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+          }
+        };
+
+        // Add authentication if token is available
+        if (authToken) {
+          socketOptions.auth = {
+            token: authToken,
+            userId: userId,
+            userType: userType
+          };
+          socketOptions.extraHeaders = {
+            ...socketOptions.extraHeaders,
+            'Authorization': `Bearer ${authToken}`
+          };
+        }
+
+        this.socket = io(socketUrl, socketOptions);
 
         this._currentUser = { userId, userType };
         // Set initial connection state to connecting to prevent disconnected flash
@@ -162,17 +212,12 @@ class SocketService {
             timestamp: new Date().toISOString(),
           };
           console.log('🔌 [DEBUG] Emitting login event:', loginData);
-          this.socket?.emit('login', loginData);
-
-          // Listen for any event to debug
-          // this.socket?.onAny((eventName, ...args) => {
-          //   console.log('🔌 Socket received event:', eventName, args);
-          // });
+          this.socket?.emit('adminLogin', loginData);
 
           // Start heartbeat
           this.startHeartbeat();
           console.log('🔌 [DEBUG] Socket connection complete - Promise resolved');
-          resolve();
+          resolve(true);
         });
 
         // Handle connecting state
@@ -214,8 +259,29 @@ class SocketService {
             type: (error as any).type,
             socketUrl,
             userId,
-            userType
+            userType,
+            hasAuthToken: !!authToken,
+            error: error
           });
+          
+          // Check if it's a 400 error specifically
+          if ((error as any).description === 400) {
+            console.error('🔌 [DEBUG] 400 Bad Request - Possible causes:');
+            console.error('1. Missing or invalid authentication token');
+            console.error('2. Server not accepting the connection');
+            console.error('3. CORS issues');
+            console.error('4. Invalid socket configuration');
+          }
+
+          // Check if it's a CORS error
+          if (error.message.includes('CORS') || error.message.includes('cross-origin')) {
+            console.error('🔌 [DEBUG] CORS Error detected - Possible solutions:');
+            console.error('1. Server needs to allow localhost:3005 in CORS policy');
+            console.error('2. Try using withCredentials: false');
+            console.error('3. Check if server supports preflight OPTIONS requests');
+            console.error('4. Verify Origin header is correct');
+          }
+          
           this._isConnected = false;
           reject(error);
         });
@@ -227,7 +293,18 @@ class SocketService {
             socketId: this.socket?.id,
             currentUser: this._currentUser
           });
-          this.handleForceLogout(data);
+          
+          // Only show notification if we have a current user
+          if (this._currentUser) {
+            // Show notification to user
+            toast.error(data.message || "You have been logged out from another device", {
+              duration: 5000,
+            });
+            
+            this.handleForceLogout(data);
+          } else {
+            console.log('🚨 [DEBUG] Force logout ignored - no current user');
+          }
         });
 
         // Admin login notification event
@@ -240,19 +317,6 @@ class SocketService {
           // You can add a callback for admin login notifications if needed
           if (this.adminLoginCallback) {
             this.adminLoginCallback(data);
-          }
-        });
-
-        // Casino join event handler
-        this.socket.on('joinCasino', (data: any) => {
-          console.log('🎰 [DEBUG] Join casino event received:', {
-            data,
-            socketId: this.socket?.id,
-            currentUser: this._currentUser
-          });
-          // Handle casino join logic here
-          if (this.casinoJoinCallback) {
-            this.casinoJoinCallback(data);
           }
         });
 
@@ -314,7 +378,7 @@ class SocketService {
         // Connection timeout
         setTimeout(() => {
           if (!this._isConnected) {
-            console.error('🔌 [DEBUG] Socket connection timeout after 10 seconds', {
+            console.error('🔌 [DEBUG] Socket connection timeout after 20 seconds', {
               socketId: this.socket?.id,
               userId,
               userType,
@@ -322,7 +386,7 @@ class SocketService {
             });
             reject(new Error('Socket connection timeout'));
           }
-        }, 10000);
+        }, 20000);
 
       } catch (error) {
         console.error('🔌 [DEBUG] Socket connection failed:', {
@@ -345,11 +409,14 @@ class SocketService {
    */
   disconnect(): void {
     if (this.socket) {
-      // console.log('🔌 Disconnecting socket...');
+      console.log('🔌 Disconnecting socket...');
+      
+      // Clear registered listeners to prevent duplicates on reconnect
+      this.registeredListeners.clear();
       
       // Emit logout event before disconnecting
       if (this._currentUser) {
-        this.socket.emit('logout', {
+        this.socket.emit('adminLogout', {
           userId: this._currentUser.userId,
           userType: this._currentUser.userType,
           socketId: this.socket.id,
@@ -459,18 +526,6 @@ class SocketService {
   }
 
   /**
-   * Sets callback function for casino join notifications
-   * 
-   * Registers a callback that will be executed when the server sends
-   * casino join events.
-   * 
-   * @param callback - Function to execute when casino join event is received
-   */
-  onCasinoJoin(callback: (data: any) => void): void {
-    this.casinoJoinCallback = callback;
-  }
-
-  /**
    * Handles force logout events from server
    * 
    * Processes force logout data, disconnects socket, and executes
@@ -498,19 +553,19 @@ class SocketService {
   private handleReconnection(): void {
     if (this.reconnectAttempts < this.maxReconnectAttempts && this._currentUser) {
       this.reconnectAttempts++;
-      // console.log(`🔌 Attempting reconnection ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
+      console.log(`🔌 Attempting reconnection ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
       
       setTimeout(() => {
         if (this._currentUser) {
           this.connect(this._currentUser.userId, this._currentUser.userType)
             .catch((error) => {
-              // console.error('🔌 Reconnection failed:', error);
+              console.error('🔌 Reconnection failed:', error);
               this.handleReconnection();
             });
         }
       }, this.reconnectDelay * this.reconnectAttempts);
     } else {
-      // console.error('🔌 Max reconnection attempts reached');
+      console.error('🔌 Max reconnection attempts reached');
       this._currentUser = null;
     }
   }
@@ -556,7 +611,28 @@ class SocketService {
     if (this.socket?.connected) {
       this.socket.emit(event, data);
     } else {
-      console.warn('🔌 Cannot emit event: socket not connected');
+      console.warn('🔌 Cannot emit event: socket not connected', {
+        event,
+        data,
+        socketExists: !!this.socket,
+        socketConnected: this.socket?.connected,
+        currentUser: this._currentUser
+      });
+      
+      // Try to reconnect if we have user data
+      if (this._currentUser) {
+        console.log('🔌 Attempting to reconnect for event emission...');
+        this.connect(this._currentUser.userId, this._currentUser.userType)
+          .then(() => {
+            console.log('🔌 Reconnected, retrying event emission');
+            if (this.socket?.connected) {
+              this.socket.emit(event, data);
+            }
+          })
+          .catch((error) => {
+            console.error('🔌 Failed to reconnect for event emission:', error);
+          });
+      }
     }
   }
 
@@ -564,13 +640,22 @@ class SocketService {
    * Listens to custom events from server
    * 
    * Registers event listener for custom events from the server.
+   * Prevents duplicate listeners by tracking registered events.
    * 
    * @param event - Event name to listen for
    * @param callback - Function to execute when event is received
    */
   on(event: string, callback: (...args: any[]) => void): void {
     if (this.socket) {
+      // Check if listener is already registered to prevent duplicates
+      if (this.registeredListeners.has(event)) {
+        console.log(`🔌 [DEBUG] Event listener for '${event}' already registered, skipping duplicate`);
+        return;
+      }
+      
       this.socket.on(event, callback);
+      this.registeredListeners.add(event);
+      console.log(`🔌 [DEBUG] Registered event listener for '${event}'`);
     }
   }
 
@@ -578,13 +663,22 @@ class SocketService {
    * Removes event listener
    * 
    * Unregisters event listener for custom events.
+   * Updates the registered listeners tracking.
    * 
    * @param event - Event name to stop listening for
    * @param callback - Optional specific callback to remove
    */
   off(event: string, callback?: (...args: any[]) => void): void {
     if (this.socket) {
-      this.socket.off(event, callback);
+      if (callback) {
+        this.socket.off(event, callback);
+      } else {
+        this.socket.off(event);
+      }
+      
+      // Remove from registered listeners tracking
+      this.registeredListeners.delete(event);
+      console.log(`🔌 [DEBUG] Removed event listener for '${event}'`);
     }
   }
 
@@ -602,8 +696,8 @@ class SocketService {
       socketConnected: this.socket?.connected,
       internalConnected: this._isConnected,
       currentUser: this._currentUser,
-      serverUrl: import.meta.env.VITE_SERVER_URL,
-      allEnvVars: import.meta.env
+      serverUrl: 'https://api.2xbat.com', // Hardcoded
+      allEnvVars: 'production' // Hardcoded to resolve import.meta.env issues
     });
   }
 
@@ -639,6 +733,51 @@ class SocketService {
       timestamp: new Date().toISOString()
     };
     this.handleForceLogout(testData);
+  }
+
+  /**
+   * Ensure socket is connected before emitting
+   * 
+   * Checks if socket is connected and attempts to connect if not.
+   * Returns a promise that resolves when socket is ready.
+   * 
+   * @returns Promise that resolves when socket is connected
+   */
+  async ensureConnected(): Promise<boolean> {
+    if (this.socket?.connected) {
+      return true;
+    }
+
+    if (!this._currentUser) {
+      console.warn('🔌 Cannot ensure connection: no current user');
+      return false;
+    }
+
+    try {
+      await this.connect(this._currentUser.userId, this._currentUser.userType);
+      return this.socket?.connected || false;
+    } catch (error) {
+      console.error('🔌 Failed to ensure connection:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Emit event with connection guarantee
+   * 
+   * Ensures socket is connected before emitting the event.
+   * 
+   * @param event - Event name to emit
+   * @param data - Data to send with the event
+   * @returns Promise that resolves when event is emitted
+   */
+  async emitWithConnection(event: string, data: any): Promise<void> {
+    const isConnected = await this.ensureConnected();
+    if (isConnected) {
+      this.socket?.emit(event, data);
+    } else {
+      throw new Error('Failed to establish socket connection');
+    }
   }
 }
 

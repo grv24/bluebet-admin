@@ -86,6 +86,32 @@ export const getCurrentSportsSettings = async ({
   }
 };
 
+export const getAccounts = async ({
+  token,
+  userId,
+}: {
+  token: string;
+  userId: string;
+}) => {
+  try {
+    const response = await fetch(
+      `${SERVER_URL}/api/v1/users/admins/get-accounts/${userId}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.json();
+  } catch (error) {
+    console.error("Error getting accounts:", error);
+    throw error;
+  }
+};
+
 export const getDownlineList = async ({
   token,
   userId,
