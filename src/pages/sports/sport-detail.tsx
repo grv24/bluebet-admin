@@ -150,6 +150,7 @@ const SportDetail: React.FC = () => {
             market={market}
             eventId={eventId}
             sportId={sportId}
+            downlinesBets={downlinesBets}
           />
         );
       
