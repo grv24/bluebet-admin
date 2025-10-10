@@ -141,13 +141,13 @@ const Header: React.FC = () => {
           <div className="absolute left-0 top-2 w-2 h-2 bg-blue-500 rounded-full transform -translate-x-1"></div>
           <div className="flex items-center py-1 hover:bg-gray-100 ml-4">
             <span onClick={() => { 
-              navigate(`/sport-details/${sportName.toLowerCase()}/${market.gmid}`, {
+              navigate(`/sport-details/${sportName.toLowerCase()}/${(market as any).eventId || market.name}`, {
                 state: {
                   competition: competitionName,
                   date: dateName,
                   match: matchName,
                   market: market.name,
-                  sportId:market.etid
+                  // sportId:market.etid
                 }
               }); 
               setIsSportsOpen(false); 

@@ -24,9 +24,13 @@ import Tennis from "./tennis";
 const SportDetail: React.FC = () => {
   // Extract sport name and event ID from URL parameters
   const { sportId: sportName, eventId } = useParams();
+
+console.log(sportName,'sportName')
   
   // Get navigation state data passed from Header component
   const { competition, date, match, market, sportId } = useLocation().state || {};
+
+ 
 
   // Fetch live match odds data using React Query
   const {
@@ -34,7 +38,7 @@ const SportDetail: React.FC = () => {
     isLoading,
     error,
   } = useLiveMatchOdds({
-    sportId: sportId || "",
+    sportId: sportName || "",
     eventId: eventId || "",
   });
 

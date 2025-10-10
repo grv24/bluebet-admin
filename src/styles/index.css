@@ -9,6 +9,14 @@
   --bg-secondary85: #2c3e50d9;
   --text-secondary: #fff;
   --bg-aside-menu: #bbbbbb;
+  --back: #72bbef;
+  --back-hover: #4fa1dc;
+  --back1: #72bbefcc;
+  --back2: #72bbefa3;
+  --lay: #f994ba;
+  --lay-hover: #e16f9a;
+  --lay1: #f994bacc;
+  --lay2: #f994baa3;
 }
 body {
   font-family: "Roboto Condensed", sans-serif;
