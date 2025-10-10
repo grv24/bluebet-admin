@@ -39,13 +39,27 @@ const SportDetail: React.FC = () => {
   ]);
   const authToken = cookies[baseUrl.includes("techadmin") ? "TechAdmin" : "Admin"];
 
+  // Map sport names to API-compatible names
+  const getApiSportName = (sport: string) => {
+    switch (sport?.toLowerCase()) {
+      case "football":
+        return "soccer";
+      case "cricket":
+        return "cricket";
+      case "tennis":
+        return "tennis";
+      default:
+        return sport?.toLowerCase() || "";
+    }
+  };
+
   // Fetch live match odds data using React Query
   const {
     data: matchOdds,
     isLoading,
     error,
   } = useLiveMatchOdds({
-    sportId: sportName || "",
+    sportId: getApiSportName(sportName || ""),
     eventId: eventId || "",
   });
 
@@ -122,6 +136,7 @@ const SportDetail: React.FC = () => {
             market={market}
             eventId={eventId}
             sportId={sportId}
+            downlinesBets={downlinesBets}
           />
         );
       
