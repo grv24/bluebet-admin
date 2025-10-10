@@ -1,5 +1,8 @@
 import React from "react";
 import { useParams, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { useCookies } from "react-cookie";
+import { baseUrl, SERVER_URL } from "@/helper/auth";
 import useLiveMatchOdds from "@/hooks/useLiveMatchOdds";
 import Cricket from "./cricket";
 import Football from "./football";
@@ -25,12 +28,16 @@ const SportDetail: React.FC = () => {
   // Extract sport name and event ID from URL parameters
   const { sportId: sportName, eventId } = useParams();
 
-console.log(sportName,'sportName')
+  console.log(sportName,'sportName')
   
   // Get navigation state data passed from Header component
   const { competition, date, match, market, sportId } = useLocation().state || {};
 
- 
+  // Get authentication token from cookies
+  const [cookies] = useCookies([
+    baseUrl.includes("techadmin") ? "TechAdmin" : "Admin",
+  ]);
+  const authToken = cookies[baseUrl.includes("techadmin") ? "TechAdmin" : "Admin"];
 
   // Fetch live match odds data using React Query
   const {
@@ -42,21 +49,50 @@ console.log(sportName,'sportName')
     eventId: eventId || "",
   });
 
+  // Fetch downlines bets data
+  const {
+    data: downlinesBets,
+    isLoading: isLoadingBets,
+    error: betsError,
+  } = useQuery({
+    queryKey: ["downlinesBets", { eventId, authToken }],
+    queryFn: async () => {
+      if (!eventId || !authToken) return null;
+      
+      const response = await fetch(`${SERVER_URL}/api/v1/sports/user-event-bets/${eventId}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch downlines bets: ${response.statusText}`);
+      }
+      
+      return response.json();
+    },
+    enabled: !!eventId && !!authToken,
+    refetchInterval: 5000, // Refetch every 5 seconds for real-time updates
+  });
+
   // Show loading state while fetching data
-  if (isLoading) {
+  if (isLoading || isLoadingBets) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading match odds...</div>
+        <div className="text-lg">Loading match data...</div>
       </div>
     );
   }
 
   // Show error state if API call fails
-  if (error) {
+  if (error || betsError) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-lg text-red-500">
-          Error loading match odds: {error.message}
+          Error loading data: {error?.message || betsError?.message}
         </div>
       </div>
     );
@@ -112,6 +148,7 @@ console.log(sportName,'sportName')
             market={market}
             eventId={eventId}
             sportId={sportId}
+            downlinesBets={downlinesBets}
           />
         );
       
