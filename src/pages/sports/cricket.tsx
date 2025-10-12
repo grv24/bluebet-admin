@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import { useCookies } from "react-cookie";
+import { baseUrl, SERVER_URL } from "@/helper/auth";
 
 interface CricketProps {
   matchOdds: any;
@@ -185,19 +187,77 @@ const Cricket: React.FC<CricketProps> = ({
   const [showBetLockModal, setShowBetLockModal] = useState<boolean>(false);
   const [showViewMoreModal, setShowViewMoreModal] = useState<boolean>(false);
   const [showMyBetsModal, setShowMyBetsModal] = useState<boolean>(false);
+  const [showBetDetailsModal, setShowBetDetailsModal] = useState<boolean>(false);
+  const [betDetails, setBetDetails] = useState<any>(null);
+  const [loadingBetDetails, setLoadingBetDetails] = useState<boolean>(false);
+  const [selectedResult, setSelectedResult] = useState<'win' | 'loss' | null>(null);
+  const [resultValue, setResultValue] = useState<string>('');
+  const [isProcessingBet, setIsProcessingBet] = useState<boolean>(false);
   const normalizedMatchOdds = matchOdds?.data?.data?.matchOdds || [];
   const normalizedBookMakerOdds = matchOdds?.data?.data?.bookMakerOdds || [];
   const normalizedOtherMarketOdds =
     matchOdds?.data?.data?.otherMarketOdds || [];
   const fancyOdds = matchOdds?.data?.data?.fancyOdds || [];
 
+  // Get authentication token from cookies
+  const [cookies] = useCookies([
+    baseUrl.includes("techadmin") ? "TechAdmin" : "Admin",
+  ]);
+  const authToken = cookies[baseUrl.includes("techadmin") ? "TechAdmin" : "Admin"];
+
   // Log downlines bets data for debugging
   console.log("Downlines Bets:", downlinesBets);
 
   // Helper functions for bet actions
-  const handleProceedBet = (betId: string) => {
-    console.log("Proceed bet:", betId);
-    // TODO: Implement proceed bet logic
+  const handleProceedBet = async (betId: string) => {
+    if (!selectedResult || !resultValue.trim()) {
+      alert("Please select result type and enter result value");
+      return;
+    }
+
+    setIsProcessingBet(true);
+    try {
+      const response = await fetch(`${SERVER_URL}/api/sports/bet/${betId}`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: selectedResult === 'win' ? 'won' : 'lost',
+          result: {
+            winner: resultValue,
+            score: "", // You can add score input if needed
+            outcome: `${resultValue} ${selectedResult === 'win' ? 'wins' : 'loses'}`
+          },
+          betData: {
+            profit: selectedResult === 'win' ? betDetails.betProfit : 0,
+            stake: betDetails.betAmount
+          }
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to proceed bet: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        alert(`Bet ${selectedResult === 'win' ? 'won' : 'lost'} successfully!`);
+        setShowBetDetailsModal(false);
+        setSelectedResult(null);
+        setResultValue('');
+        // TODO: Refresh bet list or update state
+      } else {
+        alert(`Failed to proceed bet: ${data.message}`);
+      }
+    } catch (error) {
+      console.error("Error proceeding bet:", error);
+      alert("Error proceeding bet. Please try again.");
+    } finally {
+      setIsProcessingBet(false);
+    }
   };
 
   const handleDeleteBet = (betId: string) => {
@@ -208,6 +268,42 @@ const Cricket: React.FC<CricketProps> = ({
   const handleRevertBet = (betId: string) => {
     console.log("Revert bet:", betId);
     // TODO: Implement revert bet logic
+  };
+
+  // Fetch bet details by betId
+  const fetchBetDetails = async (betId: string) => {
+    if (!authToken) {
+      console.error("No auth token available");
+      return;
+    }
+
+    setLoadingBetDetails(true);
+    try {
+      const response = await fetch(`${SERVER_URL}/api/v1/sports/bet/${betId}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch bet details: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setBetDetails(data.data);
+        setShowBetDetailsModal(true);
+      } else {
+        console.error("Failed to fetch bet details:", data.message);
+      }
+    } catch (error) {
+      console.error("Error fetching bet details:", error);
+    } finally {
+      setLoadingBetDetails(false);
+    }
   };
 
   // Filter bets based on status
@@ -1557,58 +1653,59 @@ const Cricket: React.FC<CricketProps> = ({
                     Settled ({settledBets.length})
                   </button>
                 </div>
-                <div className="space-y-1 max-h-60 overflow-y-auto">
+                <div className="space-y-3 max-h-60 overflow-y-auto">
                   {(activeBetTab === 'matched' ? matchedBets : 
                     activeBetTab === 'unmatched' ? unmatchedBets : 
                     settledBets).map((bet: any, index: number) => (
-                    <div key={bet.betId} className="p-2 bg-white rounded text-xs border">
-                      <div className="flex justify-between items-start mb-1">
+                    <div key={bet.betId} className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200">
+                      <div className="flex justify-between items-start mb-3">
                         <div className="flex-1">
-                          <div className="font-medium text-gray-800">{bet.rname}</div>
-                          <div className="text-gray-500 text-[10px]">{bet.market}</div>
+                          <div className="font-semibold text-gray-800 text-sm">{bet.rname}</div>
+                          <div className="text-gray-500 text-xs mt-1">{bet.market}</div>
                         </div>
                         <div className="text-right">
-                          <div className={`px-2 py-1 rounded text-[10px] ${
-                            bet.betStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            bet.betStatus === 'won' ? 'bg-green-100 text-green-800' :
+                          <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            bet.betStatus === 'pending' ? 'bg-amber-100 text-amber-800' :
+                            bet.betStatus === 'won' ? 'bg-emerald-100 text-emerald-800' :
                             bet.betStatus === 'lost' ? 'bg-red-100 text-red-800' :
                             bet.betStatus === 'settled' ? 'bg-blue-100 text-blue-800' :
                             'bg-gray-100 text-gray-800'
                           }`}>
-                            {bet.betStatus}
+                            {bet.betStatus.toUpperCase()}
                           </div>
                         </div>
                       </div>
-                      <div className="flex justify-between items-center text-[10px]">
-                        <div>
-                          <span className="text-gray-500">Amount:</span>
-                          <span className="font-medium ml-1">₹{bet.betAmount}</span>
+                      <div className="grid grid-cols-3 gap-2 mb-3">
+                        <div className="text-center">
+                          <div className="text-gray-500 text-xs">Amount</div>
+                          <div className="font-bold text-sm text-gray-800">₹{bet.betAmount}</div>
                         </div>
-                        <div>
-                          <span className="text-gray-500">Profit:</span>
-                          <span className="font-medium ml-1 text-green-600">₹{bet.betProfit}</span>
+                        <div className="text-center">
+                          <div className="text-gray-500 text-xs">Profit</div>
+                          <div className="font-bold text-sm text-emerald-600">₹{bet.betProfit}</div>
                         </div>
-                        <div>
-                          <span className="text-gray-500">Loss:</span>
-                          <span className="font-medium ml-1 text-red-600">₹{bet.betLoss}</span>
+                        <div className="text-center">
+                          <div className="text-gray-500 text-xs">Loss</div>
+                          <div className="font-bold text-sm text-red-600">₹{bet.betLoss}</div>
                         </div>
                       </div>
-                      <div className="text-[9px] text-gray-400 mt-1">
+                      <div className="text-xs text-gray-400 mb-3 text-center">
                         {new Date(bet.createdAt).toLocaleString()}
                       </div>
                       {/* Action Buttons */}
-                      <div className="flex gap-1 mt-2">
+                      <div className="flex gap-1 mt-3">
                         {activeBetTab === 'matched' && (
                           <>
                             <button
-                              onClick={() => handleProceedBet(bet.betId)}
-                              className="px-2 py-1 bg-green-500 text-white rounded text-[9px] hover:bg-green-600"
+                              onClick={() => fetchBetDetails(bet.betId)}
+                              disabled={loadingBetDetails}
+                              className="px-3 py-1.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg text-[10px] font-medium hover:from-green-600 hover:to-green-700 disabled:opacity-50 transition-all duration-200 shadow-sm hover:shadow-md"
                             >
-                              Proceed
+                              {loadingBetDetails ? "Loading..." : "Proceed"}
                             </button>
                             <button
                               onClick={() => handleDeleteBet(bet.betId)}
-                              className="px-2 py-1 bg-red-500 text-white rounded text-[9px] hover:bg-red-600"
+                              className="px-3 py-1.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg text-[10px] font-medium hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-sm hover:shadow-md"
                             >
                               Delete
                             </button>
@@ -1617,7 +1714,7 @@ const Cricket: React.FC<CricketProps> = ({
                         {activeBetTab === 'settled' && (
                           <button
                             onClick={() => handleRevertBet(bet.betId)}
-                            className="px-2 py-1 bg-orange-500 text-white rounded text-[9px] hover:bg-orange-600"
+                            className="px-3 py-1.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg text-[10px] font-medium hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-sm hover:shadow-md"
                           >
                             Revert
                           </button>
@@ -1637,7 +1734,7 @@ const Cricket: React.FC<CricketProps> = ({
       </div>
 
       {/* User Book Modal */}
-      {showUserBookModal && (
+      {/* {showUserBookModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96 max-w-[90vw]">
             <div className="flex justify-between items-center mb-4">
@@ -1654,10 +1751,10 @@ const Cricket: React.FC<CricketProps> = ({
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Bet Lock Modal */}
-      {showBetLockModal && (
+      {/* {showBetLockModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96 max-w-[90vw]">
             <div className="flex justify-between items-center mb-4">
@@ -1711,10 +1808,10 @@ const Cricket: React.FC<CricketProps> = ({
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* My Bets Modal */}
-      {showMyBetsModal && (
+      {/* {showMyBetsModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg w-[95vw] max-w-7xl h-[90vh] overflow-hidden flex flex-col">
             <div className="flex justify-between items-center p-4 border-b">
@@ -1852,10 +1949,10 @@ const Cricket: React.FC<CricketProps> = ({
             )}
           </div>
         </div>
-      )}
+      )} */}
 
       {/* View More Modal */}
-      {showViewMoreModal && (
+      {/* {showViewMoreModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96 max-w-[90vw]">
             <div className="flex justify-between items-center mb-4">
@@ -1879,6 +1976,313 @@ const Cricket: React.FC<CricketProps> = ({
             </div>
             <div className="text-center text-gray-500 py-8">
               No records found
+            </div>
+          </div>
+        </div>
+      )} */}
+
+      {/* Bet Details Modal */}
+      {showBetDetailsModal && betDetails && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold">Bet Details</h2>
+                  <p className="text-blue-100 text-sm mt-1">Complete bet information and user details</p>
+                </div>
+                <button
+                  onClick={() => setShowBetDetailsModal(false)}
+                  className="text-white/80 hover:text-white hover:bg-white/20 rounded-full p-2 transition-all duration-200"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[calc(95vh-120px)]">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Bet Information */}
+              <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border border-gray-100 shadow-sm">
+                <div className="flex items-center mb-6">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-800">Bet Information</h3>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                    <span className="text-gray-600 font-medium">Bet ID</span>
+                    <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{betDetails.betId}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                    <span className="text-gray-600 font-medium">Event ID</span>
+                    <span className="font-medium text-gray-800">{betDetails.eventId}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                    <span className="text-gray-600 font-medium">Status</span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                      betDetails.status === 'pending' ? 'bg-amber-100 text-amber-800' :
+                      betDetails.status === 'won' ? 'bg-emerald-100 text-emerald-800' :
+                      betDetails.status === 'lost' ? 'bg-red-100 text-red-800' :
+                      betDetails.status === 'settled' ? 'bg-blue-100 text-blue-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {betDetails.status.toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                    <span className="text-gray-600 font-medium">Bet Amount</span>
+                    <span className="font-bold text-lg text-gray-800">₹{betDetails.betAmount}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                    <span className="text-gray-600 font-medium">Bet Rate</span>
+                    <span className="font-semibold text-gray-800">{betDetails.betRate}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                    <span className="text-gray-600 font-medium">Potential Profit</span>
+                    <span className="font-bold text-lg text-emerald-600">₹{betDetails.betProfit}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                    <span className="text-gray-600 font-medium">Potential Loss</span>
+                    <span className="font-bold text-lg text-red-600">₹{betDetails.betLoss}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                    <span className="text-gray-600 font-medium">Created</span>
+                    <span className="text-sm text-gray-700">{new Date(betDetails.createdAt).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-gray-600 font-medium">Updated</span>
+                    <span className="text-sm text-gray-700">{new Date(betDetails.updatedAt).toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* User Information */}
+              <div className="bg-gradient-to-br from-emerald-50 to-white rounded-xl p-6 border border-emerald-100 shadow-sm">
+                <div className="flex items-center mb-6">
+                  <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center mr-3">
+                    <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-800">User Information</h3>
+                </div>
+                {betDetails.userDetails && (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                      <span className="text-gray-600 font-medium">User ID</span>
+                      <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{betDetails.userDetails.id}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                      <span className="text-gray-600 font-medium">Name</span>
+                      <span className="font-semibold text-gray-800">{betDetails.userDetails.userName}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                      <span className="text-gray-600 font-medium">Login ID</span>
+                      <span className="font-medium text-gray-800">{betDetails.userDetails.loginId}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                      <span className="text-gray-600 font-medium">Mobile</span>
+                      <span className="font-medium text-gray-800">{betDetails.userDetails.mobile}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                      <span className="text-gray-600 font-medium">Balance</span>
+                      <span className="font-bold text-lg text-emerald-600">₹{betDetails.userDetails.balance}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                      <span className="text-gray-600 font-medium">Exposure</span>
+                      <span className="font-bold text-lg text-orange-600">₹{betDetails.userDetails.exposure}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                      <span className="text-gray-600 font-medium">Status</span>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        betDetails.userDetails.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {betDetails.userDetails.isActive ? 'ACTIVE' : 'INACTIVE'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-gray-600 font-medium">Upline ID</span>
+                      <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{betDetails.userDetails.uplineId}</span>
+                    </div>
+                  </div>
+                )}
+                </div>
+              </div>
+
+              {/* Technical Information */}
+              <div className="mt-8 bg-gradient-to-br from-purple-50 to-white rounded-xl p-6 border border-purple-100 shadow-sm">
+                <div className="flex items-center mb-6">
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-800">Technical Information</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600 font-medium">IP Address</span>
+                    <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{betDetails.ipAddress}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600 font-medium">User Agent</span>
+                    <span className="font-medium text-xs truncate max-w-xs bg-gray-100 px-2 py-1 rounded" title={betDetails.userAgent}>
+                      {betDetails.userAgent}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Raw Bet Data */}
+              {betDetails.rawBetData && (
+                <div className="mt-8 bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border border-gray-100 shadow-sm">
+                  <div className="flex items-center mb-6">
+                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
+                      <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-800">Raw Bet Data</h3>
+                  </div>
+                  <div className="bg-gray-900 p-4 rounded-lg">
+                    <pre className="text-xs text-gray-300 overflow-x-auto font-mono">
+                      {JSON.stringify(betDetails.rawBetData, null, 2)}
+                    </pre>
+                  </div>
+                </div>
+              )}
+
+              {/* Bet Result Section */}
+              {betDetails.status === 'pending' && (
+                <div className="mt-8 bg-gradient-to-br from-blue-50 to-white rounded-xl p-6 border border-blue-100 shadow-sm">
+                  <div className="flex items-center mb-6">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-800">Declare Bet Result</h3>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    {/* Result Type Selection */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-3">Select Result</label>
+                      <div className="flex gap-4">
+                        <label className="flex items-center cursor-pointer">
+                          <input
+                            type="radio"
+                            name="result"
+                            value="win"
+                            checked={selectedResult === 'win'}
+                            onChange={(e) => setSelectedResult(e.target.value as 'win')}
+                            className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 focus:ring-green-500"
+                          />
+                          <span className="ml-2 text-sm font-medium text-gray-700 flex items-center">
+                            <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                            Win
+                          </span>
+                        </label>
+                        <label className="flex items-center cursor-pointer">
+                          <input
+                            type="radio"
+                            name="result"
+                            value="loss"
+                            checked={selectedResult === 'loss'}
+                            onChange={(e) => setSelectedResult(e.target.value as 'loss')}
+                            className="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 focus:ring-red-500"
+                          />
+                          <span className="ml-2 text-sm font-medium text-gray-700 flex items-center">
+                            <span className="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                            Loss
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Result Value Input */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Result Value <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={resultValue}
+                        onChange={(e) => setResultValue(e.target.value)}
+                        placeholder="Enter result value (e.g., Team A, Yes, 150, etc.)"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Enter the actual result that occurred for this bet
+                      </p>
+                    </div>
+
+                    {/* Preview */}
+                    {selectedResult && resultValue && (
+                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Result Preview:</h4>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            selectedResult === 'win' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {selectedResult.toUpperCase()}
+                          </span>
+                          <span className="text-sm text-gray-600">-</span>
+                          <span className="text-sm font-medium text-gray-800">{resultValue}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
+                <button
+                  onClick={() => {
+                    setShowBetDetailsModal(false);
+                    setSelectedResult(null);
+                    setResultValue('');
+                  }}
+                  className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all duration-200 shadow-sm hover:shadow-md"
+                >
+                  Close
+                </button>
+                {betDetails.status === 'pending' && (
+                  <>
+                    <button
+                      onClick={() => handleProceedBet(betDetails.betId)}
+                      disabled={!selectedResult || !resultValue.trim() || isProcessingBet}
+                      className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl font-medium hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
+                    >
+                      {isProcessingBet ? "Processing..." : "Proceed Bet"}
+                    </button>
+                    <button
+                      onClick={() => handleDeleteBet(betDetails.betId)}
+                      className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                    >
+                      Delete Bet
+                    </button>
+                  </>
+                )}
+                {betDetails.status === 'settled' && (
+                  <button
+                    onClick={() => handleRevertBet(betDetails.betId)}
+                    className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl font-medium hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
+                    Revert Bet
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

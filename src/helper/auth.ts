@@ -355,7 +355,7 @@ export const setDirectCookie = (name: string, value: string, maxAgeInSeconds: nu
 
 export const getDirectCookie = (name: string): string | null => {
   const cookies = document.cookie.split(';');
-  for (let cookie of cookies) {
+  for (const cookie of cookies) {
     const [cookieName, cookieValue] = cookie.trim().split('=');
     if (cookieName === name) {
       return cookieValue;

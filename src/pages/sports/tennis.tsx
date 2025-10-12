@@ -1132,7 +1132,7 @@ const Tennis: React.FC<TennisProps> = ({
       </div>
 
       {/* User Book Modal */}
-      {showUserBookModal && (
+      {/* {showUserBookModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96 max-w-[90vw]">
             <div className="flex justify-between items-center mb-4">
@@ -1149,10 +1149,10 @@ const Tennis: React.FC<TennisProps> = ({
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Bet Lock Modal */}
-      {showBetLockModal && (
+      {/* {showBetLockModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96 max-w-[90vw]">
             <div className="flex justify-between items-center mb-4">
@@ -1208,10 +1208,10 @@ const Tennis: React.FC<TennisProps> = ({
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* My Bets Modal */}
-      {showMyBetsModal && (
+      {/* {showMyBetsModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg w-[95vw] max-w-7xl h-[90vh] overflow-hidden flex flex-col">
             <div className="flex justify-between items-center p-4 border-b">
@@ -1393,10 +1393,10 @@ const Tennis: React.FC<TennisProps> = ({
             )}
           </div>
         </div>
-      )}
+      )} */}
 
       {/* View More Modal */}
-      {showViewMoreModal && (
+      {/* {showViewMoreModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96 max-w-[90vw]">
             <div className="flex justify-between items-center mb-4">
@@ -1423,7 +1423,7 @@ const Tennis: React.FC<TennisProps> = ({
             </div>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };
