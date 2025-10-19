@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useCookies } from "react-cookie";
 import { baseUrl, SERVER_URL } from "@/helper/auth";
+import toast from "react-hot-toast";
 
 interface CricketProps {
   matchOdds: any;
@@ -176,7 +177,7 @@ const Cricket: React.FC<CricketProps> = ({
   const [showBookSummary, setShowBookSummary] = useState<boolean>(false);
   const [showScoreCard, setShowScoreCard] = useState<boolean>(false);
   const [showMyBets, setShowMyBets] = useState<boolean>(false);
-  const [activeBetTab, setActiveBetTab] = useState<'matched' | 'unmatched' | 'settled'>('matched');
+  const [activeBetTab, setActiveBetTab] = useState<'matched' | 'settled'>('matched');
   const [showOddEven, setShowOddEven] = useState<boolean>(false);
   const [showTournamentWinner, setShowTournamentWinner] =
     useState<boolean>(false);
@@ -211,13 +212,13 @@ const Cricket: React.FC<CricketProps> = ({
   // Helper functions for bet actions
   const handleProceedBet = async (betId: string) => {
     if (!selectedResult || !resultValue.trim()) {
-      alert("Please select result type and enter result value");
+      toast.error("Please select result type and enter result value");
       return;
     }
 
     setIsProcessingBet(true);
     try {
-      const response = await fetch(`${SERVER_URL}/api/sports/bet/${betId}`, {
+      const response = await fetch(`https://api.2xbat.com/api/v1/sports/bet/${betId}`, {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${authToken}`,
@@ -244,17 +245,17 @@ const Cricket: React.FC<CricketProps> = ({
 
       const data = await response.json();
       if (data.success) {
-        alert(`Bet ${selectedResult === 'win' ? 'won' : 'lost'} successfully!`);
+        toast.success(`Bet ${selectedResult === 'win' ? 'won' : 'lost'} successfully!`);
         setShowBetDetailsModal(false);
         setSelectedResult(null);
         setResultValue('');
         // TODO: Refresh bet list or update state
       } else {
-        alert(`Failed to proceed bet: ${data.message}`);
+        toast.error(`Failed to proceed bet: ${data.message}`);
       }
     } catch (error) {
       console.error("Error proceeding bet:", error);
-      alert("Error proceeding bet. Please try again.");
+      toast.error("Error proceeding bet. Please try again.");
     } finally {
       setIsProcessingBet(false);
     }
@@ -265,9 +266,36 @@ const Cricket: React.FC<CricketProps> = ({
     // TODO: Implement delete bet logic
   };
 
-  const handleRevertBet = (betId: string) => {
-    console.log("Revert bet:", betId);
-    // TODO: Implement revert bet logic
+  const handleReopenBet = async (betId: string) => {
+    setIsProcessingBet(true);
+    try {
+      const response = await fetch(`https://api.2xbat.com/api/v1/sports/bets/reopen/${betId}`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to reopen bet: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success("Bet reopened successfully!");
+        setShowBetDetailsModal(false);
+        // TODO: Refresh bet list or update state
+      } else {
+        toast.error(`Failed to reopen bet: ${data.message}`);
+      }
+    } catch (error) {
+      console.error("Error reopening bet:", error);
+      toast.error("Error reopening bet. Please try again.");
+    } finally {
+      setIsProcessingBet(false);
+    }
   };
 
   // Fetch bet details by betId
@@ -308,7 +336,6 @@ const Cricket: React.FC<CricketProps> = ({
 
   // Filter bets based on status
   const matchedBets = downlinesBets?.bets?.filter((bet: any) => bet.betStatus === 'pending') || [];
-  const unmatchedBets = downlinesBets?.bets?.filter((bet: any) => bet.betStatus === 'unmatched') || [];
   const settledBets = downlinesBets?.bets?.filter((bet: any) => ['won', 'lost', 'settled'].includes(bet.betStatus)) || [];
 
   const cricketMatchOddsRender = () => {
@@ -1633,16 +1660,6 @@ const Cricket: React.FC<CricketProps> = ({
                     Matched ({matchedBets.length})
                   </button>
                   <button 
-                    onClick={() => setActiveBetTab('unmatched')}
-                    className={`px-3 py-2 font-medium text-xs ${
-                      activeBetTab === 'unmatched' 
-                        ? 'text-blue-600 border-b-2 border-blue-600' 
-                        : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    Unmatched ({unmatchedBets.length})
-                  </button>
-                  <button 
                     onClick={() => setActiveBetTab('settled')}
                     className={`px-3 py-2 font-medium text-xs ${
                       activeBetTab === 'settled' 
@@ -1655,7 +1672,6 @@ const Cricket: React.FC<CricketProps> = ({
                 </div>
                 <div className="space-y-3 max-h-60 overflow-y-auto">
                   {(activeBetTab === 'matched' ? matchedBets : 
-                    activeBetTab === 'unmatched' ? unmatchedBets : 
                     settledBets).map((bet: any, index: number) => (
                     <div key={bet.betId} className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200">
                       <div className="flex justify-between items-start mb-3">
@@ -1712,12 +1728,21 @@ const Cricket: React.FC<CricketProps> = ({
                           </>
                         )}
                         {activeBetTab === 'settled' && (
-                          <button
-                            onClick={() => handleRevertBet(bet.betId)}
-                            className="px-3 py-1.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg text-[10px] font-medium hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-sm hover:shadow-md"
-                          >
-                            Revert
-                          </button>
+                          <>
+                            <button
+                              onClick={() => fetchBetDetails(bet.betId)}
+                              disabled={loadingBetDetails}
+                              className="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-[10px] font-medium hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 transition-all duration-200 shadow-sm hover:shadow-md"
+                            >
+                              {loadingBetDetails ? "Loading..." : "Details"}
+                            </button>
+                            <button
+                              onClick={() => handleReopenBet(bet.betId)}
+                              className="px-3 py-1.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg text-[10px] font-medium hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                            >
+                              Reopen
+                            </button>
+                          </>
                         )}
                       </div>
             </div>
@@ -2017,10 +2042,6 @@ const Cricket: React.FC<CricketProps> = ({
                 </div>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
-                    <span className="text-gray-600 font-medium">Bet ID</span>
-                    <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{betDetails.betId}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
                     <span className="text-gray-600 font-medium">Event ID</span>
                     <span className="font-medium text-gray-800">{betDetails.eventId}</span>
                   </div>
@@ -2076,10 +2097,6 @@ const Cricket: React.FC<CricketProps> = ({
                 {betDetails.userDetails && (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
-                      <span className="text-gray-600 font-medium">User ID</span>
-                      <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{betDetails.userDetails.id}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
                       <span className="text-gray-600 font-medium">Name</span>
                       <span className="font-semibold text-gray-800">{betDetails.userDetails.userName}</span>
                     </div>
@@ -2099,17 +2116,13 @@ const Cricket: React.FC<CricketProps> = ({
                       <span className="text-gray-600 font-medium">Exposure</span>
                       <span className="font-bold text-lg text-orange-600">₹{betDetails.userDetails.exposure}</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                    <div className="flex justify-between items-center py-2">
                       <span className="text-gray-600 font-medium">Status</span>
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                         betDetails.userDetails.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
                       }`}>
                         {betDetails.userDetails.isActive ? 'ACTIVE' : 'INACTIVE'}
                       </span>
-                    </div>
-                    <div className="flex justify-between items-center py-2">
-                      <span className="text-gray-600 font-medium">Upline ID</span>
-                      <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{betDetails.userDetails.uplineId}</span>
                     </div>
                   </div>
                 )}
@@ -2276,10 +2289,11 @@ const Cricket: React.FC<CricketProps> = ({
                 )}
                 {betDetails.status === 'settled' && (
                   <button
-                    onClick={() => handleRevertBet(betDetails.betId)}
-                    className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl font-medium hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                    onClick={() => handleReopenBet(betDetails.betId)}
+                    disabled={isProcessingBet}
+                    className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl font-medium hover:from-orange-600 hover:to-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
                   >
-                    Revert Bet
+                    {isProcessingBet ? "Processing..." : "Reopen Bet"}
                   </button>
                 )}
               </div>

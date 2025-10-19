@@ -644,7 +644,7 @@ const AddClient: React.FC = () => {
           // Send original sports settings as they are without modifications
           ...(data.accountType !== "Client" && {
             commissionGiven: data.downlineCommission || 0,    // ✅ Downline commission
-            partnershipGiven: data.downlinePartnership || 0,  // ✅ Downline partnership
+            partnershipGiven: partnershipCalculations.downlineAbsolute || 0,  // ✅ Calculated absolute partnership value
             partnershipToUserId: userId || "",
             partnershipToType: userType || "",
             commissionToUserId: userId || "",
@@ -1014,39 +1014,48 @@ const AddClient: React.FC = () => {
             {/* Partnership */}
             <div className="mb-4">
               <div className="bg-[#2d3e50] text-white px-2 leading-8 font-normal text-md mb-2">
-                Partnership
+                Partnership Distribution
               </div>
+
+              {/* Partnership Overview */}
+             
 
               <div className="flex flex-col">
                 <div className=" bg-[#0000000d] flex justify-between items-center border-white font-normal text-xs">
-                  <h2 className="text-xs font-normal w-1/2 px-4 leading-8">
-                    Upline
-                  </h2>
+                  <div className="w-1/2 px-4 leading-8 flex gap-2">
+                    <h2 className="text-xs font-normal">Upline Share</h2>
+                    <p className="text-xs text-gray-500">(Fixed - cannot be changed)</p>
+                  </div>
                   <input
                     type="text"
                     value={partnershipCalculations.upline.toFixed(2)}
                     disabled
-                    className="w-full border-gray-300 px-4 text-xs leading-8 border-l"
+                    className="w-full border-gray-300 px-4 text-xs leading-8 border-l bg-gray-100"
                   />
                 </div>
                 <div className=" bg-white flex justify-between items-center border-white font-normal text-xs">
-                  <h2 className="text-xs font-normal w-1/2 px-4 leading-8">
-                    Our
-                  </h2>
+                  <div className="w-1/2 px-4 leading-8 flex gap-2 items-center">
+                    <h2 className="text-xs font-normal">Your Share</h2>
+                    <p className="text-xs text-gray-500">(Available for distribution)</p>
+                  </div>
                   <div className="w-full flex items-center">
                     <input
                       type="text"
                       value={partnershipCalculations.our.toFixed(2)}
                       disabled
-                      className="w-full border-gray-300 px-4 text-xs leading-8 border-l"
+                      className="w-full border-gray-300 px-4 text-xs leading-8 border-l bg-gray-100"
                     />
                     <span className="ml-2 text-xs text-gray-500">%</span>
                   </div>
                 </div>
                 <div className=" bg-[#0000000d] flex justify-between items-center border-white font-normal text-xs">
-                  <h2 className="text-xs font-normal w-1/2 px-4 leading-8">
-                    Downline
-                  </h2>
+                  <div className="w-1/2 px-4 leading-8 flex gap-2 items-center">
+                    <h2 className="text-xs font-normal">Give to Downline</h2>
+                    <p className="text-xs text-gray-500">(% of your share)</p>
+                    <div className="text-xs text-blue-600 font-medium">
+                      = {partnershipCalculations.downlineAbsolute.toFixed(2)}% actual share
+                    </div>
+                  </div>
                   <div className="w-full flex items-center">
                     <input
                       type="number"
@@ -1073,6 +1082,7 @@ const AddClient: React.FC = () => {
                           ? "border-gray-300"
                           : "border-red-300 bg-red-50"
                       }`}
+                      placeholder="Enter % to give"
                     />
                     <span className="ml-2 text-xs text-gray-500">%</span>
                   </div>
