@@ -333,7 +333,14 @@ const CurrentBet = () => {
     }
   }, [settlementModal.bet, refetch, handleCloseSettlementModal]);
 
-
+const changed = true;
+if(changed){
+  return (
+    <div className="p-2 sm:p-4 bg-[#fafafa] min-h-screen">
+      <h2 className="m-0 text-lg font-normal mb-2">Current Bets</h2>
+    </div>
+  );
+}else{
   return (
     <div className="p-2 sm:p-4 bg-[#fafafa] min-h-screen">
       <h2 className="m-0 text-lg font-normal mb-2">Current Bets</h2>
@@ -741,6 +748,7 @@ const CurrentBet = () => {
       )}
     </div>
   );
+}
 };
 
 export default CurrentBet;

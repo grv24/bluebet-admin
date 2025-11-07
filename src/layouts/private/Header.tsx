@@ -331,7 +331,7 @@ const Header: React.FC = () => {
             className="h-10 w-20 cursor-pointer"
           >
             <img
-              src="https://allpanealexch.com/assets/hosts/allpanealexch.com/logo.png?v=1.4"
+             src="https://sitethemedata.com/sitethemes/allpanelexch.com/front/logo.png"
               className="h-full w-full object-contain"
               alt=""
               loading="lazy"
