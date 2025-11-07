@@ -304,7 +304,7 @@ const SignIn = () => {
         {/* logo */}
         <div className="">
           <img
-            src="https://allpanealexch.com/assets/hosts/allpanealexch.com/logo.png?v=1.4"
+            src="	https://sitethemedata.com/sitethemes/allpanelexch.com/front/logo.png"
             className="h-20 w-full"
             alt=""
             loading="lazy"

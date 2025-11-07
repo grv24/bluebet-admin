@@ -124,22 +124,6 @@ interface ModalState {
 }
 
 /**
- * Calculates total credit reference from client data
- * 
- * Sums up all credit reference values from the client rows,
- * handling comma-separated number formatting.
- * 
- * @param data - Array of client row data
- * @returns Total credit reference as a number
- */
-const getTotalCreditRef = (data: ClientRow[]): number => {
-  return data.reduce((sum: number, row: ClientRow) => {
-    const num = Number(row.creditRef.replace(/,/g, ""));
-    return sum + (isNaN(num) ? 0 : num);
-  }, 0);
-};
-
-/**
  * Formats number with Indian locale formatting
  * 
  * @param num - Number to format
@@ -743,27 +727,22 @@ const ClientList: React.FC = () => {
     setPage((prev) => Math.min(paginationInfo.totalPages, prev + 1));
   }, [paginationInfo.totalPages]);
 
-  // Calculate total credit reference for visible data
-  const totalCreditRef = useMemo(
-    () => getTotalCreditRef(filteredData),
-    [filteredData]
-  );
+  const parseNumericValue = useCallback((value: string | number | undefined): number => {
+    if (typeof value === "number") return value || 0;
+    if (!value) return 0;
+    const num = Number(value.toString().replace(/,/g, ""));
+    return Number.isFinite(num) ? num : 0;
+  }, []);
 
   const totals = useMemo(() => {
-    const parseNumeric = (value: string | number | undefined): number => {
-      if (typeof value === "number") return value || 0;
-      if (!value) return 0;
-      const num = Number(value.toString().replace(/,/g, ""));
-      return isNaN(num) ? 0 : num;
-    };
     return filteredData.reduce(
       (acc, row) => {
-        acc.balance += row.balance || 0;
-        acc.clientPL += parseNumeric(row.clientPL);
-        acc.exposure += row.exposure || 0;
-        acc.availableBalance += row.availableBalance || 0;
-        acc.exposureLimit += row.exposureLimit || 0;
-        acc.defaultPercent += row.defaultPercent || 0;
+        acc.balance += parseNumericValue(row.balance);
+        acc.clientPL += parseNumericValue(row.clientPL);
+        acc.exposure += parseNumericValue(row.exposure);
+        acc.availableBalance += parseNumericValue(row.availableBalance);
+        acc.exposureLimit += parseNumericValue(row.exposureLimit);
+        acc.defaultPercent += parseNumericValue(row.defaultPercent);
         return acc;
       },
       {
@@ -775,7 +754,31 @@ const ClientList: React.FC = () => {
         defaultPercent: 0,
       }
     );
-  }, [filteredData]);
+  }, [filteredData, parseNumericValue]);
+
+  const visibleTotals = useMemo(
+    () =>
+      filteredData.reduce(
+        (acc, row) => {
+          acc.creditRef += parseNumericValue(row.creditRef);
+          acc.balance += parseNumericValue(row.balance);
+          acc.availableBalance += parseNumericValue(row.availableBalance);
+          return acc;
+        },
+        {
+          creditRef: 0,
+          balance: 0,
+          availableBalance: 0,
+        }
+      ),
+    [filteredData, parseNumericValue]
+  );
+
+  // Calculate total credit reference for visible data
+  const totalCreditRef = useMemo(
+    () => visibleTotals.creditRef,
+    [visibleTotals.creditRef]
+  );
 
   // Export handlers
   const handleExportPDF = useCallback(async () => {
@@ -1349,12 +1352,12 @@ const ClientList: React.FC = () => {
               <>
                 {/* Totals row at top, like the screenshot */}
                 <tr className="bg-[#f0f4f8] font-bold text-xs">
-                  <td className="border border-[#e0e0e0] py-2 px-2"></td>
+                  <td className="border border-[#e0e0e0] py-2 px-2 text-center">Total</td>
                   <td className="border border-[#e0e0e0] text-center py-2 px-2">
-                    {formatNumber(totalCreditRef)}
+                    {formatNumber(visibleTotals.creditRef)}
                   </td>
                   <td className="border border-[#e0e0e0] text-center py-2 px-2">
-                    {formatNumber(totals.balance)}
+                    {formatNumber(visibleTotals.balance)}
                   </td>
                   <td className="border border-[#e0e0e0] text-center py-2 px-2">
                     -
@@ -1363,7 +1366,7 @@ const ClientList: React.FC = () => {
                    -
                   </td>
                   <td className="border border-[#e0e0e0] text-center py-2 px-2">
-                    {formatNumber(totals.availableBalance)}
+                    {formatNumber(visibleTotals.availableBalance)}
                   </td>
                   <td className="border border-[#e0e0e0] text-center py-2 px-2"></td>
                   <td className="border border-[#e0e0e0] text-center py-2 px-2"></td>
