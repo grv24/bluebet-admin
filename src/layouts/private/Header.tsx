@@ -1,10 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCookies } from "react-cookie";
 import { baseUrl, getDecodedTokenData, logout } from "@/helper/auth";
 import useCricketTree from "@/hooks/useCricketTree";
-import { CricketCompetition, CricketDate, CricketMatch, CricketMarket } from "@/types/cricket.ts";
-
+import useCasinoGames from "@/hooks/useCasinoGames";
+import {
+  CricketCompetition,
+  CricketDate,
+  CricketMatch,
+  CricketMarket,
+} from "@/types/cricket.ts";
 
 const Header: React.FC = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState<string | null>(null);
@@ -12,14 +17,22 @@ const Header: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(["sport-cricket"]));
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(
+    new Set(["sport-cricket"])
+  );
   const navigate = useNavigate();
   const [cookies, , removeCookie] = useCookies([
     baseUrl.includes("techadmin") ? "TechAdmin" : "Admin",
     "hasPopupBeenShown",
-  ]);  
+  ]);
   const userData = getDecodedTokenData(cookies);
-  const { data: cricketData, isLoading: cricketLoading, error: cricketError } = useCricketTree();
+  const {
+    data: cricketData,
+    isLoading: cricketLoading,
+    error: cricketError,
+  } = useCricketTree();
+  const { data: casinoGamesData, isLoading: casinoGamesLoading } =
+    useCasinoGames();
   const handleLogout = () => {
     logout(
       (name: string, options?: any) =>
@@ -34,7 +47,7 @@ const Header: React.FC = () => {
   };
 
   const toggleExpanded = (itemId: string) => {
-    setExpandedItems(prev => {
+    setExpandedItems((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(itemId)) {
         newSet.delete(itemId);
@@ -49,20 +62,25 @@ const Header: React.FC = () => {
     // Get all dynamic sports from API data
     const allDynamicSports = cricketData?.data?.children || [];
 
-
-    const renderCompetition = (competition: CricketCompetition, index: number, sportName: string) => {
+    const renderCompetition = (
+      competition: CricketCompetition,
+      index: number,
+      sportName: string
+    ) => {
       const competitionId = `comp-${competition.name}`;
       const isExpanded = expandedItems.has(competitionId);
-      
+
       return (
         <div key={competitionId} className="relative">
           {/* Blue dot */}
           <div className="absolute left-0 top-2 w-2 h-2 bg-blue-500 rounded-full transform -translate-x-1"></div>
-          <div 
+          <div
             className="flex items-center cursor-pointer py-1 hover:bg-gray-100 ml-4"
             onClick={() => toggleExpanded(competitionId)}
           >
-            <i className={`fa-solid fa-${isExpanded ? 'minus' : 'plus'} text-xs mr-2 text-gray-600`}></i>
+            <i
+              className={`fa-solid fa-${isExpanded ? "minus" : "plus"} text-xs mr-2 text-gray-600`}
+            ></i>
             <span className="text-xs text-gray-800">{competition.name}</span>
           </div>
           {isExpanded && (
@@ -70,7 +88,15 @@ const Header: React.FC = () => {
               {/* Vertical line */}
               <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-200"></div>
               <div className="space-y-1">
-                {competition.children.map((date, dateIndex) => renderDate(date, dateIndex, competition.children.length, sportName, competition.name))}
+                {competition.children.map((date, dateIndex) =>
+                  renderDate(
+                    date,
+                    dateIndex,
+                    competition.children.length,
+                    sportName,
+                    competition.name
+                  )
+                )}
               </div>
             </div>
           )}
@@ -78,19 +104,27 @@ const Header: React.FC = () => {
       );
     };
 
-    const renderDate = (date: CricketDate, index: number, totalDates: number, sportName: string, competitionName: string) => {
+    const renderDate = (
+      date: CricketDate,
+      index: number,
+      totalDates: number,
+      sportName: string,
+      competitionName: string
+    ) => {
       const dateId = `date-${date.name}`;
       const isExpanded = expandedItems.has(dateId);
-      
+
       return (
         <div key={dateId} className="relative">
           {/* Blue dot */}
           <div className="absolute left-0 top-2 w-2 h-2 bg-blue-500 rounded-full transform -translate-x-1"></div>
-          <div 
+          <div
             className="flex items-center cursor-pointer py-1 hover:bg-gray-100 ml-4"
             onClick={() => toggleExpanded(dateId)}
           >
-            <i className={`fa-solid fa-${isExpanded ? 'minus' : 'plus'} text-xs mr-2 text-gray-600`}></i>
+            <i
+              className={`fa-solid fa-${isExpanded ? "minus" : "plus"} text-xs mr-2 text-gray-600`}
+            ></i>
             <span className="text-xs text-gray-800">{date.name}</span>
           </div>
           {isExpanded && (
@@ -98,7 +132,16 @@ const Header: React.FC = () => {
               {/* Vertical line */}
               <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-200"></div>
               <div className="space-y-1">
-                {date.children.map((match, matchIndex) => renderMatch(match, matchIndex, date.children.length, sportName, competitionName, date.name))}
+                {date.children.map((match, matchIndex) =>
+                  renderMatch(
+                    match,
+                    matchIndex,
+                    date.children.length,
+                    sportName,
+                    competitionName,
+                    date.name
+                  )
+                )}
               </div>
             </div>
           )}
@@ -106,19 +149,28 @@ const Header: React.FC = () => {
       );
     };
 
-    const renderMatch = (match: CricketMatch, index: number, totalMatches: number, sportName: string, competitionName: string, dateName: string) => {
+    const renderMatch = (
+      match: CricketMatch,
+      index: number,
+      totalMatches: number,
+      sportName: string,
+      competitionName: string,
+      dateName: string
+    ) => {
       const matchId = `match-${match.gmid}`;
       const isExpanded = expandedItems.has(matchId);
-      
+
       return (
         <div key={matchId} className="relative">
           {/* Blue dot */}
           <div className="absolute left-0 top-2 w-2 h-2 bg-blue-500 rounded-full transform -translate-x-1"></div>
-          <div 
+          <div
             className="flex items-center cursor-pointer py-1 hover:bg-gray-100 ml-4"
             onClick={() => toggleExpanded(matchId)}
           >
-            <i className={`fa-solid fa-${isExpanded ? 'minus' : 'plus'} text-xs mr-2 text-gray-600`}></i>
+            <i
+              className={`fa-solid fa-${isExpanded ? "minus" : "plus"} text-xs mr-2 text-gray-600`}
+            ></i>
             <span className="text-xs text-gray-800">{match.name}</span>
           </div>
           {isExpanded && (
@@ -126,7 +178,18 @@ const Header: React.FC = () => {
               {/* Vertical line */}
               <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-200"></div>
               <div className="space-y-1">
-                {match.children.map((market, marketIndex) => renderMarket(market, marketIndex, match.children.length, match.gmid, sportName, competitionName, dateName, match.name))}
+                {match.children.map((market, marketIndex) =>
+                  renderMarket(
+                    market,
+                    marketIndex,
+                    match.children.length,
+                    match.gmid,
+                    sportName,
+                    competitionName,
+                    dateName,
+                    match.name
+                  )
+                )}
               </div>
             </div>
           )}
@@ -134,24 +197,41 @@ const Header: React.FC = () => {
       );
     };
 
-    const renderMarket = (market: CricketMarket, index: number, totalMarkets: number, gmid: number, sportName: string, competitionName: string, dateName: string, matchName: string) => {
+    const renderMarket = (
+      market: CricketMarket,
+      index: number,
+      totalMarkets: number,
+      gmid: number,
+      sportName: string,
+      competitionName: string,
+      dateName: string,
+      matchName: string
+    ) => {
       return (
         <div key={`market-${market.name}`} className="relative">
           {/* Blue dot */}
           <div className="absolute left-0 top-2 w-2 h-2 bg-blue-500 rounded-full transform -translate-x-1"></div>
           <div className="flex items-center py-1 hover:bg-gray-100 ml-4">
-            <span onClick={() => { 
-              navigate(`/sport-details/${sportName.toLowerCase()}/${(market as any).eventId || market.name}`, {
-                state: {
-                  competition: competitionName,
-                  date: dateName,
-                  match: matchName,
-                  market: market.name,
-                  // sportId:market.etid
-                }
-              }); 
-              setIsSportsOpen(false); 
-            }} className="text-xs uppercase text-gray-800 cursor-pointer">{market.name}</span>
+            <span
+              onClick={() => {
+                navigate(
+                  `/sport-details/${sportName.toLowerCase()}/${(market as any).eventId || market.name}`,
+                  {
+                    state: {
+                      competition: competitionName,
+                      date: dateName,
+                      match: matchName,
+                      market: market.name,
+                      // sportId:market.etid
+                    },
+                  }
+                );
+                setIsSportsOpen(false);
+              }}
+              className="text-xs uppercase text-gray-800 cursor-pointer"
+            >
+              {market.name}
+            </span>
           </div>
         </div>
       );
@@ -164,14 +244,16 @@ const Header: React.FC = () => {
           const sportName = sport.name === "Soccer" ? "Football" : sport.name;
           const sportId = `sport-${sport.name.toLowerCase()}`;
           const isExpanded = expandedItems.has(sportId);
-          
+
           return (
             <div key={sport.name} className="relative">
-              <div 
+              <div
                 className="flex items-center cursor-pointer py-1 hover:bg-gray-100"
                 onClick={() => toggleExpanded(sportId)}
               >
-                <i className={`fa-solid fa-${isExpanded ? 'minus' : 'plus'} text-xs mr-2 text-gray-600`}></i>
+                <i
+                  className={`fa-solid fa-${isExpanded ? "minus" : "plus"} text-xs mr-2 text-gray-600`}
+                ></i>
                 <span className="text-xs text-gray-800">{sportName}</span>
               </div>
               {isExpanded && sport.children && sport.children.length > 0 && (
@@ -179,23 +261,32 @@ const Header: React.FC = () => {
                   {/* Vertical line */}
                   <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-200"></div>
                   <div className="space-y-1">
-                    {sport.children.map((competition, index) => renderCompetition(competition, index, sportName))}
+                    {sport.children.map((competition, index) =>
+                      renderCompetition(competition, index, sportName)
+                    )}
                   </div>
                 </div>
               )}
-              {isExpanded && (!sport.children || sport.children.length === 0) && (
-                <div className="ml-4 text-xs text-gray-500">No competitions available</div>
-              )}
+              {isExpanded &&
+                (!sport.children || sport.children.length === 0) && (
+                  <div className="ml-4 text-xs text-gray-500">
+                    No competitions available
+                  </div>
+                )}
             </div>
           );
         })}
 
         {/* Loading/Error states for Cricket */}
         {cricketLoading && (
-          <div className="ml-4 text-xs text-gray-500">Loading cricket data...</div>
+          <div className="ml-4 text-xs text-gray-500">
+            Loading cricket data...
+          </div>
         )}
         {cricketError && (
-          <div className="ml-4 text-xs text-red-500">Error loading cricket data</div>
+          <div className="ml-4 text-xs text-red-500">
+            Error loading cricket data
+          </div>
         )}
       </div>
     );
@@ -215,87 +306,101 @@ const Header: React.FC = () => {
     };
   }, []);
 
+  // Helper function to convert game name to kebab-case URL
+  const toKebabCase = (str: string): string => {
+    return str
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  };
+
+  // Helper function to format game type name for display
+  const formatGameTypeName = (gameType: string | null): string => {
+    if (!gameType) return "Other";
+    return gameType
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
+
+  // Transform casino games data to show only game types
+  const liveMarketItems = useMemo(() => {
+    if (!casinoGamesData?.data) {
+      return [];
+    }
+
+    // Filter active games and extract unique game types
+    const activeGames = casinoGamesData.data.filter((game) => game.isActive);
+
+    // Get unique game types
+    const gameTypes = new Set<string>();
+    activeGames.forEach((game) => {
+      const gameType = game.gameType || "other";
+      gameTypes.add(gameType);
+    });
+
+    // Convert to array and sort (other goes last)
+    const sortedGameTypes = Array.from(gameTypes).sort((a, b) => {
+      if (a === "other") return 1;
+      if (b === "other") return -1;
+      return a.localeCompare(b);
+    });
+
+    // Create menu items for each game type
+    return sortedGameTypes.map((gameType, index) => ({
+      name: formatGameTypeName(gameType === "other" ? null : gameType),
+      id: `game-type-${index}`,
+      href: `/live-market/${gameType === "other" ? "others" : gameType}`,
+    }));
+  }, [casinoGamesData]);
+
   const navLinks = [
     { label: "List of Clients", href: "/clients" },
     { label: "Market Analysis", href: "/market-analysis" },
     {
       label: "Live Market",
       href: "#",
-      items: [
-        {
-          name: "Unique Teenpatti",
-          id: 1,
-          href: "/live-market/unique-teenpatti",
-        },
-        { name: "Roulette", id: 2, href: "/live-market/roulette" },
-        { name: "Ball by Ball", id: 3, href: "/live-market/ball-by-ball" },
-        { name: "Lucky15", id: 4, href: "/live-market/lucky15" },
-        { name: "Goal", id: 5, href: "/live-market/goal" },
-        { name: "Binary", id: 6, href: "/live-market/binary" },
-        { name: "Race 20-20", id: 7, href: "/live-market/race-20-20" },
-        { name: "Queen", id: 8, href: "/live-market/queen" },
-        { name: "Baccarat", id: 9, href: "/live-market/baccarat" },
-        { name: "Sport Casino", id: 10, href: "/live-market/sport-casino" },
-        { name: "Casino War", id: 11, href: "/live-market/casino-war" },
-        { name: "Worli", id: 12, href: "/live-market/worli" },
-        {
-          name: "3 Card Judgement",
-          id: 13,
-          href: "/live-market/3-card-judgement",
-        },
-        { name: "32 Card Casino", id: 14, href: "/live-market/32-card-casino" },
-        { name: "Live Teenpatti", id: 15, href: "/live-market/live-teenpatti" },
-        { name: "Teenpatti 2.0", id: 16, href: "/live-market/teenpatti-2-0" },
-        { name: "Live Poker", id: 17, href: "/live-market/live-poker" },
-        { name: "Andar Bahar", id: 18, href: "/live-market/andar-bahar" },
-        { name: "Lucky 7", id: 19, href: "/live-market/lucky-7" },
-        { name: "Dragon Tiger", id: 20, href: "/live-market/dragon-tiger" },
-        {
-          name: "Bollywood Casino",
-          id: 21,
-          href: "/live-market/bollywood-casino",
-        },
-      ],
+      items: liveMarketItems,
     },
-    {
-      label: "Live Virtual Market",
-      href: "#",
-      items: [
-        { name: "20-20 DTL", id: 1, href: "/live-virtual-market/20-20-dtl" },
-        {
-          name: "Amar Akbar Anthony",
-          id: 2,
-          href: "/live-virtual-market/amar-akbar-anthony",
-        },
-        {
-          name: "Muflis Teenpatti",
-          id: 3,
-          href: "/live-virtual-market/muflis-teenpatti",
-        },
-        {
-          name: "1 Day Teenpatti",
-          id: 4,
-          href: "/live-virtual-market/1-day-teenpatti",
-        },
-        {
-          name: "1 Day Dragon Tiger",
-          id: 5,
-          href: "/live-virtual-market/1-day-dragon-tiger",
-        },
-        { name: "Lucky 7", id: 6, href: "/live-virtual-market/lucky-7" },
-        {
-          name: "Bollywood Casino",
-          id: 7,
-          href: "/live-virtual-market/bollywood-casino",
-        },
-        {
-          name: "20-20 Teenpatti",
-          id: 8,
-          href: "/live-virtual-market/20-20-teenpatti",
-        },
-        { name: "Trio", id: 9, href: "/live-virtual-market/trio" },
-      ],
-    },
+    // {
+    //   label: "Live Virtual Market",
+    //   href: "#",
+    //   items: [
+    //     { name: "20-20 DTL", id: 1, href: "/live-virtual-market/20-20-dtl" },
+    //     {
+    //       name: "Amar Akbar Anthony",
+    //       id: 2,
+    //       href: "/live-virtual-market/amar-akbar-anthony",
+    //     },
+    //     {
+    //       name: "Muflis Teenpatti",
+    //       id: 3,
+    //       href: "/live-virtual-market/muflis-teenpatti",
+    //     },
+    //     {
+    //       name: "1 Day Teenpatti",
+    //       id: 4,
+    //       href: "/live-virtual-market/1-day-teenpatti",
+    //     },
+    //     {
+    //       name: "1 Day Dragon Tiger",
+    //       id: 5,
+    //       href: "/live-virtual-market/1-day-dragon-tiger",
+    //     },
+    //     { name: "Lucky 7", id: 6, href: "/live-virtual-market/lucky-7" },
+    //     {
+    //       name: "Bollywood Casino",
+    //       id: 7,
+    //       href: "/live-virtual-market/bollywood-casino",
+    //     },
+    //     {
+    //       name: "20-20 Teenpatti",
+    //       id: 8,
+    //       href: "/live-virtual-market/20-20-teenpatti",
+    //     },
+    //     { name: "Trio", id: 9, href: "/live-virtual-market/trio" },
+    //   ],
+    // },
     {
       label: "Reports",
       href: "#",
@@ -331,7 +436,7 @@ const Header: React.FC = () => {
             className="h-10 w-20 cursor-pointer"
           >
             <img
-             src="https://sitethemedata.com/sitethemes/allpanelexch.com/front/logo.png"
+              src="https://sitethemedata.com/sitethemes/allpanelexch.com/front/logo.png"
               className="h-full w-full object-contain"
               alt=""
               loading="lazy"
@@ -454,7 +559,7 @@ const Header: React.FC = () => {
         </div>
       </section>
       {/* Mobile menu overlay */}
-     
+
       {/* Sports overlay */}
       {isSportsOpen && (
         <React.Fragment>

@@ -21,6 +21,7 @@ import {
   TransactionPassword,
   PaymentGateway,
   SportDetail,
+  CasinoGameDetail,
 } from "@/pages";
 import type { Route } from "./types";
 import { Navigate } from "react-router-dom";
@@ -188,6 +189,13 @@ export const routes: Route[] = [
     layout: "private",
     private: true,
     title: `Sport Details | ${title}`,
+  },
+  {
+    path: "/casino-game-detail/:gameCode",
+    component: CasinoGameDetail,
+    layout: "private",
+    private: true,
+    title: `Casino Game Detail | ${title}`,
   },
   {
     path: "*",

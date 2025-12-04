@@ -31,4 +31,8 @@ export const PaymentGateway = lazyWithErrorHandling(() => import("./PaymentGatew
 export const SportDetail = lazyWithErrorHandling(() => import("./sports/sport-detail"));
 
 
+//casino
+export const CasinoGameDetail = lazyWithErrorHandling(() => import("./casino"));
+
+
 export const NotFound = lazyWithErrorHandling(() => import("./NotFound"));
