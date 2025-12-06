@@ -193,8 +193,7 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
                     </div>
                   </td>
                   <td
-                    className="bg-[var(--bg-back)] w-1/4 text-sm font-semibold relative "
-                    }
+                    className="bg-[var(--bg-back)] w-1/4 text-sm font-semibold relative"
                   >
                     {locked && (
                       <div className="absolute inset-0 bg-black/60 flex flex-col w-full h-full justify-center items-center font-bold uppercase z-20">
@@ -248,8 +247,7 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
                     </div>
                   </td>
                   <td
-                    className="bg-[var(--bg-back)] w-1/4 text-sm font-semibold relative "
-                    }
+                    className="bg-[var(--bg-back)] w-1/4 text-sm font-semibold relative"
                   >
                     {locked && (
                       <div className="absolute inset-0 bg-black/60 flex flex-col w-full h-full justify-center items-center font-bold uppercase z-20">
