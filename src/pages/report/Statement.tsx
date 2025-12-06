@@ -203,6 +203,13 @@ const Statement = () => {
     }
   };
 
+  // Reset Game Name to "All" when Account Type is "All"
+  React.useEffect(() => {
+    if (accountType === "All") {
+      setGameName("All");
+    }
+  }, [accountType]);
+
   // Handle click outside for dropdown
   React.useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -243,9 +250,10 @@ const Statement = () => {
         <div className="flex flex-col min-w-[140px] w-full">
           <label className="text-sm font-medium mb-1">Game Name</label>
           <select
-            className="border border-gray-300 rounded px-3 py-2 text-sm text-gray-500 focus:border-gray-300 focus:ring-0 outline-none transition w-full"
+            className="border border-gray-300 rounded px-3 py-2 text-sm text-gray-500 focus:border-gray-300 focus:ring-0 outline-none transition w-full disabled:bg-gray-100 disabled:cursor-not-allowed"
             value={gameName}
             onChange={(e) => setGameName(e.target.value)}
+            disabled={accountType === "All"}
           >
             {gameNames.map((name) => (
               <option key={name} value={name}>
