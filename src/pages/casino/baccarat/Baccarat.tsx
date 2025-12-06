@@ -74,75 +74,6 @@ const BaccaratComponent: React.FC<BaccaratProps> = ({
     return getCardByCode(cardCode, "baccarat2") || cardImage.back;
   };
 
-  // Get profit/loss for individual bet types (independent calculation like DT6 Odd/Even)
-  const getBetProfitLoss = (betType: string): number => {
-    if (!currentBet?.data || !casinoData?.data?.mid) return 0;
-
-    const currentMatchId = casinoData.data.mid;
-    let profitLoss = 0;
-
-    // Only bets for this match
-    const bets = currentBet.data.filter(
-      (bet: any) => String(bet.matchId) === String(currentMatchId)
-    );
-
-    bets.forEach((bet: any) => {
-      const { betName, oddCategory, stake, betRate, matchOdd } = bet.betData;
-
-      // Normalize bet name for comparison
-      const normalizedBetName = betName?.toLowerCase() || "";
-      const normalizedBetType = betType.toLowerCase();
-
-      // Check if this bet matches the current bet type
-      let isMatch = false;
-
-      // Handle Baccarat bets (independent calculation like DT6 Odd/Even)
-      if (normalizedBetType === normalizedBetName) {
-        isMatch = true;
-      }
-
-      if (isMatch) {
-        // Get the odds rate (betRate or matchOdd)
-        const rate = Number(betRate || matchOdd || 0);
-        const stakeAmount = Number(stake) || 0;
-
-        // Calculate profit/loss for Baccarat bets
-        if (oddCategory.toLowerCase() === "back") {
-          // For Back bets:
-          // - If rate < 1 (e.g., 0.54 stored as 0.54 in "0.54:1" format), profit = stake * rate
-          // - If rate >= 1 (e.g., 1.54 decimal format), profit = stake * (rate - 1)
-          // Example: stake=100, rate=0.54 -> profit = 100 * 0.54 = 54
-          // Example: stake=100, rate=1.54 -> profit = 100 * (1.54 - 1) = 54
-          let profit = 0;
-          if (rate > 0 && rate < 1) {
-            // Odds in "0.54:1" format (stored as 0.54) - multiply directly
-            profit = stakeAmount * rate;
-          } else if (rate >= 1) {
-            // Odds in decimal format (e.g., 1.54) - subtract 1 to get profit
-            profit = stakeAmount * (rate - 1);
-          }
-          profitLoss += profit;
-        } else if (oddCategory.toLowerCase() === "lay") {
-          // For Lay bets:
-          // - Profit = stake (you keep the stake if you win)
-          // - Loss = stake * rate (if rate < 1) or stake * (rate - 1) (if rate >= 1)
-          // Net profit shown = profit - potential loss
-          let potentialLoss = 0;
-          if (rate > 0 && rate < 1) {
-            // Odds in "0.54:1" format - multiply directly for loss
-            potentialLoss = stakeAmount * rate;
-          } else if (rate >= 1) {
-            // Odds in decimal format - subtract 1 for loss
-            potentialLoss = stakeAmount * (rate - 1);
-          }
-          // Net profit = stake you keep - potential loss you pay
-          profitLoss += stakeAmount - potentialLoss;
-        }
-      }
-    });
-
-    return profitLoss;
-  };
 
 
   return (
@@ -308,7 +239,6 @@ const BaccaratComponent: React.FC<BaccaratProps> = ({
             ].map((item, index) => {
               const data = getByNat(item);
               const locked = isLocked(item);
-              const profitLoss = getBetProfitLoss(item);
               return (
                 <div key={index} className="flex flex-col items-center">
                   <div
@@ -358,18 +288,6 @@ const BaccaratComponent: React.FC<BaccaratProps> = ({
                   </div>
                 )}
               </div>
-              <h2
-                className={`text-xs font-semibold mt-1 ${
-                  getBetProfitLoss("Player Pair") > 0
-                    ? "text-green-600"
-                    : getBetProfitLoss("Player Pair") < 0
-                      ? "text-red-600"
-                      : "text-gray-600"
-                }`}
-              >
-                {getBetProfitLoss("Player Pair") > 0 ? "+" : ""}
-                {getBetProfitLoss("Player Pair").toFixed(0)}
-              </h2>
             </div>
 
             <div className="w-full flex justify-center items-start">
@@ -409,18 +327,6 @@ const BaccaratComponent: React.FC<BaccaratProps> = ({
                     </div>
                   )}
                 </div>
-                <h2
-                  className={`text-xs font-semibold mt-1 ${
-                    getBetProfitLoss("Player") > 0
-                      ? "text-green-600"
-                      : getBetProfitLoss("Player") < 0
-                        ? "text-red-600"
-                        : "text-gray-600"
-                  }`}
-                >
-                  {getBetProfitLoss("Player") > 0 ? "+" : ""}
-                  {getBetProfitLoss("Player").toFixed(0)}
-                </h2>
               </div>
 
               {/* Tie */}
@@ -440,18 +346,6 @@ const BaccaratComponent: React.FC<BaccaratProps> = ({
                     </div>
                   )}
                 </div>
-                <h2
-                  className={`text-xs font-semibold mt-1 ${
-                    getBetProfitLoss("Tie") > 0
-                      ? "text-green-600"
-                      : getBetProfitLoss("Tie") < 0
-                        ? "text-red-600"
-                        : "text-gray-600"
-                  }`}
-                >
-                  {getBetProfitLoss("Tie") > 0 ? "+" : ""}
-                  {getBetProfitLoss("Tie").toFixed(0)}
-                </h2>
               </div>
 
               {/* Banker */}
@@ -483,18 +377,6 @@ const BaccaratComponent: React.FC<BaccaratProps> = ({
                     </div>
                   )}
                 </div>
-                <h2
-                  className={`text-xs font-semibold mt-1 ${
-                    getBetProfitLoss("Banker") > 0
-                      ? "text-green-600"
-                      : getBetProfitLoss("Banker") < 0
-                        ? "text-red-600"
-                        : "text-gray-600"
-                  }`}
-                >
-                  {getBetProfitLoss("Banker") > 0 ? "+" : ""}
-                  {getBetProfitLoss("Banker").toFixed(0)}
-                </h2>
               </div>
             </div>
 
@@ -515,18 +397,6 @@ const BaccaratComponent: React.FC<BaccaratProps> = ({
                   </div>
                 )}
               </div>
-              <h2
-                className={`text-xs font-semibold mt-1 ${
-                  getBetProfitLoss("Banker Pair") > 0
-                    ? "text-green-600"
-                    : getBetProfitLoss("Banker Pair") < 0
-                      ? "text-red-600"
-                      : "text-gray-600"
-                }`}
-              >
-                {getBetProfitLoss("Banker Pair") > 0 ? "+" : ""}
-                {getBetProfitLoss("Banker Pair").toFixed(0)}
-              </h2>
             </div>
           </div>
         </div>
