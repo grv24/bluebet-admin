@@ -10,17 +10,14 @@ import { memoizeCasinoComponent } from "@/utils/casinoMemo";
 interface CasinoQueenProps {
   casinoData: any;
   remainingTime: number;
-  onBetClick: (sid: string, type: "back" | "lay") => void;
   results?: any[];
   gameCode?: string;
   gameName?: string;
-  currentBet?: any;
 }
 
 const CasinoQueenComponent: React.FC<CasinoQueenProps> = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results = [],
   gameCode,
 }) => {
@@ -87,18 +84,6 @@ const CasinoQueenComponent: React.FC<CasinoQueenProps> = ({
   const total2 = getOddsBySid(3);
   const total3 = getOddsBySid(4);
 
-  // Handle clicking on individual result to show details
-  const handleResultClick = (result: any) => {
-    if (!result?.mid) return;
-    setSelectedResult(result);
-    setIsModalOpen(true);
-  };
-
-  // Close the result details modal
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedResult(null);
-  };
 
   // React Query for individual result details
   const {

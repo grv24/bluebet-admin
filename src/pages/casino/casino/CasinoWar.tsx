@@ -13,17 +13,14 @@ import {
   import { useNavigate } from "react-router-dom";
   import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
   
-  const CasinoWarComponent = ({
-    casinoData,
-    remainingTime,
-    onBetClick,
-    results,
-    gameSlug,
-    gameName,
-    currentBet,
-  }: any) => {
-    // const resultModal = useIndividualResultModal();
-    const navigate = useNavigate();
+const CasinoWarComponent = ({
+  casinoData,
+  remainingTime,
+  results,
+  gameSlug,
+  gameName,
+}: any) => {
+  const navigate = useNavigate();
   
     const t2: any[] =
       casinoData?.data?.sub || casinoData?.data?.data?.data?.t2 || [];
@@ -57,26 +54,6 @@ import {
       return normalized || "war";
     }, [gameSlug]);
   
-    // Function to filter user bets based on selected filter
-    const getFilteredBets = (bets: any[], filter: string) => {
-      if (filter === "all") return bets;
-  
-      return bets.filter((bet: any) => {
-        const oddCategory = bet.betData?.oddCategory?.toLowerCase();
-        const status = bet.status?.toLowerCase();
-  
-        switch (filter) {
-          case "back":
-            return oddCategory === "back";
-          case "lay":
-            return oddCategory === "lay";
-          case "deleted":
-            return status === "deleted" || status === "cancelled";
-          default:
-            return true;
-        }
-      });
-    };
   
     // Debug logging for War component
     console.log("🎰 War component debug:", {
@@ -91,12 +68,6 @@ import {
       remark: casinoData?.data?.remark,
     });
   
-    /**
-     * Calculate profit/loss for individual War betting types
-     * @param betType - The type of bet to calculate profit/loss for (e.g., "Winner 1", "Red 2", "Odd 3")
-     * @returns The profit/loss amount (negative for loss-only display like dt6 Odd/Even)
-     */
-    const getBetProfitLoss = (betType: string): number => {
       if (!currentBet?.data || !casinoData?.data?.mid) return 0;
   
       const currentMatchId = casinoData.data.mid;
