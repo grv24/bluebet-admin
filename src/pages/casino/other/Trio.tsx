@@ -135,11 +135,7 @@ const TrioComponent: React.FC<TrioProps> = ({
         <div className="flex w-full gap-1 relative">
           {/* Back Odds */}
           <h2
-            className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-back)] relative ${
-              !locked && oddsItem?.b ? "hover:opacity-90" : ""
-            }`}
-            onClick={() =>
-            }
+            className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-back)] relative`}
           >
             {locked && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -151,11 +147,7 @@ const TrioComponent: React.FC<TrioProps> = ({
           {/* Lay Odds - only show if showLay is true */}
           {showLay && (
             <h2
-              className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-lay)] relative ${
-                !locked && oddsItem?.l ? "hover:opacity-90" : ""
-              }`}
-              onClick={() =>
-              }
+              className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-lay)] relative`}
             >
               {locked && (
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
