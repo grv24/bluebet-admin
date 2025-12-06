@@ -92,22 +92,82 @@ export const getCasinoTopTenResult = async (
 };
 
 // Fetch user match bets for a specific round
-export interface UserMatchBet {
-  id: string;
-  userName: string;
-  nation: string;
-  rate: number;
-  amount: number;
-  placeDate: string;
+export interface BetData {
+  mid: number;
+  sid: number;
+  loss: number;
+  name: string;
+  stake: number;
+  oddsId: number;
+  profit: number;
+  betName: string;
+  betRate: number;
+  betType: string;
+  cardNat?: string;
+  oddType: string;
+  boxColor?: string;
+  gameDate: string;
+  gameName: string;
+  gameSlug: string;
   gameType: string;
-  betType?: string;
-  marketName?: string;
+  matchOdd: number;
+  maxStake: number;
+  minStake: number;
+  placedAt: string;
+  otherInfo?: any;
+  sportType: string;
+  betOutcome?: string;
+  isFancyBet: boolean;
+  oddSubType?: string;
+  stakeLimit: number;
+  oddCategory: string;
+  fancyMultiplier?: number;
+  matchOddVariant?: string;
+}
+
+export interface UserMatchBet {
+  betId: string;
+  matchId: string;
+  userId: string;
+  userType: string;
+  betStatus: string;
+  betAmount: number;
+  betProfit: number;
+  betLoss: number;
+  commission: number;
+  partnership: number;
+  exposure: number;
+  createdAt: string;
+  updatedAt: string;
+  gameSlug: string;
+  gameName: string;
+  gameDate: string;
+  sid: number;
+  name: string;
+  betRate: number;
+  matchOdd: number;
+  oddType: string;
+  oddCategory: string;
+  sportType: string;
+  isFancyBet: boolean;
+  betData: BetData;
+  user?: {
+    userName: string;
+    name?: string;
+  };
 }
 
 export interface UserMatchBetsResponse {
-  status: boolean;
-  data: UserMatchBet[];
-  message?: string;
+  success: boolean;
+  matchId: string;
+  targetUserIds: string[];
+  userType: string;
+  totalBets: number;
+  bets: UserMatchBet[];
+  isAdminAccess: boolean;
+  requestedBy: string;
+  requestedByType: string;
+  downlineUserCount: number;
 }
 
 export const getCasinoUserMatchBets = async (
