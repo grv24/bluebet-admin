@@ -449,18 +449,6 @@ const ThirtyTwoCardBComponent: React.FC<{
                 <tr key={label} className="w-full border border-gray-300">
                   <td className="text-base font-semibold px-2 text-[var(--bg-secondary)]">
                     {label}
-                    <h2 
-                      className={`text-xs font-medium ${
-                        profitLoss > 0
-                          ? "text-green-600"
-                          : profitLoss < 0
-                            ? "text-red-600"
-                            : "text-gray-600"
-                      }`}
-                    >
-                      {profitLoss > 0 ? "+" : ""}
-                      {profitLoss.toFixed(0)}
-                    </h2>
                   </td>
                   <td
                     className="relative text-base border border-gray-300 text-center leading-10 font-semibold bg-[var(--bg-back)] text-[var(--bg-secondary)]"
@@ -633,18 +621,6 @@ const ThirtyTwoCardBComponent: React.FC<{
                 >
                   <td className="text-base font-semibold px-2 text-[var(--bg-secondary)]">
                     {String(names[0])}
-                     <h2 
-                          className={`text-xs font-semibold leading-5 ${
-                            profitLoss > 0
-                              ? "text-green-600"
-                              : profitLoss < 0
-                                ? "text-red-600"
-                                : "text-gray-600"
-                          }`}
-                        >
-                          {profitLoss > 0 ? "+" : ""}
-                          {profitLoss.toFixed(0)}
-                        </h2>
                   </td>
                   <td
                     className="relative text-base border border-gray-300 text-center leading-10 font-semibold bg-[var(--bg-back)] text-[var(--bg-secondary)]"
@@ -706,18 +682,6 @@ const ThirtyTwoCardBComponent: React.FC<{
                 <tr key={label} className="w-full border border-gray-300">
                   <td className="text-base font-semibold px-2 text-[var(--bg-secondary)]">
                     {label}
-                    <h2 
-                      className={`text-xs font-medium ${
-                        profitLoss > 0
-                          ? "text-green-600"
-                          : profitLoss < 0
-                            ? "text-red-600"
-                            : "text-gray-600"
-                      }`}
-                    >
-                      {profitLoss > 0 ? "+" : ""}
-                      {profitLoss.toFixed(0)}
-                    </h2>
                   </td>
                   <td
                     className="relative text-base text-center border border-gray-300 leading-10 font-semibold bg-[var(--bg-back)] text-[var(--bg-secondary)] cursor-pointer"
@@ -761,18 +725,6 @@ const ThirtyTwoCardBComponent: React.FC<{
                 )}
                 <div className="flex flex-col items-center justify-center h-full">
                   <span>{num}</span>
-                  <span 
-                    className={`text-xs font-medium ${
-                      profitLoss > 0
-                        ? "text-green-600"
-                        : profitLoss < 0
-                          ? "text-red-600"
-                          : "text-gray-600"
-                    }`}
-                  >
-                    {profitLoss > 0 ? "+" : ""}
-                    {profitLoss.toFixed(0)}
-                  </span>
                 </div>
               </div>
             );
