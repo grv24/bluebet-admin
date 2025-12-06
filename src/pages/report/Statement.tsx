@@ -5,7 +5,13 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 
-const accountTypes = ["All", "User", "Admin"];
+const accountTypes = [
+  "All",
+  "Deposit/Withdraw Report",
+  "Sports Report",
+  "Casino Report",
+  "Third Party Casino Report",
+];
 const gameNames = ["All", "Game 1", "Game 2"];
 const pageSizeOptions = [25, 50, 100];
 
