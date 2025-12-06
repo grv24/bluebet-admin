@@ -94,7 +94,6 @@ const Lucky7bComponent = ({
                 <button
                   className="relative bg-gradient-to-r from-[var(--bg-primary)] text-white font-semibold to-[var(--bg-secondary)] w-full py-2"
                   disabled={locked}
-                  }
                 >
                   {locked && (
                     <span className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -103,14 +102,7 @@ const Lucky7bComponent = ({
                   )}
                   Low Card
                 </button>
-                <h2 
-                  className={`text-xs font-semibold leading-5 text-center ${
-                      ? "text-green-600"
-                        ? "text-red-600"
-                        : "text-gray-600"
-                  }`}
-                >
-                </h2>
+                
               </>
             );
           })()}
@@ -131,7 +123,6 @@ const Lucky7bComponent = ({
                 <button
                   className="relative bg-gradient-to-r from-[var(--bg-primary)] text-white font-semibold to-[var(--bg-secondary)] w-full py-2"
                   disabled={locked}
-                  }
                 >
                   {locked && (
                     <span className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -140,14 +131,7 @@ const Lucky7bComponent = ({
                   )}
                   High Card
                 </button>
-                <h2 
-                  className={`text-xs font-semibold leading-5 text-center ${
-                      ? "text-green-600"
-                        ? "text-red-600"
-                        : "text-gray-600"
-                  }`}
-                >
-                </h2>
+                
               </>
             );
           })()}
@@ -169,9 +153,6 @@ const Lucky7bComponent = ({
                   <button
                     className="relative bg-gradient-to-r from-[var(--bg-primary)] text-white font-semibold to-[var(--bg-secondary)] w-full py-2.5"
                     disabled={locked}
-                      !locked &&
-                      row?.sid &&
-                    }
                   >
                     {locked && (
                       <span className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -180,14 +161,7 @@ const Lucky7bComponent = ({
                     )}
                     Even
                   </button>
-                  <h2 
-                    className={`text-xs font-semibold leading-5 text-center ${
-                        ? "text-green-600"
-                          ? "text-red-600"
-                          : "text-gray-600"
-                    }`}
-                  >
-                  </h2>
+                  
                 </>
               );
             })()}
@@ -205,9 +179,6 @@ const Lucky7bComponent = ({
                   <button
                     className="relative bg-gradient-to-r from-[var(--bg-primary)] text-white font-semibold to-[var(--bg-secondary)] w-full py-2.5"
                     disabled={locked}
-                      !locked &&
-                      row?.sid &&
-                    }
                   >
                     {locked && (
                       <span className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -216,14 +187,7 @@ const Lucky7bComponent = ({
                     )}
                     Odd
                   </button>
-                  <h2 
-                    className={`text-xs font-semibold leading-5 text-center ${
-                        ? "text-green-600"
-                          ? "text-red-600"
-                          : "text-gray-600"
-                    }`}
-                  >
-                  </h2>
+                  
                 </>
               );
             })()}
@@ -243,9 +207,6 @@ const Lucky7bComponent = ({
                   <button
                     className="relative bg-gradient-to-r from-[var(--bg-primary)] text-white font-semibold to-[var(--bg-secondary)] w-full py-2.5"
                     disabled={locked}
-                      !locked &&
-                      row?.sid &&
-                    }
                   >
                     {locked && (
                       <span className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -266,14 +227,7 @@ const Lucky7bComponent = ({
                       />
                     </div>
                   </button>
-                  <h2 
-                    className={`text-xs font-semibold leading-5 text-center ${
-                        ? "text-green-600"
-                          ? "text-red-600"
-                          : "text-gray-600"
-                    }`}
-                  >
-                  </h2>
+                  
                 </>
               );
             })()}
@@ -291,9 +245,6 @@ const Lucky7bComponent = ({
                   <button
                     className="relative bg-gradient-to-r from-[var(--bg-primary)] text-white font-semibold to-[var(--bg-secondary)] w-full py-2.5"
                     disabled={locked}
-                      !locked &&
-                      row?.sid &&
-                    }
                   >
                     {locked && (
                       <span className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -305,14 +256,7 @@ const Lucky7bComponent = ({
                       <img src={getBlackShapes().Club} alt="" className="w-5" />
                     </div>
                   </button>
-                  <h2 
-                    className={`text-xs font-semibold leading-5 text-center ${
-                        ? "text-green-600"
-                          ? "text-red-600"
-                          : "text-gray-600"
-                    }`}
-                  >
-                  </h2>
+                  
                 </>
               );
             })()}
@@ -335,9 +279,6 @@ const Lucky7bComponent = ({
                   <button
                     className="relative"
                     disabled={locked}
-                      !locked &&
-                      lineRow?.sid &&
-                    }
                   >
                     {locked && (
                       <span className="absolute inset-0 flex items-center justify-center bg-black/50 rounded">
@@ -354,14 +295,7 @@ const Lucky7bComponent = ({
               );
             })}
           </div>
-                  <h2 
-                    className={`text-xs font-semibold leading-3 ${
-                        ? "text-green-600"
-                          ? "text-red-600"
-                          : "text-gray-600"
-                    }`}
-                  >
-                  </h2>
+                  
         </div>
         {/* Line 2: Cards 4, 5, 6 */}
         <div className="flex flex-col items-center justify-center gap-2 bg-[var(--bg-table-row)] p-2">
@@ -377,9 +311,6 @@ const Lucky7bComponent = ({
                   <button
                     className="relative"
                     disabled={locked}
-                      !locked &&
-                      lineRow?.sid &&
-                    }
                   >
                     {locked && (
                       <span className="absolute inset-0 flex items-center justify-center bg-black/50 rounded">
@@ -396,14 +327,7 @@ const Lucky7bComponent = ({
               );
             })}
           </div>
-                  <h2 
-                    className={`text-xs font-semibold leading-3 ${
-                        ? "text-green-600"
-                          ? "text-red-600"
-                          : "text-gray-600"
-                    }`}
-                  >
-                  </h2>
+                  
         </div>
         {/* Line 3: Cards 7, 8, 9 */}
         <div className="flex flex-col items-center justify-center gap-2 bg-[var(--bg-table-row)] p-2">
@@ -419,9 +343,6 @@ const Lucky7bComponent = ({
                   <button
                     className="relative"
                     disabled={locked}
-                      !locked &&
-                      lineRow?.sid &&
-                    }
                   >
                     {locked && (
                       <span className="absolute inset-0 flex items-center justify-center bg-black/50 rounded">
@@ -438,14 +359,7 @@ const Lucky7bComponent = ({
               );
             })}
           </div>
-                  <h2 
-                    className={`text-xs font-semibold leading-3 ${
-                        ? "text-green-600"
-                          ? "text-red-600"
-                          : "text-gray-600"
-                    }`}
-                  >
-                  </h2>
+                  
         </div>
         {/* Line 4: Cards 10, J, Q, K (or 10, J, Q if only 3) */}
         <div className="flex flex-col items-center justify-center gap-2 bg-[var(--bg-table-row)] p-2">
@@ -461,9 +375,6 @@ const Lucky7bComponent = ({
                   <button
                     className="relative"
                     disabled={locked}
-                      !locked &&
-                      lineRow?.sid &&
-                    }
                   >
                     {locked && (
                       <span className="absolute inset-0 flex items-center justify-center bg-black/50 rounded">
@@ -480,14 +391,7 @@ const Lucky7bComponent = ({
               );
             })}
           </div>
-                  <h2 
-                    className={`text-xs font-semibold leading-3 ${
-                        ? "text-green-600"
-                          ? "text-red-600"
-                          : "text-gray-600"
-                    }`}
-                  >
-                  </h2>
+                  
         </div>
       </div>
       {/* fourth row - All Cards (Card 1 to Card K) */}
@@ -518,7 +422,6 @@ const Lucky7bComponent = ({
                 <button
                   className="relative"
                   disabled={locked}
-                  }
                 >
                   {locked && (
                     <span className="absolute inset-0 flex items-center justify-center bg-black/50 rounded">
@@ -531,14 +434,7 @@ const Lucky7bComponent = ({
                     className="lg:w-8 w-6"
                   />
                 </button>
-                <h2 
-                  className={`text-xs font-semibold leading-3 ${
-                      ? "text-green-600"
-                        ? "text-red-600"
-                        : "text-gray-600"
-                  }`}
-                >
-                </h2>
+                
               </div>
             );
           })}

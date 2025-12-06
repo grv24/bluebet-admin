@@ -138,20 +138,9 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
                   <td className="w-1/2">
                     <div className="flex items-center gap-1">
                       <h2 className="text-sm font-normal px-2">{odd?.nat}</h2>
-                        <span
-                          className={`text-[10px] font-semibold ${
-                          }`}
-                        >
-                        </span>
-                      )}
                     </div>
                   </td>
-                  <td
-                    className="bg-[var(--bg-back)] text-sm font-semibold relative cursor-pointer"
-                      !locked &&
-                      odd?.sid &&
-                    }
-                  >
+                  <td className="bg-[var(--bg-back)] text-sm font-semibold relative">
                     {locked && (
                       <div className="absolute inset-0 bg-black/60 flex flex-col w-full h-full justify-center items-center font-bold uppercase z-20">
                         <span className="text-white">
@@ -200,18 +189,11 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
                   <td className="w-1/2">
                     <div className="flex items-center gap-1">
                       <h2 className="text-sm font-normal px-2">{odd?.nat}</h2>
-                        <span
-                          className={`text-[10px] font-semibold ${
-                          }`}
-                        >
-                        </span>
-                      )}
+                        
                     </div>
                   </td>
                   <td
-                    className="bg-[var(--bg-back)] w-1/4 text-sm font-semibold relative cursor-pointer"
-                      !locked &&
-                      odd?.sid &&
+                    className="bg-[var(--bg-back)] w-1/4 text-sm font-semibold relative "
                     }
                   >
                     {locked && (
@@ -262,18 +244,11 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
                   <td className="w-1/2">
                     <div className="flex items-center gap-1">
                       <h2 className="text-sm font-normal px-2">{odd?.nat}</h2>
-                        <span
-                          className={`text-[10px] font-semibold ${
-                          }`}
-                        >
-                        </span>
-                      )}
+                        
                     </div>
                   </td>
                   <td
-                    className="bg-[var(--bg-back)] w-1/4 text-sm font-semibold relative cursor-pointer"
-                      !locked &&
-                      odd?.sid &&
+                    className="bg-[var(--bg-back)] w-1/4 text-sm font-semibold relative "
                     }
                   >
                     {locked && (
@@ -326,20 +301,9 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
                   <td className="w-1/2">
                     <div className="flex items-center gap-1">
                       <h2 className="text-sm font-normal px-2">{odd?.nat}</h2>
-                        <span
-                          className={`text-[10px] font-semibold ${
-                          }`}
-                        >
-                        </span>
-                      )}
                     </div>
                   </td>
-                  <td
-                    className="bg-[var(--bg-back)] text-sm font-semibold relative cursor-pointer"
-                      !locked &&
-                      odd?.sid &&
-                    }
-                  >
+                  <td className="bg-[var(--bg-back)] text-sm font-semibold relative">
                     {locked && (
                       <div className="absolute inset-0 bg-black/60 flex flex-col w-full h-full justify-center items-center font-bold uppercase z-20">
                         <span className="text-white">
