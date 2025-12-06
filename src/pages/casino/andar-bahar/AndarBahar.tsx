@@ -1,67 +1,16 @@
-import React, { useState } from "react";
-import { cardImage, getCardByCode, getNumberCard } from "../../../utils/card";
-// import { getCasinoIndividualResult } from "../../../helper/casino";
-import { useCookies } from "react-cookie";
-import { useQuery } from "@tanstack/react-query";
-// import CasinoModal from "../../components/common/CasinoModal";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import React from "react";
+import { cardImage, getNumberCard } from "../../../utils/card";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
-
-const formatDateTime = (
-  value: string | number | Date | null | undefined
-): string => {
-  if (value === undefined || value === null) return "N/A";
-
-  if (value instanceof Date) {
-    if (Number.isNaN(value.getTime())) return "N/A";
-    return value.toLocaleString();
-  }
-
-  if (typeof value === "string") {
-    const trimmedValue = value.trim();
-    if (!trimmedValue) return "N/A";
-
-    const dateFromString = new Date(trimmedValue);
-    if (!Number.isNaN(dateFromString.getTime())) {
-      return dateFromString.toLocaleString();
-    }
-
-    const numericValue = Number(trimmedValue);
-    if (!Number.isNaN(numericValue)) {
-      const dateFromNumeric = new Date(numericValue);
-      if (!Number.isNaN(dateFromNumeric.getTime())) {
-        return dateFromNumeric.toLocaleString();
-      }
-    }
-
-    return trimmedValue;
-  }
-
-  const dateFromNumber = new Date(value);
-  if (!Number.isNaN(dateFromNumber.getTime())) {
-    return dateFromNumber.toLocaleString();
-  }
-
-  return String(value);
-};
 
 const AndarBaharComponent = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results,
 }: {
   casinoData: any;
   remainingTime: number;
-  onBetClick: (sid: string, type: string) => void;
   results: any;
 }) => {
-  const [cookies] = useCookies(["clientToken"]);
-  const [selectedResult, setSelectedResult] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [firstRowIndex, setFirstRowIndex] = useState(0);
-  const [secondRowIndex, setSecondRowIndex] = useState(0);
-  const [betFilter, setBetFilter] = useState("all");
 
   const cardSequence =
     casinoData?.data?.card || casinoData?.data?.data?.data?.card || "";
@@ -111,187 +60,14 @@ const AndarBaharComponent = ({
   // Get odds data from the sub array
   const oddsData = casinoData?.data?.sub || [];
 
-  // React Query for individual result details
-  // const {
-  //   data: resultDetails,
-  //   isLoading,
-  //   error,
-  // } = useQuery<any>({
-  //   queryKey: ["casinoIndividualResult", selectedResult?.mid],
-  //   queryFn: () =>
-  //     // getCasinoIndividualResult(selectedResult?.mid, cookies, "ab4"),
-  //     Promise.resolve(null),
-  //   enabled: !!selectedResult?.mid && isModalOpen,
-  //   staleTime: 1000 * 60 * 5, // 5 minutes
-  //   gcTime: 1000 * 60 * 10, // 10 minutes
-  //   retry: 2,
-  // });
-
-  // Debug logging for individual result details
-  // React.useEffect(() => {
-  //   if (resultDetails?.data?.matchData) {
-  //     console.log("🎰 AB4 Individual Result Details:", {
-  //       mid: resultDetails.data.matchData.mid,
-  //       win: resultDetails.data.matchData.win,
-  //       cards: resultDetails.data.matchData.cards,
-  //       desc: resultDetails.data.matchData.desc,
-  //       winAt: resultDetails.data.matchData.winAt,
-  //       dateAndTime: resultDetails.data.matchData.dateAndTime,
-  //       // Legacy format fields
-  //       resultMid: resultDetails.data.matchData.result?.mid,
-  //       resultWin: resultDetails.data.matchData.result?.win,
-  //       resultCards: resultDetails.data.matchData.result?.cards,
-  //     });
-  //   }
-  // }, [resultDetails]);
-
-  /**
-   * Handle clicking on individual result to show details
-   */
-  const handleResultClick = (result: any) => {
-    if (!result?.mid) return;
-
-    setSelectedResult(result);
-    setIsModalOpen(true);
-  };
-
-  /**
-   * Close the result details modal
-   */
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedResult(null);
-  };
-
-  const getFilteredBets = (bets: any[], filter: string) => {
-    if (!Array.isArray(bets) || bets.length === 0) return [];
-    if (filter === "all") return bets;
-
-    return bets.filter((bet: any) => {
-      const oddCategory =
-        bet.betData?.oddCategory?.toLowerCase() ||
-        bet.betData?.betType?.toLowerCase() ||
-        "";
-      const status = bet.status?.toLowerCase();
-
-      switch (filter) {
-        case "back":
-          return oddCategory === "back" || oddCategory === "yes";
-        case "lay":
-          return oddCategory === "lay" || oddCategory === "no";
-        case "deleted":
-          return status === "deleted" || status === "cancelled";
-        default:
-          return true;
-      }
-    });
-  };
-
-  // Array of card ranks to display
-  const cardRanks = [
-    "A",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "8",
-    "9",
-    "10",
-    "J",
-    "Q",
-    "K",
-  ];
-
+  // Check if item is suspended (for display purposes only)
   const isSuspended = (item: any) => {
-    // Check if the specific item is suspended
     return (
       !item ||
       item.gstatus === "SUSPENDED" ||
       item.gstatus === "CLOSED" ||
       remainingTime <= 3
     );
-  };
-
-  const handleBetClick = (item: any, betType: "back" | "lay") => {
-    console.log("🎰 AB4 bet click:", { item, betType, sid: item?.sid });
-
-    // Check if betting is suspended for this item
-    if (isSuspended(item)) {
-      console.log("🎰 AB4 bet suspended for item:", item);
-      return;
-    }
-
-    // // Check if the specific bet type is available
-    // if (betType === "back" && (!item.b || item.b === 0 || item.b === "0")) {
-    //   console.log("🎰 AB4 back bet not available for item:", item);
-    //   return;
-    // }
-
-    // if (betType === "lay" && (!item.l || item.l === 0 || item.l === "0")) {
-    //   console.log("🎰 AB4 lay bet not available for item:", item);
-    //   return;
-    // }
-
-    // Trigger global bet popup handled in parent/component registry
-    onBetClick(String(item.sid), betType);
-  };
-
-  // const cards = resultDetails?.data?.matchData?.cards?.split(",") || [];
-
-  // Filter and split cards into two rows with alternating pattern
-  // const validCards = cards.filter((card: string) => card && card.trim());
-
-  // Distribute cards alternately: 0th index -> second row, 1st index -> first row, etc.
-  const firstRowCards: string[] = [];
-  const secondRowCards: string[] = [];
-
-  // validCards.forEach((card: string, index: number) => {
-  //   if (index % 2 === 0) {
-  //     // Even indices (0, 2, 4, ...) go to second row
-  //     secondRowCards.push(card);
-  //   } else {
-  //     // Odd indices (1, 3, 5, ...) go to first row
-  //     firstRowCards.push(card);
-  //   }
-  // });
-
-  // Get visible cards for each row based on current index
-  const getVisibleCards = (
-    cards: string[],
-    startIndex: number,
-    maxVisible: number = 5
-  ) => {
-    return cards.slice(startIndex, startIndex + maxVisible);
-  };
-
-  const visibleFirstRow = getVisibleCards(firstRowCards, firstRowIndex);
-  const visibleSecondRow = getVisibleCards(secondRowCards, secondRowIndex);
-
-  // Navigation functions
-  const nextFirstRow = () => {
-    if (firstRowIndex + 5 < firstRowCards.length) {
-      setFirstRowIndex(firstRowIndex + 1);
-    }
-  };
-
-  const prevFirstRow = () => {
-    if (firstRowIndex > 0) {
-      setFirstRowIndex(firstRowIndex - 1);
-    }
-  };
-
-  const nextSecondRow = () => {
-    if (secondRowIndex + 5 < secondRowCards.length) {
-      setSecondRowIndex(secondRowIndex + 1);
-    }
-  };
-
-  const prevSecondRow = () => {
-    if (secondRowIndex > 0) {
-      setSecondRowIndex(secondRowIndex - 1);
-    }
   };
 
   return (
@@ -341,24 +117,11 @@ const AndarBaharComponent = ({
                             ? cardImage?.back
                             : getNumberCard(rank || "")
                         }
-                        className={`w-8 h-full ${
-                          suspended
-                            ? "cursor-not-allowed opacity"
-                            : "cursor-pointer"
-                        }`}
+                        className="w-8 h-full"
                         alt={
                           suspended && !isCardRevealed ? "card back" : item?.nat
                         }
-                        onClick={
-                          suspended
-                            ? undefined
-                            : () => handleBetClick(item, "back")
-                        }
-                        title={
-                          suspended && !isCardRevealed
-                            ? "Bet suspended"
-                            : `Back: ${displayRate || 0}`
-                        }
+                        title={`Rate: ${displayRate || 0}`}
                       />
                       <span
                         className={`text-[10px] font-semibold ${
@@ -423,24 +186,11 @@ const AndarBaharComponent = ({
                             ? cardImage?.back
                             : getNumberCard(rank || "")
                         }
-                        className={`w-8 h-full ${
-                          suspended
-                            ? "cursor-not-allowed"
-                            : "cursor-pointer"
-                        }`}
+                        className="w-8 h-full"
                         alt={
                           suspended && !isCardRevealed ? "card back" : item?.nat
                         }
-                        onClick={
-                          suspended
-                            ? undefined
-                            : () => handleBetClick(item, "back")
-                        }
-                        title={
-                          suspended && !isCardRevealed
-                            ? "Bet suspended"
-                            : `Back: ${displayRate || 0}`
-                        }
+                        title={`Rate: ${displayRate || 0}`}
                       />
                       <span
                         className={`text-[10px] font-semibold ${
@@ -491,11 +241,10 @@ const AndarBaharComponent = ({
                 return (
                   <h2
                     key={index}
-                    className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor} cursor-pointer hover:scale-110 transition-transform`}
-                    onClick={() => handleResultClick(item)}
+                    className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor}`}
                     title={`Result: ${resultValue}`}
                   >
-                    R
+                    {displayText}
                   </h2>
                 );
               })

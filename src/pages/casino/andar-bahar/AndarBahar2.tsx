@@ -169,19 +169,19 @@ const AndarBahar2Component = ({
                 <h2 className="text-base font-semibold text-center">
                   {name.toUpperCase()}
                 </h2>
-                <div className="relative bg-[var(--bg-back)] w-full">
+                <div className="relative border-2 border-[var(--bg-back)] w-full">
                   {locked && (
                     <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                       <RiLockFill className="text-white text-lg" />
                     </div>
                   )}
-                  <h2 className="text-base font-semibold leading-10 text-center text-white">
+                  <h2 className="text-base font-semibold leading-10 text-center ">
                     {row?.b ?? 0}
                   </h2>
                 </div>
-                <h2 className="text-xs font-medium text-center text-gray-500">
+                {/* <h2 className="text-xs font-medium text-center text-gray-500">
                   {locked ? "SUSPENDED" : "OPEN"}
-                </h2>
+                </h2> */}
               </div>
             );
           })}
@@ -221,19 +221,19 @@ const AndarBahar2Component = ({
                 {suitImage && (
                   <img src={suitImage} className="w-6 h-6 mx-auto" alt={label} />
                 )}
-                <div className="relative bg-[var(--bg-back)] w-full">
+                <div className="relative border-2 border-[var(--bg-back)] w-full">
                   {locked && (
                     <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                       <RiLockFill className="text-white text-lg" />
                     </div>
                   )}
-                  <h2 className="text-base font-semibold leading-10 text-center text-white">
+                  <h2 className="text-base font-semibold leading-10 text-center ">
                     {row?.b ?? 0}
                   </h2>
                 </div>
-                <h2 className="text-xs font-medium text-center text-gray-500">
+                {/* <h2 className="text-xs font-medium text-center text-gray-500">
                   {locked ? "SUSPENDED" : "OPEN"}
-                </h2>
+                </h2> */}
               </div>
             );
           })}
