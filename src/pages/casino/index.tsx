@@ -273,6 +273,16 @@ const Casino: React.FC = () => {
     unsubscribeFromCasinoUpdates,
   } = useSocketContext();
 
+  // Track subscription to prevent duplicate subscriptions
+  const subscriptionRef = useRef<{
+    gameCode: string | null;
+    subscribed: boolean;
+  }>({ gameCode: null, subscribed: false });
+
+  // Track if we've received socket data - after first socket update, ignore API calls
+  const hasReceivedSocketData = useRef(false);
+  const initialDataFetchedGame = useRef<string | null>(null);
+
   // Component initialization log (only once)
   useEffect(() => {
     console.log("🎰 Casino component initialized:", {
@@ -283,10 +293,15 @@ const Casino: React.FC = () => {
       mode: isConnected
         ? "Real-time (Socket) - API fetch once, then socket updates only"
         : "API-only (Socket unavailable)",
+      locationState: location.state,
     });
     
-    // Reset socket data flag when component mounts or game changes
+    // Reset socket data flag ONLY when game actually changes (not on every re-render)
+    const currentGameCode = game?.casinoGameCode;
+    
     return () => {
+      // Only reset if we're actually leaving this game (unmounting or switching to different game)
+      console.log("🎰 Casino component cleanup for:", currentGameCode);
       hasReceivedSocketData.current = false;
       initialDataFetchedGame.current = null;
     };
@@ -397,16 +412,6 @@ const Casino: React.FC = () => {
       }
     }
   }, [isConnected, game?.casinoGameCode, joinCasinoRoom]);
-
-  // Track subscription to prevent duplicate subscriptions
-  const subscriptionRef = useRef<{
-    gameCode: string | null;
-    subscribed: boolean;
-  }>({ gameCode: null, subscribed: false });
-
-  // Track if we've received socket data - after first socket update, ignore API calls
-  const hasReceivedSocketData = useRef(false);
-  const initialDataFetchedGame = useRef<string | null>(null);
 
   // Socket update handler - defined outside useEffect to prevent recreation
   const handleCasinoUpdate = useCallback(
@@ -747,6 +752,24 @@ const Casino: React.FC = () => {
 
   // Then check if it's a supported game type
   const GameComponent = GAME_COMPONENTS[game?.casinoGameCode as GameCode];
+
+  // Check if game data exists - handle after all hooks
+  if (!game) {
+    console.error("🎰 [ERROR] No game data found in location.state");
+    return (
+      <div className="p-4 bg-[#fafafa] min-h-screen">
+        <div className="flex flex-col justify-center items-center h-screen space-y-4">
+          <div className="text-2xl text-red-500">❌ No Game Selected</div>
+          <p className="text-sm text-gray-600">
+            Please select a game from the Live Market menu.
+          </p>
+          <p className="text-xs text-gray-400">
+            Location state: {JSON.stringify(location.state)}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-2 bg-[#fafafa] min-h-screen">
