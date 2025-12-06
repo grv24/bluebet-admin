@@ -107,22 +107,48 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   }, [onLeaveOldSignIn, onBalanceUpdate, onExposureUpdate]);
 
   const processCasinoUpdate = useCallback((data: any) => {
+    console.log("🎰 [PROCESS UPDATE] Starting processCasinoUpdate:", {
+      data,
+      dataKeys: Object.keys(data || {}),
+      dataType: typeof data,
+    });
+
     let casinoType =
       data?.casinoType || data?.type || data?.gameType || data?.data?.casinoType;
 
+    console.log("🎰 [PROCESS UPDATE] Extracted casinoType:", {
+      casinoType,
+      fromField: data?.casinoType ? 'casinoType' : 
+                  data?.type ? 'type' : 
+                  data?.gameType ? 'gameType' : 
+                  data?.data?.casinoType ? 'data.casinoType' : 'none',
+    });
+
     if (!casinoType) {
-      console.log("🎰 No casino type found in data:", data);
+      console.warn("🎰 [PROCESS UPDATE] ❌ No casino type found in data:", {
+        data,
+        availableFields: Object.keys(data || {}),
+      });
       return;
     }
 
     const gameKey = String(casinoType).toLowerCase();
     const callback = casinoSubscribers.current.get(gameKey);
 
+    console.log("🎰 [PROCESS UPDATE] Looking for subscriber:", {
+      casinoType,
+      gameKey,
+      hasCallback: !!callback,
+      availableSubscribers: Array.from(casinoSubscribers.current.keys()),
+      subscribersCount: casinoSubscribers.current.size,
+    });
+
     if (callback) {
+      console.log("🎰 [PROCESS UPDATE] ✅ Calling subscriber callback for:", gameKey);
       callback(data);
     } else {
-      console.log(
-        "🎰 No subscriber found for:",
+      console.warn(
+        "🎰 [PROCESS UPDATE] ❌ No subscriber found for:",
         gameKey,
         "Available subscribers:",
         Array.from(casinoSubscribers.current.keys())
@@ -198,6 +224,12 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
 
       casinoEvents.forEach((event) => {
         socketService.on(event, (data) => {
+          console.log(`🎰 [SOCKET CONTEXT] Received '${event}' event:`, {
+            event,
+            data,
+            timestamp: new Date().toISOString(),
+            dataKeys: Object.keys(data || {}),
+          });
           setCasinoData(data);
           processCasinoUpdate(data);
         });
@@ -248,10 +280,18 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
 
   const subscribeToCasinoUpdates = useCallback(
     (gameSlug: string, callback: (data: any) => void) => {
-      if (!gameSlug) return;
+      if (!gameSlug) {
+        console.warn("🎰 [SUBSCRIBE] ❌ Cannot subscribe - no gameSlug provided");
+        return;
+      }
       const gameKey = gameSlug.toLowerCase();
       casinoSubscribers.current.set(gameKey, callback);
-      console.log("🎰 Subscribed to casino updates for:", gameKey);
+      console.log("🎰 [SUBSCRIBE] ✅ Subscribed to casino updates:", {
+        gameSlug,
+        gameKey,
+        totalSubscribers: casinoSubscribers.current.size,
+        allSubscribers: Array.from(casinoSubscribers.current.keys()),
+      });
     },
     []
   );
@@ -259,8 +299,14 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   const unsubscribeFromCasinoUpdates = useCallback((gameSlug: string) => {
     if (!gameSlug) return;
     const gameKey = gameSlug.toLowerCase();
+    const wasSubscribed = casinoSubscribers.current.has(gameKey);
     casinoSubscribers.current.delete(gameKey);
-    console.log("🎰 Unsubscribed from casino updates for:", gameKey);
+    console.log("🎰 [UNSUBSCRIBE] Unsubscribed from casino updates:", {
+      gameSlug,
+      gameKey,
+      wasSubscribed,
+      remainingSubscribers: Array.from(casinoSubscribers.current.keys()),
+    });
   }, []);
 
   const joinCasinoRoom = useCallback(

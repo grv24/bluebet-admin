@@ -138,22 +138,24 @@ class SocketService {
         
         console.log('🔌 [DEBUG] Creating socket connection with config:', {
           socketUrl,
-          transports: ['websocket', 'polling'], // WebSocket first, polling fallback
+          transports: ['polling', 'websocket'], // Polling first, then upgrade to WebSocket
           upgrade: true,
           rememberUpgrade: true,
-          timeout: 5000,
+          timeout: 10000,
           forceNew: false,
           secure: true,
-          rejectUnauthorized: false
+          rejectUnauthorized: false,
+          note: 'Using polling first because WebSocket upgrade blocked by server'
         });
         
-        // Prepare socket options - Match working implementation
+        // Prepare socket options - Use polling first, then upgrade to WebSocket
         const socketOptions: any = {
-          // WebSocket first for low latency, polling as fallback
-          transports: ['websocket', 'polling'],
-          upgrade: true,
+          // IMPORTANT: Polling first because WebSocket upgrade is blocked by server
+          // Socket.IO will automatically upgrade to WebSocket if server allows it
+          transports: ['polling', 'websocket'],
+          upgrade: true, // Allow upgrade to WebSocket after initial polling connection
           rememberUpgrade: true, // Remember successful WebSocket upgrade
-          timeout: 5000, // Match server upgradeTimeout
+          timeout: 10000, // Increased timeout for polling
           forceNew: false, // Allow connection reuse
           secure: true,
           rejectUnauthorized: false,
@@ -164,10 +166,10 @@ class SocketService {
           reconnectionDelayMax: 5000,
           maxReconnectionAttempts: 5,
           withCredentials: false,
-          // Optimize for faster WebSocket connection
-          upgradeTimeout: 1000,
-          pingTimeout: 10000,
-          pingInterval: 15000,
+          // Optimize for WebSocket upgrade after polling connection
+          upgradeTimeout: 10000, // Increased timeout for upgrade
+          pingTimeout: 60000, // Increased for polling
+          pingInterval: 25000, // Increased for polling
         };
 
         // Add authentication if token is available
@@ -279,9 +281,9 @@ class SocketService {
           const isWebSocketError = errorType === 'TransportError' && error.message === 'websocket error';
           
           if (isWebSocketError) {
-            // Suppress repeated WebSocket transport errors - these are expected if server doesn't support WebSocket
-            // Component will work fine with API calls only
-            console.warn('🔌 WebSocket connection unavailable - using API mode only. Component will function normally.');
+            // Suppress repeated WebSocket transport errors - these are expected during polling connection
+            // Socket.IO will try to upgrade to WebSocket after polling connection is established
+            console.log('🔌 WebSocket direct connection failed (expected) - using polling transport. Will upgrade to WebSocket if server allows.');
           } else {
             // Log other connection errors (auth, CORS, etc.)
             console.error('🔌 [DEBUG] Socket connection error:', {
@@ -717,7 +719,19 @@ class SocketService {
         return;
       }
       
-      this.socket.on(event, callback);
+      // Wrap callback to log raw data received from server
+      const wrappedCallback = (...args: any[]) => {
+        console.log(`🔌 [RAW EVENT] Received '${event}' from server:`, {
+          event,
+          args,
+          argsCount: args.length,
+          firstArg: args[0],
+          timestamp: new Date().toISOString(),
+        });
+        callback(...args);
+      };
+      
+      this.socket.on(event, wrappedCallback);
       this.registeredListeners.add(event);
       console.log(`🔌 [DEBUG] Registered event listener for '${event}'`);
     }

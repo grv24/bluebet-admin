@@ -281,49 +281,71 @@ const Casino: React.FC = () => {
       gameName: game?.casinoGameName,
       isConnected,
       mode: isConnected
-        ? "Real-time (Socket)"
+        ? "Real-time (Socket) - API fetch once, then socket updates only"
         : "API-only (Socket unavailable)",
     });
-  }, []); // Only log once on mount
+    
+    // Reset socket data flag when component mounts or game changes
+    return () => {
+      hasReceivedSocketData.current = false;
+      initialDataFetchedGame.current = null;
+    };
+  }, [game?.casinoGameCode]); // Reset when game changes
 
   // Get stream URL from game
   const streamUrl = useMemo(() => {
     return game?.casinoGameTvLink || null;
   }, [game?.casinoGameTvLink]);
 
-  // Fetch odds and top ten results for the current game
+  // Fetch INITIAL odds and top ten results ONCE when component mounts
+  // After this, ALL updates come from socket only
   useEffect(() => {
     if (!game?.casinoGameCode) return;
+    
+    // Only fetch initial data once per game
+    const gameKey = game.casinoGameCode;
+    if (initialDataFetchedGame.current === gameKey) {
+      console.log("🎰 [API] Skipping API fetch - initial data already loaded, waiting for socket updates");
+      return;
+    }
 
-    const fetchData = async () => {
+    const fetchInitialData = async () => {
+      console.log("🎰 [API] Fetching INITIAL data from API (one-time only)...");
+      
       try {
         const oddsRes = (await getCasinoGameOdds(
           game.casinoGameCode,
           cookies
         )) as any;
-        setOdds(oddsRes);
-        console.log(
-          "🎰 Casino odds (TEEN_3):",
-          JSON.stringify(oddsRes, null, 2)
-        );
-        setOddsError(null);
+        
+        // Only set odds if we haven't received socket data yet
+        if (!hasReceivedSocketData.current) {
+          setOdds(oddsRes);
+          console.log(
+            "🎰 [API] Initial casino odds loaded:",
+            JSON.stringify(oddsRes, null, 2)
+          );
+          setOddsError(null);
 
-        // Extract countdown time from odds data
-        const countdownTime =
-          oddsRes?.data?.lt ||
-          oddsRes?.data?.data?.lt ||
-          oddsRes?.data?.data?.data?.lt ||
-          0;
-        if (
-          countdownTime &&
-          typeof countdownTime === "number" &&
-          countdownTime > 0
-        ) {
-          setCountdown(countdownTime);
-          console.log("🎰 Countdown time extracted:", countdownTime, "seconds");
+          // Extract countdown time from odds data
+          const countdownTime =
+            oddsRes?.data?.lt ||
+            oddsRes?.data?.data?.lt ||
+            oddsRes?.data?.data?.data?.lt ||
+            0;
+          if (
+            countdownTime &&
+            typeof countdownTime === "number" &&
+            countdownTime > 0
+          ) {
+            setCountdown(countdownTime);
+            console.log("🎰 [API] Countdown time extracted:", countdownTime, "seconds");
+          }
+        } else {
+          console.log("🎰 [API] ⚠️ Socket data already received - ignoring API odds");
         }
       } catch (error) {
-        console.error("Failed to fetch casino odds:", error);
+        console.error("🎰 [API] Failed to fetch initial casino odds:", error);
         setOddsError((error as any)?.message || "Failed to fetch odds");
       }
 
@@ -332,27 +354,42 @@ const Casino: React.FC = () => {
           game.casinoGameCode,
           cookies
         )) as any;
-        setTopResults(resultsRes);
-        console.log(
-          "🏁 Casino top ten results (TEEN_3):",
-          JSON.stringify(resultsRes, null, 2)
-        );
-        setResultsError(null);
+        
+        if (!hasReceivedSocketData.current) {
+          setTopResults(resultsRes);
+          console.log(
+            "🎰 [API] Initial top ten results loaded:",
+            JSON.stringify(resultsRes, null, 2)
+          );
+          setResultsError(null);
+        } else {
+          console.log("🎰 [API] ⚠️ Socket data already received - ignoring API results");
+        }
       } catch (error) {
-        console.error("Failed to fetch casino top ten results:", error);
+        console.error("🎰 [API] Failed to fetch initial top ten results:", error);
         setResultsError(
           (error as any)?.message || "Failed to fetch top results"
         );
       }
+
+      initialDataFetchedGame.current = gameKey;
+      console.log("🎰 [API] ✅ Initial data fetch complete. All future updates will come from socket only.");
     };
 
-    fetchData();
-  }, [game?.casinoGameCode, cookies]);
+    fetchInitialData();
+  }, [game?.casinoGameCode]); // Removed 'cookies' dependency to prevent refetching
 
   // Socket reconnection handler - ensures subscription when socket connects
   useEffect(() => {
+    console.log("🎰 [RECONNECTION] Reconnection effect triggered:", {
+      isConnected,
+      gameCode: game?.casinoGameCode,
+    });
+
     if (isConnected && game?.casinoGameCode) {
       const gameSlug = game.casinoGameCode.toLowerCase();
+
+      console.log("🎰 [RECONNECTION] ✅ Socket connected, rejoining room:", gameSlug);
 
       // Join room when socket connects
       if (typeof joinCasinoRoom === "function") {
@@ -367,18 +404,35 @@ const Casino: React.FC = () => {
     subscribed: boolean;
   }>({ gameCode: null, subscribed: false });
 
+  // Track if we've received socket data - after first socket update, ignore API calls
+  const hasReceivedSocketData = useRef(false);
+  const initialDataFetchedGame = useRef<string | null>(null);
+
   // Socket update handler - defined outside useEffect to prevent recreation
   const handleCasinoUpdate = useCallback(
     (socketData: any) => {
+      console.log("🎰 [HANDLE UPDATE] ⚡ Casino update received:", {
+        socketData,
+        hasGameCode: !!game?.casinoGameCode,
+        timestamp: new Date().toISOString(),
+      });
+
       if (!game?.casinoGameCode) {
-        console.log("🎰 handleCasinoUpdate: No game code available");
+        console.warn("🎰 [HANDLE UPDATE] ❌ No game code available, ignoring update");
         return;
       }
 
       const gameSlug = game.casinoGameCode.toLowerCase();
       const currentGameCode = game.casinoGameCode.toUpperCase();
+      
+      console.log("🎰 [HANDLE UPDATE] Processing update:", {
+        gameSlug,
+        currentGameCode,
+        socketDataKeys: Object.keys(socketData || {}),
+      });
+
       try {
-        console.log(`🎰 Real-time socket data for ${gameSlug}:`, socketData);
+        console.log(`🎰 [HANDLE UPDATE] Real-time socket data for ${gameSlug}:`, socketData);
 
         // Extract casino type and data from different possible structures
         let casinoType =
@@ -393,18 +447,27 @@ const Casino: React.FC = () => {
         // Check if this update is for the current game
         const socketGameType = casinoType?.toUpperCase() || casinoType;
 
-        console.log("🎰 Comparing game types:", {
+        console.log("🎰 [HANDLE UPDATE] Comparing game types:", {
           currentGameCode,
           socketGameType,
           originalCasinoType: casinoType,
           matches: currentGameCode === socketGameType,
+          willProcess: currentGameCode === socketGameType && !!data,
         });
 
         // Update state only if the data is for the current game
         if (currentGameCode === socketGameType && data) {
           console.log(
-            "🎰 Processing casino socket update for:",
-            currentGameCode
+            "🎰 [HANDLE UPDATE] ✅ Processing casino socket update for:",
+            currentGameCode,
+            {
+              hasCurrentData: !!data.current,
+              hasSubData: !!data.sub,
+              hasOddsData: !!data.odds,
+              hasT2Data: !!data.t2,
+              hasT1Data: !!data.t1,
+              dataStructure: Object.keys(data),
+            }
           );
 
           // Normalize data structure
@@ -480,7 +543,17 @@ const Casino: React.FC = () => {
             data.t1;
 
           if (hasValidData) {
-            console.log("🎰 Updating odds from socket");
+            // Mark that we've received socket data - API fetches should now be ignored
+            if (!hasReceivedSocketData.current) {
+              hasReceivedSocketData.current = true;
+              console.log("🎰 [SOCKET] 🎉 First socket data received! API fetching now disabled.");
+            }
+            
+            console.log("🎰 [SOCKET] ✅ Updating odds from socket (PRIMARY DATA SOURCE):", {
+              casinoDataToSet,
+              hasLt: !!casinoDataToSet?.data?.lt,
+              hasSub: !!casinoDataToSet?.data?.data?.data?.sub,
+            });
             setOdds(casinoDataToSet);
             setOddsError(null);
 
@@ -513,7 +586,7 @@ const Casino: React.FC = () => {
             data.results.length > 0
           ) {
             console.log(
-              "🎰 Updating results from socket:",
+              "🎰 [SOCKET] ✅ Updating results from socket (PRIMARY DATA SOURCE):",
               data.results.length,
               "results"
             );
@@ -526,14 +599,20 @@ const Casino: React.FC = () => {
             setResultsError(null);
           }
         } else {
-          console.log("🎰 Socket data mismatch - ignoring update:", {
+          console.warn("🎰 [HANDLE UPDATE] ❌ Socket data mismatch - ignoring update:", {
             currentGameCode,
             socketGameType,
             matches: currentGameCode === socketGameType,
+            hasData: !!data,
+            reason: !data ? "No data in update" : "Game type mismatch",
           });
         }
       } catch (error) {
-        console.error("🎰 Error processing casino socket update:", error);
+        console.error("🎰 [HANDLE UPDATE] ❌ Error processing casino socket update:", {
+          error,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          socketData,
+        });
       }
     },
     [game?.casinoGameCode]
@@ -541,7 +620,20 @@ const Casino: React.FC = () => {
 
   // Socket handler for real-time casino updates
   useEffect(() => {
+    console.log("🎰 [CASINO EFFECT] Socket handler effect triggered:", {
+      isConnected,
+      gameCode: game?.casinoGameCode,
+      gameName: game?.casinoGameName,
+      hasJoinFunction: typeof joinCasinoRoom === "function",
+      hasSubscribeFunction: typeof subscribeToCasinoUpdates === "function",
+    });
+
     if (!isConnected || !game?.casinoGameCode) {
+      console.log("🎰 [CASINO EFFECT] ⚠️ Skipping socket setup:", {
+        reason: !isConnected ? "Socket not connected" : "No game code",
+        isConnected,
+        gameCode: game?.casinoGameCode,
+      });
       // Silently skip subscription if socket is not connected - component works with API only
       subscriptionRef.current = { gameCode: null, subscribed: false };
       return;
@@ -550,23 +642,45 @@ const Casino: React.FC = () => {
     const gameSlug = game.casinoGameCode.toLowerCase();
     const currentGameCode = game.casinoGameCode.toUpperCase();
 
+    console.log("🎰 [CASINO EFFECT] Game identifiers:", {
+      originalCode: game.casinoGameCode,
+      gameSlug,
+      currentGameCode,
+      subscriptionRef: subscriptionRef.current,
+    });
+
     // Check if we need to subscribe (new gameCode or socket just connected)
     const needsSubscription =
       !subscriptionRef.current.subscribed ||
       subscriptionRef.current.gameCode !== currentGameCode;
 
+    console.log("🎰 [CASINO EFFECT] Subscription check:", {
+      needsSubscription,
+      currentlySubscribed: subscriptionRef.current.subscribed,
+      subscribedToGame: subscriptionRef.current.gameCode,
+      currentGame: currentGameCode,
+    });
+
     if (needsSubscription) {
+      console.log("🎰 [CASINO EFFECT] ✅ Setting up socket subscription and joining room");
+      
       // Subscribe to casino updates FIRST (before joining room)
       subscribeToCasinoUpdates(gameSlug, handleCasinoUpdate);
       subscriptionRef.current = { gameCode: currentGameCode, subscribed: true };
 
       // Join casino room for real-time updates
       if (typeof joinCasinoRoom === "function") {
+        console.log("🎰 [CASINO EFFECT] Calling joinCasinoRoom for:", gameSlug);
         joinCasinoRoom(gameSlug);
+      } else {
+        console.error("🎰 [CASINO EFFECT] ❌ joinCasinoRoom is not a function!");
       }
+    } else {
+      console.log("🎰 [CASINO EFFECT] ℹ️ Already subscribed, skipping setup");
     }
 
     return () => {
+      console.log("🎰 [CASINO EFFECT] 🧹 Cleanup - unsubscribing and leaving room:", gameSlug);
       subscriptionRef.current = { gameCode: null, subscribed: false };
 
       if (typeof unsubscribeFromCasinoUpdates === "function") {
@@ -636,6 +750,31 @@ const Casino: React.FC = () => {
 
   return (
     <div className="p-2 bg-[#fafafa] min-h-screen">
+      {/* Debug Info - Remove this after debugging */}
+      {/* <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+        <div className="font-bold mb-1">🔍 Socket Debug Info:</div>
+        <div className="grid grid-cols-3 gap-2">
+          <div>
+            Socket Connected: <span className={isConnected ? "text-green-600" : "text-red-600"}>{isConnected ? "✅ Yes" : "❌ No"}</span>
+          </div>
+          <div>
+            Game Code: <span className="font-mono">{game?.casinoGameCode || "N/A"}</span>
+          </div>
+          <div>
+            Round ID: <span className="font-mono">{roundId}</span>
+          </div>
+          <div>
+            Countdown: <span className="font-mono">{countdown}s</span>
+          </div>
+          <div>
+            Has Odds: <span className={odds ? "text-green-600" : "text-red-600"}>{odds ? "✅ Yes" : "❌ No"}</span>
+          </div>
+          <div>
+            Has Results: <span className={topResults ? "text-green-600" : "text-red-600"}>{topResults ? "✅ Yes" : "❌ No"}</span>
+          </div>
+        </div>
+      </div> */}
+
       <div className="grid grid-cols-8 gap-3">
         {/* Left Side */}
         <div className="col-span-5 min-h-40">
@@ -645,6 +784,8 @@ const Casino: React.FC = () => {
               <h2 className="text-xs tracking-tighter leading-6 uppercase text-white">
                 {game?.casinoGameName}
               </h2>
+              {/* Socket indicator */}
+              {/* <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'}`} title={isConnected ? 'Connected' : 'Disconnected'}></div> */}
             </div>
             <h2 className="text-xs tracking-tighter leading-6 text-white">
               Round ID: <span className="text-white">{roundId}</span>
