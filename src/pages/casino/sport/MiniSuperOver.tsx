@@ -273,7 +273,7 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
                           <span className="truncate md:text-[12px] text-xs px-2">
                             {section.nat}
                           </span>
-                          )}</div>
+                        </div>
                       </div>
                     </td>
 
@@ -362,7 +362,7 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
                               <span className="truncate text-xs md:text-[12px] px-2">
                                 {section.nat}
                               </span>
-                          )}</div>
+                            </div>
                           </div>
                         </td>
 
@@ -447,7 +447,7 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
                             <span className="truncate text-xs md:text-[12px] px-2">
                               {section.nat}
                             </span>
-                          )}</div>
+                          </div>
                         </div>
                       </td>
 
@@ -534,7 +534,7 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
                               <span className="truncate text-xs md:text-[12px] px-2">
                                 {section.nat}
                               </span>
-                          )}</div>
+                            </div>
                           </div>
                         </td>
 
@@ -618,7 +618,7 @@ const MiniSuperOver = React.memo(
     if (
       prevProps.remainingTime !== nextProps.remainingTime ||
       prevProps.gameCode !== nextProps.gameCode ||
-      prevProps.gameName !== nextProps.gameName ||
+      prevProps.gameName !== nextProps.gameName
     ) {
       return false;
     }
@@ -633,9 +633,6 @@ const MiniSuperOver = React.memo(
       const prevResults = JSON.stringify(prevProps.results);
       const nextResults = JSON.stringify(nextProps.results);
       if (prevResults !== nextResults) return false;
-    }
-
-      if (prevBet !== nextBet) return false;
     }
 
     return true;
