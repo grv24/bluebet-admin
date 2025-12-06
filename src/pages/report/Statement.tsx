@@ -12,8 +12,19 @@ const accountTypes = [
   "Casino Report",
   "Third Party Casino Report",
 ];
-const gameNames = ["All", "Game 1", "Game 2"];
 const pageSizeOptions = [25, 50, 100];
+
+// Function to get game names based on account type
+const getGameNamesByAccountType = (accountType: string): string[] => {
+  switch (accountType) {
+    case "Deposit/Withdraw Report":
+      return ["All", "Upper", "Lower"];
+    case "All":
+      return ["All"];
+    default:
+      return ["All", "Game 1", "Game 2"];
+  }
+};
 
 const Statement = () => {
   const [accountType, setAccountType] = useState("All");
@@ -28,6 +39,9 @@ const Statement = () => {
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [isExportingExcel, setIsExportingExcel] = useState(false);
   const clientInputRef = useRef<HTMLInputElement>(null);
+
+  // Get dynamic game names based on account type
+  const gameNames = getGameNamesByAccountType(accountType);
 
   // Table columns
   const columns = [
@@ -203,11 +217,9 @@ const Statement = () => {
     }
   };
 
-  // Reset Game Name to "All" when Account Type is "All"
+  // Reset Game Name to "All" when Account Type changes
   React.useEffect(() => {
-    if (accountType === "All") {
-      setGameName("All");
-    }
+    setGameName("All");
   }, [accountType]);
 
   // Handle click outside for dropdown
