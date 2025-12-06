@@ -113,7 +113,7 @@ export default defineConfig(({ mode }) => {
 
     // Development server configuration
     server: {
-      port: 3001,
+      port: 3002,
       strictPort: true,
       host: true,
       open: true,
@@ -131,7 +131,7 @@ export default defineConfig(({ mode }) => {
     // Preview server configuration
     // Used to preview production build locally
     preview: {
-      port: 3001,
+      port: 3002,
       strictPort: true,
       host: true,
     },

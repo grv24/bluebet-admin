@@ -35,12 +35,13 @@ const Bet = () => {
             </th>
           </tr>
         </thead>
-        <tbody></tbody>
-        <tr>
-          <td colSpan={6} className="text-center text-xs leading-6 bg-gray-200">
-            No records found
-          </td>
-        </tr>
+        <tbody>
+          <tr>
+            <td colSpan={6} className="text-center text-xs leading-6 bg-gray-200">
+              No records found
+            </td>
+          </tr>
+        </tbody>
       </table>
     </div>
   );

@@ -18,22 +18,15 @@ const LiveMarket: React.FC = () => {
   } = useCasinoGamesByType(gameType);
 
   // Handle game click
-  const handleGameClick = (gameCode: string) => {
+  const handleGameClick = (game: CasinoGame) => {
     // Navigate to game detail page or handle game selection
     // You can customize this based on your requirements
-    console.log("Game clicked:", gameCode);
-    navigate(`/casino-game-detail/${gameCode}`);
+    console.log("Game clicked:", game);
+    navigate(`/casino-game-detail/${game.casinoGameCode}`,{state: {game}});
     // Example: navigate(`/game/${gameCode}`);
   };
 
-  // Helper function to format game type name for display
-  const formatGameTypeName = (gameType: string | null): string => {
-    if (!gameType) return "Other";
-    return gameType
-      .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  };
+
 
   // Show loading state
   if (isLoading) {
@@ -80,7 +73,7 @@ const LiveMarket: React.FC = () => {
               key={game.id}
               className="bg-white overflow-hidden hover:shadow-lg transition-shadow cursor-pointer border border-gray-200"
             >
-              <div onClick={() => handleGameClick(game.casinoGameCode)} className=" bg-gray-100 flex items-center justify-center">
+              <div onClick={() => handleGameClick(game)} className=" bg-gray-100 flex items-center justify-center">
                 {game.casinoGameIcon ? (
                   <img
                     src={game.casinoGameIcon}

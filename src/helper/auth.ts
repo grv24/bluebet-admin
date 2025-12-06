@@ -25,8 +25,8 @@ export const getUserTypeFromToken = (cookies: AuthCookies): "admin" | "techadmin
   const decodedToken = getDecodedTokenData(cookies);
   if (!decodedToken) return null;
   
-  console.log("🔍 getUserTypeFromToken - decoded token:", decodedToken);
-  console.log("🔍 getUserTypeFromToken - __type:", decodedToken.user?.__type);
+  // console.log("🔍 getUserTypeFromToken - decoded token:", decodedToken);
+  // console.log("🔍 getUserTypeFromToken - __type:", decodedToken.user?.__type);
   
   // Check if __type exists and handle different possible values
   if (decodedToken.user?.__type === "techAdmin" || decodedToken.user?.__type === "techadmin") {
@@ -36,21 +36,21 @@ export const getUserTypeFromToken = (cookies: AuthCookies): "admin" | "techadmin
   }
   
   // Fallback: check the URL to determine user type
-  console.log("🔍 Falling back to URL-based user type detection");
+  // console.log("🔍 Falling back to URL-based user type detection");
   return isTechAdminUrl() ? "techadmin" : "admin";
 };
 
 // Debug function to check all cookies
 export const debugCookies = (cookies: AuthCookies): void => {
-  console.log("🍪 Cookie Debug Info:", {
-    allCookies: cookies,
-    adminCookie: cookies?.Admin && typeof cookies.Admin === 'string' ? `${cookies.Admin.substring(0, 20)}...` : "null",
-    techAdminCookie: cookies?.TechAdmin && typeof cookies.TechAdmin === 'string' ? `${cookies.TechAdmin.substring(0, 20)}...` : "null",
-    hasPopupBeenShown: cookies?.hasPopupBeenShown,
-    currentUrl: window.location.href,
-    hostname: window.location.hostname,
-    protocol: window.location.protocol,
-  });
+  // console.log("🍪 Cookie Debug Info:", {
+  //   allCookies: cookies,
+  //   adminCookie: cookies?.Admin && typeof cookies.Admin === 'string' ? `${cookies.Admin.substring(0, 20)}...` : "null",
+  //   techAdminCookie: cookies?.TechAdmin && typeof cookies.TechAdmin === 'string' ? `${cookies.TechAdmin.substring(0, 20)}...` : "null",
+  //   hasPopupBeenShown: cookies?.hasPopupBeenShown,
+  //   currentUrl: window.location.href,
+  //   hostname: window.location.hostname,
+  //   protocol: window.location.protocol,
+  // });
 
   // Decode and log token structure for debugging
   const authCookieKey = getAuthCookieKey();
@@ -58,9 +58,9 @@ export const debugCookies = (cookies: AuthCookies): void => {
   if (token) {
     try {
       const decoded = jwtDecode(token);
-      console.log("🔍 Full Token Structure:", decoded);
+      // console.log("🔍 Full Token Structure:", decoded);
     } catch (error) {
-      console.error("❌ Error decoding token for debug:", error);
+      // console.error("❌ Error decoding token for debug:", error);
     }
   }
 };
@@ -236,13 +236,25 @@ export const getWhiteListData = async (): Promise<WhiteListData> => {
     );
 
     if (!response.ok) {
+      // For 500 errors or other server errors, return a default fallback instead of throwing
+      // This prevents the app from breaking when the whitelist API is unavailable
+      if (response.status >= 500) {
+        console.warn(`Whitelist API returned ${response.status}, using default fallback. App will continue to function normally.`);
+        return {
+          success: false,
+        } as WhiteListData;
+      }
       throw new Error(`Error ${response.status}: ${response.statusText}`);
     }
 
     return await response.json();
   } catch (error) {
-    console.error("Failed to fetch whitelist data:", error);
-    throw error;
+    // For network errors or other failures, return a default fallback
+    // This prevents the app from breaking when the whitelist API is unavailable
+    console.warn("Failed to fetch whitelist data, using default fallback. App will continue to function normally:", error);
+    return {
+      success: false,
+    } as WhiteListData;
   }
 };
 
@@ -253,7 +265,7 @@ export const getIpAddress = async (): Promise<IpAddressData> => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Failed to fetch ip address:", error);
+    // console.error("Failed to fetch ip address:", error);
     throw error;
   }
 };
@@ -262,10 +274,10 @@ export const loginClient = async (
   loginData: LoginRequest
 ): Promise<LoginResponse> => {
   try {
-    console.log("🔍 Login request data:", {
-      ...loginData,
-      password: "***hidden***", // Don't log actual password
-    });
+        // console.log("🔍 Login request data:", {
+        //   ...loginData,
+        //   password: "***hidden***", // Don't log actual password
+        // });
 
     // /api/v1/users/tech-admins/login
     const response = await fetch(
@@ -280,11 +292,11 @@ export const loginClient = async (
       }
     );
 
-    console.log("📡 Response status:", response.status, response.statusText);
+    // console.log("📡 Response status:", response.status, response.statusText);
 
     // Parse the response body first to get detailed error info
     const data = await response.json();
-    console.log("📋 Response data:", data);
+    // console.log("📋 Response data:", data);
 
     if (!response.ok) {
       // Create error object with server message and status
@@ -304,7 +316,7 @@ export const loginClient = async (
   } catch (error) {
     // If it's a fetch error (network issue), handle differently
     if (error instanceof TypeError) {
-      console.error("❌ Network error:", error);
+      // console.error("❌ Network error:", error);
       const networkError = new Error(
         "Network error. Please check your connection."
       );
@@ -312,7 +324,7 @@ export const loginClient = async (
       throw networkError;
     }
 
-    console.error("❌ Login client error:", error);
+    // console.error("❌ Login client error:", error);
     throw error;
   }
 };
@@ -342,7 +354,7 @@ export const updatePassword = async (
 
     return await response.json();
   } catch (error) {
-    console.error("Failed to update password:", error);
+    // console.error("Failed to update password:", error);
     throw error;
   }
 };
@@ -366,7 +378,7 @@ export const getDirectCookie = (name: string): string | null => {
 
 export const removeDirectCookie = (name: string): void => {
   document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-  console.log(`🗑️ Direct cookie removed: ${name}`);
+  // console.log(`🗑️ Direct cookie removed: ${name}`);
 };
 
 export const authenticate = async (
@@ -397,7 +409,7 @@ export const logout = (
     const socketService = require("@/utils/socketService").default;
     socketService.disconnect();
   } catch (error) {
-    console.log("Socket service not available during logout");
+    // console.log("Socket service not available during logout");
   }
   try {
     const authCookieKey = getAuthCookieKey();
@@ -414,7 +426,7 @@ export const logout = (
     
     navigate("/sign-in", { replace: true });
   } catch (error) {
-    console.error("Logout error:", error);
+    // console.error("Logout error:", error);
     // Force navigation even if cookie removal fails
     navigate("/sign-in", { replace: true });
   }
@@ -439,7 +451,7 @@ export const isAuthenticated = (cookies?: AuthCookies): boolean => {
     const isValid = decoded.exp > currentTime;
     return isValid;
   } catch (error) {
-    console.error("❌ Token validation error:", error);
+    // console.error("❌ Token validation error:", error);
     return false;
   }
 };
@@ -455,32 +467,32 @@ export const getDecodedTokenData = (
   const authCookieKey = getAuthCookieKey();
   const token = cookies?.[authCookieKey] || getDirectCookie(authCookieKey);
   
-  console.log("🔍 getDecodedTokenData - Token check:", {
-    authCookieKey,
-    tokenFromCookies: token ? `${token.substring(0, 20)}...` : null,
-    allCookies: cookies
-  });
+  // console.log("🔍 getDecodedTokenData - Token check:", {
+  //   authCookieKey,
+  //   tokenFromCookies: token ? `${token.substring(0, 20)}...` : null,
+  //   allCookies: cookies
+  // });
 
   if (!token || token === "undefined") {
-    console.log("🍪 No token found in getDecodedTokenData");
+    // console.log("🍪 No token found in getDecodedTokenData");
     return null;
   }
 
-  console.log("🔍 getDecodedTokenData - About to decode token:", {
-    tokenLength: token.length,
-    tokenStart: token.substring(0, 50) + "..."
-  });
+  // console.log("🔍 getDecodedTokenData - About to decode token:", {
+  //   tokenLength: token.length,
+  //   tokenStart: token.substring(0, 50) + "..."
+  // });
 
   try {
     const decoded = jwtDecode<DecodedToken>(token);
-    console.log("🍪 Token decoded successfully:", {
-      decoded,
-      user: decoded?.user,
-      loginId: decoded?.user?.PersonalDetails?.loginId
-    });
+    // console.log("🍪 Token decoded successfully:", {
+    //   decoded,
+    //   user: decoded?.user,
+    //   loginId: decoded?.user?.PersonalDetails?.loginId
+    // });
     return decoded;
   } catch (error) {
-    console.error("Token decode error:", error);
+    // console.error("Token decode error:", error);
     return null;
   }
 };

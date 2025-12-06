@@ -68,6 +68,9 @@ class SocketService {
   
   /** Currently authenticated user information */
   private _currentUser: SocketUser | null = null;
+  
+  /** Track casino room subscriptions */
+  private casinoRoomSubscriptions: Set<string> = new Set();
 
   /**
    * Getter for internal connection status
@@ -135,22 +138,23 @@ class SocketService {
         
         console.log('🔌 [DEBUG] Creating socket connection with config:', {
           socketUrl,
-          transports: ['polling', 'websocket'],
+          transports: ['websocket', 'polling'], // WebSocket first, polling fallback
           upgrade: true,
-          rememberUpgrade: false,
-          timeout: 20000,
-          forceNew: true,
+          rememberUpgrade: true,
+          timeout: 5000,
+          forceNew: false,
           secure: true,
           rejectUnauthorized: false
         });
         
-        // Prepare socket options
+        // Prepare socket options - Match working implementation
         const socketOptions: any = {
-          transports: ['polling', 'websocket'],
+          // WebSocket first for low latency, polling as fallback
+          transports: ['websocket', 'polling'],
           upgrade: true,
-          rememberUpgrade: false,
-          timeout: 20000,
-          forceNew: true,
+          rememberUpgrade: true, // Remember successful WebSocket upgrade
+          timeout: 5000, // Match server upgradeTimeout
+          forceNew: false, // Allow connection reuse
           secure: true,
           rejectUnauthorized: false,
           autoConnect: true,
@@ -159,13 +163,11 @@ class SocketService {
           reconnectionDelay: 1000,
           reconnectionDelayMax: 5000,
           maxReconnectionAttempts: 5,
-          withCredentials: false, // Changed to false for CORS
-          extraHeaders: {
-            'Origin': window.location.origin,
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-          }
+          withCredentials: false,
+          // Optimize for faster WebSocket connection
+          upgradeTimeout: 1000,
+          pingTimeout: 10000,
+          pingInterval: 15000,
         };
 
         // Add authentication if token is available
@@ -175,10 +177,8 @@ class SocketService {
             userId: userId,
             userType: userType
           };
-          socketOptions.extraHeaders = {
-            ...socketOptions.extraHeaders,
-            'Authorization': `Bearer ${authToken}`
-          };
+          // Let Socket.IO send auth via "auth" payload; avoid forbidden headers like Origin
+          // The server should read token from the connection auth, not from custom headers.
         }
 
         this.socket = io(socketUrl, socketOptions);
@@ -193,8 +193,17 @@ class SocketService {
           isConnected: this._isConnected
         });
 
+        // Connection timeout variable - will be cleared on successful connection
+        let connectionTimeoutId: NodeJS.Timeout | null = null;
+
         // Connection event handlers
         this.socket.on('connect', () => {
+          // Clear timeout if connection succeeds
+          if (connectionTimeoutId) {
+            clearTimeout(connectionTimeoutId);
+            connectionTimeoutId = null;
+          }
+
           console.log('🔌 [DEBUG] Socket connected successfully:', {
             socketId: this.socket?.id,
             userId,
@@ -213,6 +222,19 @@ class SocketService {
           };
           console.log('🔌 [DEBUG] Emitting login event:', loginData);
           this.socket?.emit('adminLogin', loginData);
+
+          // 🚀 AUTO-RECONNECT: Restore active casino rooms after connection
+          // Small delay to ensure login is processed first
+          setTimeout(() => {
+            if (this.socket?.connected && this.casinoRoomSubscriptions.size > 0) {
+              const rooms = Array.from(this.casinoRoomSubscriptions);
+              console.log('🎰 Auto-rejoining casino rooms after connection:', rooms);
+              rooms.forEach((room) => {
+                // Use original casing if available, otherwise use lowercase
+                this.socket.emit('joinCasino', room);
+              });
+            }
+          }, 100);
 
           // Start heartbeat
           this.startHeartbeat();
@@ -252,34 +274,44 @@ class SocketService {
         });
 
         this.socket.on('connect_error', (error) => {
-          console.error('🔌 [DEBUG] Socket connection error:', {
-            message: error.message,
-            description: (error as any).description,
-            context: (error as any).context,
-            type: (error as any).type,
-            socketUrl,
-            userId,
-            userType,
-            hasAuthToken: !!authToken,
-            error: error
-          });
+          // Only log WebSocket errors once, not repeatedly
+          const errorType = (error as any).type || 'Unknown';
+          const isWebSocketError = errorType === 'TransportError' && error.message === 'websocket error';
           
-          // Check if it's a 400 error specifically
-          if ((error as any).description === 400) {
-            console.error('🔌 [DEBUG] 400 Bad Request - Possible causes:');
-            console.error('1. Missing or invalid authentication token');
-            console.error('2. Server not accepting the connection');
-            console.error('3. CORS issues');
-            console.error('4. Invalid socket configuration');
-          }
+          if (isWebSocketError) {
+            // Suppress repeated WebSocket transport errors - these are expected if server doesn't support WebSocket
+            // Component will work fine with API calls only
+            console.warn('🔌 WebSocket connection unavailable - using API mode only. Component will function normally.');
+          } else {
+            // Log other connection errors (auth, CORS, etc.)
+            console.error('🔌 [DEBUG] Socket connection error:', {
+              message: error.message,
+              description: (error as any).description,
+              context: (error as any).context,
+              type: (error as any).type,
+              socketUrl,
+              userId,
+              userType,
+              hasAuthToken: !!authToken,
+            });
+            
+            // Check if it's a 400 error specifically
+            if ((error as any).description === 400) {
+              console.error('🔌 [DEBUG] 400 Bad Request - Possible causes:');
+              console.error('1. Missing or invalid authentication token');
+              console.error('2. Server not accepting the connection');
+              console.error('3. CORS issues');
+              console.error('4. Invalid socket configuration');
+            }
 
-          // Check if it's a CORS error
-          if (error.message.includes('CORS') || error.message.includes('cross-origin')) {
-            console.error('🔌 [DEBUG] CORS Error detected - Possible solutions:');
-            console.error('1. Server needs to allow localhost:3005 in CORS policy');
-            console.error('2. Try using withCredentials: false');
-            console.error('3. Check if server supports preflight OPTIONS requests');
-            console.error('4. Verify Origin header is correct');
+            // Check if it's a CORS error
+            if (error.message.includes('CORS') || error.message.includes('cross-origin')) {
+              console.error('🔌 [DEBUG] CORS Error detected - Possible solutions:');
+              console.error('1. Server needs to allow localhost:3005 in CORS policy');
+              console.error('2. Try using withCredentials: false');
+              console.error('3. Check if server supports preflight OPTIONS requests');
+              console.error('4. Verify Origin header is correct');
+            }
           }
           
           this._isConnected = false;
@@ -346,6 +378,17 @@ class SocketService {
             userId,
             userType
           });
+          
+          // 🚀 AUTO-RECONNECT: Restore active casino room after reconnection
+          if (this.casinoRoomSubscriptions.size > 0) {
+            const rooms = Array.from(this.casinoRoomSubscriptions);
+            console.log('🎰 Auto-rejoining casino rooms after reconnection:', rooms);
+            rooms.forEach((room) => {
+              if (this.socket?.connected) {
+                this.socket.emit('joinCasino', room);
+              }
+            });
+          }
         });
 
         this.socket.on('reconnect_attempt', (attemptNumber) => {
@@ -375,18 +418,38 @@ class SocketService {
           });
         });
 
-        // Connection timeout
-        setTimeout(() => {
-          if (!this._isConnected) {
-            console.error('🔌 [DEBUG] Socket connection timeout after 20 seconds', {
+        // Connection timeout - reduced to 5 seconds for faster feedback
+        connectionTimeoutId = setTimeout(() => {
+          // Check both internal flag and actual socket connection state
+          const isActuallyConnected = this.socket?.connected || this._isConnected;
+          
+          if (!isActuallyConnected) {
+            console.error('🔌 [DEBUG] Socket connection timeout after 5 seconds', {
               socketId: this.socket?.id,
+              socketConnected: this.socket?.connected,
+              internalConnected: this._isConnected,
               userId,
               userType,
               socketUrl
             });
-            reject(new Error('Socket connection timeout'));
+            
+            // Only reject if socket is definitely not connected
+            if (!this.socket?.connected) {
+              reject(new Error('Socket connection timeout'));
+            } else {
+              // Socket is connected but flag isn't set - resolve anyway
+              console.log('🔌 [DEBUG] Socket connected but internal flag not set - resolving connection');
+              this._isConnected = true;
+              resolve(true);
+            }
+          } else {
+            // Connection successful - timeout fired but connection exists
+            console.log('🔌 [DEBUG] Socket connected - timeout check passed', {
+              socketId: this.socket?.id,
+              socketConnected: this.socket?.connected
+            });
           }
-        }, 20000);
+        }, 5000); // Reduced from 20s to 5s for faster timeout
 
       } catch (error) {
         console.error('🔌 [DEBUG] Socket connection failed:', {
@@ -429,6 +492,7 @@ class SocketService {
       this._isConnected = false;
       this._currentUser = null;
       this.stopHeartbeat();
+      this.casinoRoomSubscriptions.clear();
     }
   }
 
@@ -778,6 +842,66 @@ class SocketService {
     } else {
       throw new Error('Failed to establish socket connection');
     }
+  }
+
+  /**
+   * Join a casino room to receive real-time updates
+   * Matches working implementation: emits 'joinCasino' with gameSlug string
+   */
+  joinCasino(gameSlug: string): void {
+    if (!gameSlug || typeof gameSlug !== 'string') {
+      console.error('🎰 Invalid gameSlug provided:', gameSlug);
+      return;
+    }
+
+    const room = gameSlug.toLowerCase();
+    this.casinoRoomSubscriptions.add(room);
+
+    if (this.socket?.connected) {
+      // Match working implementation: emit 'joinCasino' with gameSlug string directly
+      this.socket.emit('joinCasino', gameSlug);
+      console.log('🎰 [JOIN ROOM] Emitting joinCasino for:', gameSlug, {
+        timestamp: new Date().toISOString(),
+        socketConnected: this.socket.connected,
+        socketId: this.socket.id,
+      });
+    } else {
+      console.warn('🎰 Cannot join casino room, socket not connected. Room will be joined when connected:', room);
+      // Store room to join when socket connects
+    }
+  }
+
+  /**
+   * Leave an active casino room to stop updates
+   * Matches working implementation: emits 'leaveCasino' with gameSlug string
+   */
+  leaveCasino(gameSlug: string): void {
+    if (!gameSlug || typeof gameSlug !== 'string') {
+      console.error('🎰 Invalid gameSlug provided:', gameSlug);
+      return;
+    }
+
+    const room = gameSlug.toLowerCase();
+    this.casinoRoomSubscriptions.delete(room);
+
+    if (this.socket?.connected) {
+      // Match working implementation: emit 'leaveCasino' with gameSlug string directly
+      this.socket.emit('leaveCasino', gameSlug);
+      console.log('🎰 [LEAVE ROOM] Emitting leaveCasino for:', gameSlug, {
+        timestamp: new Date().toISOString(),
+        socketConnected: this.socket.connected,
+        socketId: this.socket.id,
+      });
+    } else {
+      console.warn('🎰 Cannot leave casino room, socket not connected:', room);
+    }
+  }
+
+  /**
+   * Get a list of currently subscribed casino rooms
+   */
+  getCasinoSubscriptions(): string[] {
+    return Array.from(this.casinoRoomSubscriptions);
   }
 }
 

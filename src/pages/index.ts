@@ -32,7 +32,7 @@ export const SportDetail = lazyWithErrorHandling(() => import("./sports/sport-de
 
 
 //casino
-export const CasinoGameDetail = lazyWithErrorHandling(() => import("./casino"));
+export const CasinoGameDetail = lazyWithErrorHandling(() => import("./casino/index.tsx"));
 
 
 export const NotFound = lazyWithErrorHandling(() => import("./NotFound"));

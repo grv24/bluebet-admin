@@ -1,0 +1,1267 @@
+import {
+  cardImage,
+  getBlackShapes,
+  getNumberCard,
+  getRedShapes,
+  getCardByCode,
+} from "@/utils/card";
+import React, { useState } from "react";
+import { RiLockFill } from "react-icons/ri";
+import { getCasinoIndividualResult } from "@/helper/casino";
+import { useCookies } from "react-cookie";
+import { useQuery } from "@tanstack/react-query";
+import CasinoModal from "@/components/common/CasinoModal";
+import { useNavigate } from "react-router-dom";
+import { memoizeCasinoComponent } from "@/utils/casinoMemo";
+
+const formatDateTime = (value: string | number | undefined | null): string => {
+  if (value === undefined || value === null) return "N/A";
+
+  if (typeof value === "string") {
+    const trimmedValue = value.trim();
+    if (!trimmedValue) return "N/A";
+
+    const dateFromString = new Date(trimmedValue);
+    if (!Number.isNaN(dateFromString.getTime())) {
+      return dateFromString.toLocaleString();
+    }
+
+    const numericValue = Number(trimmedValue);
+    if (!Number.isNaN(numericValue)) {
+      const dateFromNumeric = new Date(numericValue);
+      if (!Number.isNaN(dateFromNumeric.getTime())) {
+        return dateFromNumeric.toLocaleString();
+      }
+    }
+
+    return trimmedValue;
+  }
+
+  const dateFromNumber = new Date(value);
+  if (!Number.isNaN(dateFromNumber.getTime())) {
+    return dateFromNumber.toLocaleString();
+  }
+
+  return String(value);
+};
+
+const Lucky7cComponent = ({
+  casinoData,
+  remainingTime,
+  onBetClick,
+  results,
+  gameSlug,
+  name,
+  currentBet,
+}: any) => {
+  const [cookies] = useCookies(["clientToken"]);
+  const [selectedResult, setSelectedResult] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [betFilter, setBetFilter] = useState("all");
+  const navigate = useNavigate();
+
+  const t2: any[] =
+    casinoData?.data?.sub || casinoData?.data?.data?.data?.t2 || [];
+
+  /**
+   * Universal profit/loss calculation function for all Lucky7EU betting types
+   * @param betType - The type of bet to calculate profit/loss for
+   * @returns The profit/loss amount (negative for loss-only display)
+   */
+  const getBetProfitLoss = (betType: string): number => {
+    if (!currentBet?.data || !casinoData?.data?.mid) return 0;
+
+    const currentMatchId = casinoData.data.mid;
+    let profitLoss = 0;
+
+    // Only bets for this match
+    const bets = currentBet.data.filter(
+      (bet: any) => String(bet.matchId) === String(currentMatchId)
+    );
+
+    bets.forEach((bet: any) => {
+      const { betName, stake } = bet.betData;
+
+      // Normalize bet name for comparison
+      const normalizedBetName = betName?.toLowerCase() || "";
+      const normalizedBetType = betType.toLowerCase();
+
+      // More precise matching to avoid cross-contamination
+      let isMatch = false;
+
+      // Exact match first
+      if (normalizedBetName === normalizedBetType) {
+        isMatch = true;
+      }
+      // Handle Low Card specifically
+      else if (
+        betType === "Low Card" &&
+        (normalizedBetName === "low card" || normalizedBetName === "low")
+      ) {
+        isMatch = true;
+      }
+      // Handle High Card specifically
+      else if (
+        betType === "High Card" &&
+        (normalizedBetName === "high card" || normalizedBetName === "high")
+      ) {
+        isMatch = true;
+      }
+      // Handle Even specifically
+      else if (betType === "Even" && normalizedBetName === "even") {
+        isMatch = true;
+      }
+      // Handle Odd specifically
+      else if (betType === "Odd" && normalizedBetName === "odd") {
+        isMatch = true;
+      }
+      // Handle Red specifically
+      else if (betType === "Red" && normalizedBetName === "red") {
+        isMatch = true;
+      }
+      // Handle Black specifically
+      else if (betType === "Black" && normalizedBetName === "black") {
+        isMatch = true;
+      }
+      // Handle Card bets (Card A, Card 2, etc.)
+      else if (
+        betType.startsWith("Card") &&
+        normalizedBetName.startsWith("card")
+      ) {
+        // Extract card number from both
+        const betTypeCardNum = betType.replace("Card ", "").trim();
+        const betNameCardNum = normalizedBetName.replace("card ", "").trim();
+        isMatch = betTypeCardNum === betNameCardNum;
+      }
+      // Handle Line bets (Line 1, Line 2, Line 3, Line 4)
+      else if (
+        betType.startsWith("Line") &&
+        normalizedBetName.startsWith("line")
+      ) {
+        // Extract line number from both
+        const betTypeLineNum = betType.replace("Line", "").trim();
+        const betNameLineNum = normalizedBetName.replace("line", "").trim();
+        isMatch = betTypeLineNum === betNameLineNum;
+      }
+
+      if (isMatch) {
+        profitLoss += -stake; // Accumulate loss-only display for multiple bets
+      }
+    });
+
+    return profitLoss;
+  };
+
+  // Function to parse cards from API response
+  const parseCards = (cardsString: string) => {
+    if (!cardsString) return [];
+
+    const cards = cardsString.split(",").filter((card) => card && card.trim());
+    return cards;
+  };
+
+  // Function to get winner information
+  const getWinnerInfo = (resultData: any) => {
+    if (!resultData) return { winner: null, description: "" };
+
+    const win = resultData.win;
+    const desc = resultData.desc || resultData.newdesc || "";
+
+    let winner = null;
+
+    // Parse description for winner information
+    if (desc) {
+      const parts = desc.split("#");
+      if (parts.length >= 1) {
+        winner = parts[0] || null;
+      }
+    }
+
+    // Fallback to win field if description parsing fails
+    if (!winner) {
+      if (win === "1") winner = "Low Card";
+      else if (win === "2") winner = "High Card";
+      else if (win === "0") winner = "Tie";
+    }
+
+    return { winner, description: desc };
+  };
+
+  // Function to parse Lucky7EU description and extract details
+  const parseLucky7Description = (desc: string, newdesc: string) => {
+    // Use desc if newdesc is not available
+    const descriptionToParse = newdesc || desc;
+
+    if (!descriptionToParse)
+      return {
+        result: "N/A",
+        oddEven: "N/A",
+        color: "N/A",
+        card: "N/A",
+        cardSequence: "N/A",
+      };
+
+    // Parse the description field which has the format:
+    // "Low Card#Even#Red#6#4 5 6"
+    const sections = descriptionToParse.split("#");
+
+    return {
+      result: sections[0] || "N/A",
+      oddEven: sections[1] || "N/A",
+      color: sections[2] || "N/A",
+      card: sections[3] || "N/A",
+      cardSequence: sections[4] || "N/A",
+    };
+  };
+
+  // Function to format description for better display
+  const formatDescription = (desc: string): string[] => {
+    if (!desc) return [];
+
+    // Split by # character and filter out empty parts
+    return desc.split("#").filter((line) => line.trim());
+  };
+
+  // Function to filter user bets based on selected filter
+  const getFilteredBets = (bets: any[], filter: string) => {
+    if (filter === "all") return bets;
+
+    return bets.filter((bet: any) => {
+      const oddCategory = bet.betData?.oddCategory?.toLowerCase();
+      const status = bet.status?.toLowerCase();
+
+      switch (filter) {
+        case "back":
+          return oddCategory === "back";
+        case "lay":
+          return oddCategory === "lay";
+        case "deleted":
+          return status === "deleted" || status === "cancelled";
+        default:
+          return true;
+      }
+    });
+  };
+
+  // Debug logging for Lucky7EU component
+  console.log("🎰 Lucky7EU component debug:", {
+    casinoData,
+    casinoDataStructure: {
+      hasData: !!casinoData?.data,
+      hasSub: !!casinoData?.data?.sub,
+      hasDataData: !!casinoData?.data?.data,
+      hasDataDataData: !!casinoData?.data?.data?.data,
+      hasT2: !!casinoData?.data?.data?.data?.t2,
+      subLength: casinoData?.data?.sub?.length || 0,
+      t2Length: casinoData?.data?.data?.data?.t2?.length || 0,
+    },
+    t2,
+    t2Length: t2.length,
+    results,
+    resultsLength: results?.length || 0,
+    firstResult: results?.[0],
+    sampleT2Item: t2[0],
+  });
+
+  // React Query for individual result details
+  const {
+    data: resultDetails,
+    isLoading,
+    error,
+  } = useQuery<any>({
+    queryKey: ["casinoIndividualResult", selectedResult?.mid],
+    queryFn: () =>
+      getCasinoIndividualResult(selectedResult?.mid, cookies, gameSlug),
+    enabled: !!selectedResult?.mid && isModalOpen,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes
+    retry: 2,
+  });
+
+  // Parse cards and winner info from result details
+  const resultData = resultDetails?.data?.matchData;
+  const cards = parseCards(resultData?.cards || "");
+  const { winner, description } = getWinnerInfo(resultData);
+  const formattedDescription = formatDescription(description);
+  const {
+    result: lucky7Result,
+    oddEven,
+    color,
+    card,
+    cardSequence,
+  } = parseLucky7Description(resultData?.desc || "", resultData?.newdesc || "");
+
+  // Debug: Log result details when available
+  React.useEffect(() => {
+    if (resultDetails?.data?.matchData) {
+      console.log("🎰 Lucky7EU Individual Result Details:", {
+        mid: resultDetails.data.matchData.mid,
+        win: resultDetails.data.matchData.win,
+        cards: resultDetails.data.matchData.cards,
+        desc: resultDetails.data.matchData.desc,
+        newdesc: resultDetails.data.matchData.newdesc,
+        winAt: resultDetails.data.matchData.winAt,
+        mtime: resultDetails.data.matchData.mtime,
+        parsedDesc: resultDetails.data.matchData.desc?.split("#") || [],
+        parsedNewdesc: resultDetails.data.matchData.newdesc?.split("#") || [],
+        winner,
+        lucky7Result,
+        oddEven,
+        color,
+        card,
+        cardSequence,
+      });
+    }
+  }, [resultDetails, winner, lucky7Result, oddEven, color, card, cardSequence]);
+
+  /**
+   * Handle clicking on individual result to show details
+   */
+  const handleResultClick = (result: any) => {
+    if (!result?.mid) return;
+
+    setSelectedResult(result);
+    setIsModalOpen(true);
+    setBetFilter("all"); // Reset filter when opening modal
+  };
+
+  /**
+   * Close the result details modal
+   */
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedResult(null);
+  };
+
+  const getByNat = (name: string) =>
+    t2.find(
+      (x) =>
+        String(x?.nat || x?.nation || "").toLowerCase() === name.toLowerCase()
+    );
+
+  const isLocked = (row: any) => {
+    const s = row?.gstatus as string | number | undefined;
+    return s !== "OPEN" || (remainingTime ?? 0) <= 3;
+  };
+
+  return (
+    <div className="w-full flex flex-col gap-2">
+      {/* top row */}
+      <div className="flex bg-[var(--bg-table-row)] p-4 items-center justify-center gap-2">
+        <div className="flex flex-col w-full">
+          {(() => {
+            const row = getByNat("Low Card") || {};
+            const locked = isLocked(row);
+            const value = row?.b ?? "0";
+            return (
+              <>
+                <h2 className="text-black text-md font-bold text-center">
+                  {value}
+                </h2>
+                <button
+                  className="relative bg-gradient-to-r from-[var(--bg-primary)] text-white font-semibold to-[var(--bg-secondary)] w-full py-2"
+                  disabled={locked}
+                  onClick={() =>
+                    !locked && row?.sid && onBetClick?.(String(row.sid), "back")
+                  }
+                >
+                  {locked && (
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/50">
+                      <RiLockFill className="text-white" />
+                    </span>
+                  )}
+                  Low Card
+                </button>
+                <h2
+                  className={`text-xs font-semibold leading-5 text-center ${
+                    getBetProfitLoss("Low Card") > 0
+                      ? "text-green-600"
+                      : getBetProfitLoss("Low Card") < 0
+                        ? "text-red-600"
+                        : "text-gray-600"
+                  }`}
+                >
+                  {getBetProfitLoss("Low Card") > 0 ? "+" : ""}
+                  {getBetProfitLoss("Low Card").toFixed(0)}
+                </h2>
+              </>
+            );
+          })()}
+        </div>
+        <div className="flex items-center justify-center w-26">
+          <img src={getNumberCard("7")} className="w-full" />
+        </div>
+        <div className="flex flex-col w-full">
+          {(() => {
+            const row = getByNat("High Card") || {};
+            const locked = isLocked(row);
+            const value = row?.b ?? "0";
+            return (
+              <>
+                <h2 className="text-black text-md font-bold text-center">
+                  {value}
+                </h2>
+                <button
+                  className="relative bg-gradient-to-r from-[var(--bg-primary)] text-white font-semibold to-[var(--bg-secondary)] w-full py-2"
+                  disabled={locked}
+                  onClick={() =>
+                    !locked && row?.sid && onBetClick?.(String(row.sid), "back")
+                  }
+                >
+                  {locked && (
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/50">
+                      <RiLockFill className="text-white" />
+                    </span>
+                  )}
+                  High Card
+                </button>
+                <h2
+                  className={`text-xs font-semibold leading-5 text-center ${
+                    getBetProfitLoss("High Card") > 0
+                      ? "text-green-600"
+                      : getBetProfitLoss("High Card") < 0
+                        ? "text-red-600"
+                        : "text-gray-600"
+                  }`}
+                >
+                  {getBetProfitLoss("High Card") > 0 ? "+" : ""}
+                  {getBetProfitLoss("High Card").toFixed(0)}
+                </h2>
+              </>
+            );
+          })()}
+        </div>
+      </div>
+      {/* second row */}
+      <div className=" place-items-center gap-2  grid md:grid-cols-2 grid-cols-1">
+        <div className="flex items-center py-4 bg-[var(--bg-table-row)] w-full gap-2 px-4">
+          <div className="flex flex-col w-full">
+            {(() => {
+              const row = getByNat("Even") || {};
+              const locked = isLocked(row);
+              const value = row?.b ?? "0";
+              return (
+                <>
+                  <h2 className="text-black text-md font-bold text-center">
+                    {value}
+                  </h2>
+                  <button
+                    className="relative bg-gradient-to-r from-[var(--bg-primary)] text-white font-semibold to-[var(--bg-secondary)] w-full py-2.5"
+                    disabled={locked}
+                    onClick={() =>
+                      !locked &&
+                      row?.sid &&
+                      onBetClick?.(String(row.sid), "back")
+                    }
+                  >
+                    {locked && (
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/50">
+                        <RiLockFill className="text-white" />
+                      </span>
+                    )}
+                    Even
+                  </button>
+                  <h2
+                    className={`text-xs font-semibold leading-5 text-center ${
+                      getBetProfitLoss("Even") > 0
+                        ? "text-green-600"
+                        : getBetProfitLoss("Even") < 0
+                          ? "text-red-600"
+                          : "text-gray-600"
+                    }`}
+                  >
+                    {getBetProfitLoss("Even") > 0 ? "+" : ""}
+                    {getBetProfitLoss("Even").toFixed(0)}
+                  </h2>
+                </>
+              );
+            })()}
+          </div>
+          <div className="flex flex-col w-full">
+            {(() => {
+              const row = getByNat("Odd") || {};
+              const locked = isLocked(row);
+              const value = row?.b ?? "0";
+              return (
+                <>
+                  <h2 className="text-black text-md font-bold text-center">
+                    {value}
+                  </h2>
+                  <button
+                    className="relative bg-gradient-to-r from-[var(--bg-primary)] text-white font-semibold to-[var(--bg-secondary)] w-full py-2.5"
+                    disabled={locked}
+                    onClick={() =>
+                      !locked &&
+                      row?.sid &&
+                      onBetClick?.(String(row.sid), "back")
+                    }
+                  >
+                    {locked && (
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/50">
+                        <RiLockFill className="text-white" />
+                      </span>
+                    )}
+                    Odd
+                  </button>
+                  <h2
+                    className={`text-xs font-semibold leading-5 text-center ${
+                      getBetProfitLoss("Odd") > 0
+                        ? "text-green-600"
+                        : getBetProfitLoss("Odd") < 0
+                          ? "text-red-600"
+                          : "text-gray-600"
+                    }`}
+                  >
+                    {getBetProfitLoss("Odd") > 0 ? "+" : ""}
+                    {getBetProfitLoss("Odd").toFixed(0)}
+                  </h2>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+        <div className="flex items-center py-4  bg-[var(--bg-table-row)] w-full gap-2 px-4">
+          <div className="flex flex-col w-full">
+            {(() => {
+              const row = getByNat("Red") || {};
+              const locked = isLocked(row);
+              const value = row?.b ?? "0";
+              return (
+                <>
+                  <h2 className="text-black text-md font-bold text-center">
+                    {value}
+                  </h2>
+                  <button
+                    className="relative bg-gradient-to-r from-[var(--bg-primary)] text-white font-semibold to-[var(--bg-secondary)] w-full py-2.5"
+                    disabled={locked}
+                    onClick={() =>
+                      !locked &&
+                      row?.sid &&
+                      onBetClick?.(String(row.sid), "back")
+                    }
+                  >
+                    {locked && (
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/50">
+                        <RiLockFill className="text-white" />
+                      </span>
+                    )}
+                    <div className="flex gap-1  justify-center items-center">
+                      <img
+                        src={getRedShapes().Diamond}
+                        alt=""
+                        className="w-5"
+                      />
+
+                      <img
+                        src={getBlackShapes().Spade}
+                        alt=""
+                        className="w-5"
+                      />
+                    </div>
+                  </button>
+                  <h2
+                    className={`text-xs font-semibold leading-5 text-center ${
+                      getBetProfitLoss("Red") > 0
+                        ? "text-green-600"
+                        : getBetProfitLoss("Red") < 0
+                          ? "text-red-600"
+                          : "text-gray-600"
+                    }`}
+                  >
+                    {getBetProfitLoss("Red") > 0 ? "+" : ""}
+                    {getBetProfitLoss("Red").toFixed(0)}
+                  </h2>
+                </>
+              );
+            })()}
+          </div>
+          <div className="flex flex-col w-full">
+            {(() => {
+              const row = getByNat("Black") || {};
+              const locked = isLocked(row);
+              const value = row?.b ?? "0";
+              return (
+                <>
+                  <h2 className="text-black text-md font-bold text-center">
+                    {value}
+                  </h2>
+                  <button
+                    className="relative bg-gradient-to-r from-[var(--bg-primary)] text-white font-semibold to-[var(--bg-secondary)] w-full py-2.5"
+                    disabled={locked}
+                    onClick={() =>
+                      !locked &&
+                      row?.sid &&
+                      onBetClick?.(String(row.sid), "back")
+                    }
+                  >
+                    {locked && (
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/50">
+                        <RiLockFill className="text-white" />
+                      </span>
+                    )}
+                    <div className="flex gap-1  justify-center items-center">
+                      <img src={getRedShapes().Heart} alt="" className="w-5" />
+                      <img src={getBlackShapes().Club} alt="" className="w-5" />
+                    </div>
+                  </button>
+                  <h2
+                    className={`text-xs font-semibold leading-5 text-center ${
+                      getBetProfitLoss("Black") > 0
+                        ? "text-green-600"
+                        : getBetProfitLoss("Black") < 0
+                          ? "text-red-600"
+                          : "text-gray-600"
+                    }`}
+                  >
+                    {getBetProfitLoss("Black") > 0 ? "+" : ""}
+                    {getBetProfitLoss("Black").toFixed(0)}
+                  </h2>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      </div>
+      {/* third row */}
+      <div className="grid md:grid-cols-4 grid-cols-2 gap-2">
+        {/* Line 1: Cards 1, 2, 3 */}
+        <div className="flex flex-col items-center justify-center gap-2 bg-[var(--bg-table-row)] p-2">
+          <h2 className="text-black text-md font-bold text-center">
+            {getByNat("Line 1")?.b ?? "0"}
+          </h2>
+          <div className="flex gap-2 bg-[var(--bg-table-row)] p-2 justify-center items-center">
+            {["1", "2", "3"].map((item, index) => {
+              const lineRow = getByNat("Line 1") || {};
+              const locked = isLocked(lineRow);
+              return (
+                <div key={item} className="flex flex-col items-center gap-1">
+                  <button
+                    className="relative"
+                    disabled={locked}
+                    onClick={() =>
+                      !locked &&
+                      lineRow?.sid &&
+                      onBetClick?.(String(lineRow.sid), "back")
+                    }
+                  >
+                    {locked && (
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/50 rounded">
+                        <RiLockFill className="text-white text-xs" />
+                      </span>
+                    )}
+                    <img
+                      src={getNumberCard(item === "1" ? "A" : item)}
+                      alt=""
+                      className="lg:w-8 w-6"
+                    />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          <h2
+            className={`text-xs font-semibold leading-3 ${
+              getBetProfitLoss("Line 1") > 0
+                ? "text-green-600"
+                : getBetProfitLoss("Line 1") < 0
+                  ? "text-red-600"
+                  : "text-gray-600"
+            }`}
+          >
+            {getBetProfitLoss("Line 1") > 0 ? "+" : ""}
+            {getBetProfitLoss("Line 1").toFixed(0)}
+          </h2>
+        </div>
+        {/* Line 2: Cards 4, 5, 6 */}
+        <div className="flex flex-col items-center justify-center gap-2 bg-[var(--bg-table-row)] p-2">
+          <h2 className="text-black text-md font-bold text-center">
+            {getByNat("Line 2")?.b ?? "0"}
+          </h2>
+          <div className="flex gap-2 bg-[var(--bg-table-row)] p-2 justify-center items-center">
+            {["4", "5", "6"].map((item, index) => {
+              const lineRow = getByNat("Line 2") || {};
+              const locked = isLocked(lineRow);
+              return (
+                <div key={item} className="flex flex-col items-center gap-1">
+                  <button
+                    className="relative"
+                    disabled={locked}
+                    onClick={() =>
+                      !locked &&
+                      lineRow?.sid &&
+                      onBetClick?.(String(lineRow.sid), "back")
+                    }
+                  >
+                    {locked && (
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/50 rounded">
+                        <RiLockFill className="text-white text-xs" />
+                      </span>
+                    )}
+                    <img
+                      src={getNumberCard(item)}
+                      alt=""
+                      className="lg:w-8 w-6"
+                    />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          <h2
+            className={`text-xs font-semibold leading-3 ${
+              getBetProfitLoss("Line 2") > 0
+                ? "text-green-600"
+                : getBetProfitLoss("Line 2") < 0
+                  ? "text-red-600"
+                  : "text-gray-600"
+            }`}
+          >
+            {getBetProfitLoss("Line 2") > 0 ? "+" : ""}
+            {getBetProfitLoss("Line 2").toFixed(0)}
+          </h2>
+        </div>
+        {/* Line 3: Cards 7, 8, 9 */}
+        <div className="flex flex-col items-center justify-center gap-2 bg-[var(--bg-table-row)] p-2">
+          <h2 className="text-black text-md font-bold text-center">
+            {getByNat("Line 3")?.b ?? "0"}
+          </h2>
+          <div className="flex gap-2 bg-[var(--bg-table-row)] p-2 justify-center items-center">
+            {["8", "9", "10"].map((item, index) => {
+              const lineRow = getByNat("Line 3") || {};
+              const locked = isLocked(lineRow);
+              return (
+                <div key={item} className="flex flex-col items-center gap-1">
+                  <button
+                    className="relative"
+                    disabled={locked}
+                    onClick={() =>
+                      !locked &&
+                      lineRow?.sid &&
+                      onBetClick?.(String(lineRow.sid), "back")
+                    }
+                  >
+                    {locked && (
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/50 rounded">
+                        <RiLockFill className="text-white text-xs" />
+                      </span>
+                    )}
+                    <img
+                      src={getNumberCard(item)}
+                      alt=""
+                      className="lg:w-8 w-6"
+                    />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          <h2
+            className={`text-xs font-semibold leading-3 ${
+              getBetProfitLoss("Line 3") > 0
+                ? "text-green-600"
+                : getBetProfitLoss("Line 3") < 0
+                  ? "text-red-600"
+                  : "text-gray-600"
+            }`}
+          >
+            {getBetProfitLoss("Line 3") > 0 ? "+" : ""}
+            {getBetProfitLoss("Line 3").toFixed(0)}
+          </h2>
+        </div>
+        {/* Line 4: Cards 10, J, Q, K (or 10, J, Q if only 3) */}
+        <div className="flex flex-col items-center justify-center gap-2 bg-[var(--bg-table-row)] p-2">
+          <h2 className="text-black text-md font-bold text-center">
+            {getByNat("Line 4")?.b ?? "0"}
+          </h2>
+          <div className="flex gap-2 bg-[var(--bg-table-row)] p-2 justify-center items-center">
+            {["J", "Q", "K"].slice(0, 3).map((item, index) => {
+              const lineRow = getByNat("Line 4") || {};
+              const locked = isLocked(lineRow);
+              return (
+                <div key={item} className="flex flex-col items-center gap-1">
+                  <button
+                    className="relative"
+                    disabled={locked}
+                    onClick={() =>
+                      !locked &&
+                      lineRow?.sid &&
+                      onBetClick?.(String(lineRow.sid), "back")
+                    }
+                  >
+                    {locked && (
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/50 rounded">
+                        <RiLockFill className="text-white text-xs" />
+                      </span>
+                    )}
+                    <img
+                      src={getNumberCard(item)}
+                      alt=""
+                      className="lg:w-8 w-6"
+                    />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          <h2
+            className={`text-xs font-semibold leading-3 ${
+              getBetProfitLoss("Line 4") > 0
+                ? "text-green-600"
+                : getBetProfitLoss("Line 4") < 0
+                  ? "text-red-600"
+                  : "text-gray-600"
+            }`}
+          >
+            {getBetProfitLoss("Line 4") > 0 ? "+" : ""}
+            {getBetProfitLoss("Line 4").toFixed(0)}
+          </h2>
+        </div>
+      </div>
+      {/* fourth row - All Cards (Card 1 to Card K) */}
+      <div className="flex flex-col gap-2 py-4 bg-[var(--bg-table-row)]">
+        <h2 className="text-black text-md font-bold text-center">
+          {getByNat("Card 1")?.b ?? "0"}
+        </h2>
+        <div className="flex items-center justify-center gap-2">
+          {[
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "J",
+            "Q",
+            "K",
+          ].map((item, index) => {
+            const row = getByNat(`Card ${item}`) || {};
+            const locked = isLocked(row);
+            return (
+              <div key={item} className="flex flex-col items-center gap-1">
+                <button
+                  className="relative"
+                  disabled={locked}
+                  onClick={() =>
+                    !locked && row?.sid && onBetClick?.(String(row.sid), "back")
+                  }
+                >
+                  {locked && (
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/50 rounded">
+                      <RiLockFill className="text-white text-xs" />
+                    </span>
+                  )}
+                  <img
+                    src={getNumberCard(item === "1" ? "A" : item)}
+                    alt=""
+                    className="lg:w-8 w-6"
+                  />
+                </button>
+                <h2
+                  className={`text-xs font-semibold leading-3 ${
+                    getBetProfitLoss(`Card ${item}`) > 0
+                      ? "text-green-600"
+                      : getBetProfitLoss(`Card ${item}`) < 0
+                        ? "text-red-600"
+                        : "text-gray-600"
+                  }`}
+                >
+                  {getBetProfitLoss(`Card ${item}`) > 0 ? "+" : ""}
+                  {getBetProfitLoss(`Card ${item}`).toFixed(0)}
+                </h2>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      {/* Results */}
+      <div className="mt-1 flex flex-col gap-1">
+        <div className="bg-[var(--bg-secondary85)] border border-gray-300 flex justify-between px-2 py-.5 items-center">
+          <h2 className="text-sm font-normal leading-8 text-white">
+            Last Result
+          </h2>
+          <h2
+            onClick={() => navigate(`/casino-result?game=${gameSlug}`)}
+            className="text-sm font-normal leading-8 text-white"
+          >
+            View All
+          </h2>
+        </div>
+        <div className="flex justify-end items-center mb-2 gap-1 mx-2">
+          {results?.slice(0, 10).map((item: any, index: number) => {
+            let displayText = "";
+            let textColor = "";
+
+            if (item.win === "1") {
+              displayText = "L";
+              textColor = "text-red-500";
+            } else if (item.win === "0") {
+              displayText = "T";
+              textColor = "text-white";
+            } else if (item.win === "2") {
+              displayText = "H";
+              textColor = "text-yellow-400";
+            } else {
+              displayText = "?";
+              textColor = "text-gray-400";
+            }
+
+            return (
+              <h2
+                key={index}
+                className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor} cursor-pointer hover:scale-110 transition-transform`}
+                onClick={() => handleResultClick(item)}
+                title="Click to view details"
+              >
+                {displayText}
+              </h2>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Individual Result Details Modal */}
+      <CasinoModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        title="Lucky7EU Result Details"
+        size="xl"
+        resultDetails={true}
+      >
+        <div className="flex flex-col px-2">
+          {/* Header Information */}
+          <div className="flex justify-between items-center">
+            <h2 className="text-xs md:text-sm font-semibold leading-8 text-black">
+              Round Id:{" "}
+              <span className="text-black font-normal pl-1">
+                {resultDetails?.data?.matchData?.mid}
+              </span>
+            </h2>
+            <h2 className="text-xs md:text-sm font-semibold leading-8 text-black capitalize">
+              Match Time:{" "}
+              <span className="text-black font-normal pl-1">
+                {formatDateTime(
+                  resultDetails?.data?.matchData?.winAt ||
+                    resultDetails?.data?.matchData?.matchTime ||
+                    resultDetails?.data?.matchData?.mtime
+                )}
+              </span>
+            </h2>
+          </div>
+
+          {/* Loading State */}
+          {isLoading && (
+            <div className="flex justify-center items-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--bg-primary)]"></div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <div className="flex justify-center items-center py-8">
+              <div className="text-red-500 text-center">
+                <p>Failed to load result details</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Please try again later
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* No Data State */}
+          {!isLoading && !error && !resultDetails?.data?.matchData && (
+            <div className="flex justify-center items-center py-8">
+              <div className="text-gray-500 text-center">
+                <p>No result data available</p>
+              </div>
+            </div>
+          )}
+
+          {/* Content Display - Only show when not loading and no error */}
+          {!isLoading && !error && resultData && (
+            <>
+              {/* Result Display */}
+              <div className="flex flex-col gap-1 justify-center items-center py-2">
+                {/* Cards display if available */}
+                {cards.length > 0 && (
+                  <div className="text-center">
+                    <div className="flex gap-2 justify-center flex-wrap">
+                      {cards.map((card: string, index: number) => (
+                        <img
+                          key={index}
+                          src={getCardByCode(card, "lucky7eu", "individual")}
+                          alt={`Card ${index + 1}`}
+                          className="w-8"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Description */}
+              <div
+                className="max-w-lg pyt- my-2 mx-auto w-full mb-2 box-shadow-lg border border-gray-100"
+                style={{ boxShadow: "0 0 4px -1px rgba(0, 0, 0, 0.5);" }}
+              >
+                <div className="flex flex-col gap-1 justify-center items-center">
+                  <h2 className="text-sm font-normal leading-8 text-[var(--bg-secondary)]">
+                    Winner:{" "}
+                    <span className="text-black font-normal pl-1">
+                      {winner || "N/A"}
+                    </span>
+                  </h2>
+                  <h2 className="text-sm font-normal leading-8 text-[var(--bg-secondary)]">
+                    Odd/Even:{" "}
+                    <span className="text-black font-normal pl-1">
+                      {oddEven}
+                    </span>
+                  </h2>
+                  <h2 className="text-sm font-normal leading-8 text-[var(--bg-secondary)]">
+                    Color:{" "}
+                    <span className="text-black font-normal pl-1">{color}</span>
+                  </h2>
+                  <h2 className="text-sm font-normal leading-8 text-[var(--bg-secondary)]">
+                    Card:{" "}
+                    <span className="text-black font-normal pl-1">{card}</span>
+                  </h2>
+                  <h2 className="text-sm font-normal leading-8 text-[var(--bg-secondary)]">
+                    Line:{" "}
+                    <span className="text-black font-normal pl-1">
+                      {cardSequence}
+                    </span>
+                  </h2>
+                </div>
+              </div>
+
+              {/* User Bets Table */}
+              {resultDetails?.data?.userBets &&
+                resultDetails.data.userBets.length > 0 && (
+                  <div className="max-w-4xl mx-auto w-full mb-4">
+                    <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                      <h3 className="text-sm font-semibold text-gray-700">
+                        User Bets
+                      </h3>
+                    </div>
+
+                    {/* Filter Options */}
+                    <div className="bg-white px-4 py-2 border-b border-gray-200">
+                      <div className="flex items-center gap-4">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="betFilter"
+                            value="all"
+                            checked={betFilter === "all"}
+                            onChange={(e) => setBetFilter(e.target.value)}
+                            className="text-blue-600"
+                          />
+                          <span className="text-sm">All</span>
+                        </label>
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="betFilter"
+                            value="back"
+                            checked={betFilter === "back"}
+                            onChange={(e) => setBetFilter(e.target.value)}
+                            className="text-blue-600"
+                          />
+                          <span className="text-sm">Back</span>
+                        </label>
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="betFilter"
+                            value="lay"
+                            checked={betFilter === "lay"}
+                            onChange={(e) => setBetFilter(e.target.value)}
+                            className="text-blue-600"
+                          />
+                          <span className="text-sm">Lay</span>
+                        </label>
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="betFilter"
+                            value="deleted"
+                            checked={betFilter === "deleted"}
+                            onChange={(e) => setBetFilter(e.target.value)}
+                            className="text-blue-600"
+                          />
+                          <span className="text-sm">Deleted</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Summary */}
+                    <div className="bg-white px-4 py-2 border-b border-gray-200">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">
+                          Total Bets:{" "}
+                          {
+                            getFilteredBets(
+                              resultDetails.data.userBets,
+                              betFilter
+                            ).length
+                          }
+                        </span>
+                        <span className="text-sm font-medium">
+                          Total Amount:{" "}
+                          {(() => {
+                            const totalAmount = getFilteredBets(
+                              resultDetails.data.userBets,
+                              betFilter
+                            ).reduce((sum: number, bet: any) => {
+                              const result = bet.betData?.result;
+
+                              if (!result || !result.settled) return sum;
+
+                              let profitLoss = 0;
+
+                              if (
+                                result.status === "won" ||
+                                result.status === "profit"
+                              ) {
+                                profitLoss = Number(result.profitLoss) || 0;
+                              } else if (result.status === "lost") {
+                                profitLoss = Number(result.profitLoss) || 0;
+                              }
+
+                              return sum + profitLoss;
+                            }, 0);
+
+                            return (
+                              <span
+                                className={
+                                  totalAmount >= 0
+                                    ? "text-green-600"
+                                    : "text-red-600"
+                                }
+                              >
+                                {totalAmount.toFixed(2)}
+                              </span>
+                            );
+                          })()}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Table */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm border-collapse">
+                        <thead>
+                          <tr className="bg-gray-100 text-gray-700">
+                            <th className="border border-gray-300 px-3 py-2 text-left font-medium">
+                              Nation
+                            </th>
+                            <th className="border border-gray-300 px-3 py-2 text-left font-medium">
+                              Rate
+                            </th>
+                            <th className="border border-gray-300 px-3 py-2 text-left font-medium">
+                              Amount
+                            </th>
+                            <th className="border border-gray-300 px-3 py-2 text-left font-medium">
+                              Profit/Loss
+                            </th>
+                            <th className="border border-gray-300 px-3 py-2 text-left font-medium">
+                              Date
+                            </th>
+                            <th className="border border-gray-300 px-3 py-2 text-left font-medium text-nowrap">
+                              IP Address
+                            </th>
+                            <th className="border border-gray-300 px-3 py-2 text-left font-medium text-nowrap">
+                              Browser Details
+                            </th>
+                            <th className="border border-gray-300 px-3 py-2 text-center font-medium">
+                              <input
+                                type="checkbox"
+                                className="text-blue-600"
+                              />
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {getFilteredBets(
+                            resultDetails.data.userBets,
+                            betFilter
+                          ).map((bet: any, index: number) => (
+                            <tr
+                              key={bet.id}
+                              className={`hover:bg-gray-50 ${
+                                bet.betData?.oddCategory?.toLowerCase() ===
+                                "back"
+                                  ? "bg-[var(--bg-back)]"
+                                  : bet.betData?.oddCategory?.toLowerCase() ===
+                                      "lay"
+                                    ? "bg-[var(--bg-lay)]"
+                                    : "bg-white"
+                              }`}
+                            >
+                              <td className="border text-nowrap border-gray-300 px-3 py-2">
+                                {bet.betData?.name ||
+                                  bet.betData?.betName ||
+                                  "N/A"}
+                              </td>
+                              <td className="border text-nowrap border-gray-300 px-3 py-2">
+                                {bet.betData?.betRate ||
+                                  bet.betData?.matchOdd ||
+                                  "N/A"}
+                              </td>
+                              <td className="border text-nowrap border-gray-300 px-3 py-2">
+                                {bet.betData?.stake || "N/A"}
+                              </td>
+                              <td
+                                className={`border text-nowrap border-gray-300 px-3 py-2 ${
+                                  bet.betData?.result?.status === "won"
+                                    ? "text-green-600"
+                                    : "text-red-600"
+                                }`}
+                              >
+                                {bet.betData?.result?.status === "won"
+                                  ? "+"
+                                  : ""}{" "}
+                                {bet.betData?.result?.profitLoss?.toFixed(2) ||
+                                  "N/A"}
+                              </td>
+                              <td className="border text-nowrap border-gray-300 px-3 py-2">
+                                {new Date(bet.createdAt).toLocaleString()}
+                              </td>
+                              <td className="border text-nowrap border-gray-300 px-3 py-2 text-xs">
+                                {/* IP address would come from bet data if available */}
+                                N/A
+                              </td>
+                              <td className="border border-gray-300 px-3 py-2">
+                                <button className="text-blue-600 hover:text-blue-800 text-sm">
+                                  Detail
+                                </button>
+                              </td>
+                              <td className="border border-gray-300 px-3 py-2 text-center">
+                                <input
+                                  type="checkbox"
+                                  className="text-blue-600"
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+            </>
+          )}
+        </div>
+      </CasinoModal>
+    </div>
+  );
+};
+
+// 🚀 PERFORMANCE: Memoize component with deep comparison for casinoData
+const Lucky7c = memoizeCasinoComponent(Lucky7cComponent);
+Lucky7c.displayName = "Lucky7c";
+
+export default Lucky7c;

@@ -61,3 +61,33 @@ export const fetchCasinoGamesByType = async (gameType: string): Promise<CasinoGa
   }
 };
 
+// Fetch odds for a casino game
+import { apiRequest } from "@/utils/api";
+
+export const getCasinoGameOdds = async (
+  slugName: string | undefined,
+  cookie: any
+) => {
+  return apiRequest(
+    `/api/v1/casinos/odds?casinoType=${slugName}`,
+    cookie,
+    {
+      method: "GET",
+    }
+  );
+};
+
+// Fetch top ten results for a casino game
+export const getCasinoTopTenResult = async (
+  slugName: string | undefined,
+  cookie: any
+) => {
+  return apiRequest(
+    `/api/v1/casinos/getCasinoTopTenResult?casinoType=${slugName}`,
+    cookie,
+    {
+      method: "GET",
+    }
+  );
+};
+
