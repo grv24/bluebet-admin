@@ -22,8 +22,6 @@ const CasinoQueenComponent: React.FC<CasinoQueenProps> = ({
   gameCode,
 }) => {
   const [cookies] = useCookies(["clientToken"]);
-  const [selectedResult, setSelectedResult] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Get game slug from gameCode for navigation
   const gameSlug = gameCode?.toLowerCase() || "casino_queen";
@@ -85,31 +83,30 @@ const CasinoQueenComponent: React.FC<CasinoQueenProps> = ({
   const total3 = getOddsBySid(4);
 
 
-  // React Query for individual result details
-  const {
-    data: resultDetails,
-    isLoading: isLoadingResult,
-    error: resultError,
-  } = useQuery<any>({
-    queryKey: ["casinoIndividualResult", selectedResult?.mid, gameSlug],
-    queryFn: () =>
-      getCasinoIndividualResult(selectedResult?.mid, cookies, gameSlug),
-    enabled: !!selectedResult?.mid && isModalOpen,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 10, // 10 minutes
-    retry: 2,
-  });
+  // Result details query disabled for admin view
+  // const {
+  //   data: resultDetails,
+  //   isLoading: isLoadingResult,
+  //   error: resultError,
+  // } = useQuery<any>({
+  //   queryKey: ["casinoIndividualResult", null, gameSlug],
+  //   queryFn: () => getCasinoIndividualResult(null, cookies, gameSlug),
+  //   enabled: false,
+  //   staleTime: 1000 * 60 * 5,
+  //   gcTime: 1000 * 60 * 10,
+  //   retry: 2,
+  // });
 
-  // Parse result data
-  const resultData = resultDetails?.data?.matchData;
-  const winnerSid = resultData?.win || selectedResult?.win;
-  const winnerInfo = oddsData.find(
-    (item: any) => String(item.sid) === String(winnerSid)
-  );
-  const winnerName = winnerInfo?.nat || "Unknown";
+  // Parse result data - disabled for admin view
+  // const resultData = resultDetails?.data?.matchData;
+  // const winnerSid = resultData?.win || null;
+  // const winnerInfo = oddsData.find(
+  //   (item: any) => String(item.sid) === String(winnerSid)
+  // );
+  // const winnerName = winnerInfo?.nat || "Unknown";
 
-  // Parse cards from result data
-  const parseCards = () => {
+  // Parse cards from result data - disabled for admin view
+  /* const parseCards = () => {
     const cardString =
       resultData?.card || resultData?.cards || resultData?.cardData || "";
 
@@ -155,10 +152,10 @@ const CasinoQueenComponent: React.FC<CasinoQueenProps> = ({
       total2: total2Cards,
       total3: total3Cards,
     };
-  };
+  }; */
 
-  // Calculate scores for each Total
-  const calculateScores = (cards: {
+  // Calculate scores disabled for admin view
+  /* const calculateScores = (cards: {
     total0: string[];
     total1: string[];
     total2: string[];
@@ -210,10 +207,11 @@ const CasinoQueenComponent: React.FC<CasinoQueenProps> = ({
     return scores;
   };
 
-  const cardsData = parseCards();
-  const scores = calculateScores(cardsData);
+  // const cardsData = parseCards();
+  // const scores = calculateScores(cardsData);
 
-  // Determine winner
+  // Determine winner - disabled for admin view
+  /*
   const winnerTotalNumber = winnerSid ? parseInt(winnerSid) - 1 : null; // sid 1 = Total 0, sid 2 = Total 1, etc.
 
   // Map win value to display info
@@ -270,9 +268,6 @@ const CasinoQueenComponent: React.FC<CasinoQueenProps> = ({
             className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-back)] relative ${
               !locked && oddsItem?.b ? "cursor-pointer hover:opacity-90" : ""
             }`}
-            onClick={() =>
-              !locked && oddsItem?.b && onBetClick(String(sid), "back")
-            }
           >
             {locked && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -286,9 +281,6 @@ const CasinoQueenComponent: React.FC<CasinoQueenProps> = ({
             className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-lay)] relative ${
               !locked && oddsItem?.l ? "cursor-pointer hover:opacity-90" : ""
             }`}
-            onClick={() =>
-              !locked && oddsItem?.l && onBetClick(String(sid), "lay")
-            }
           >
             {locked && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -327,9 +319,8 @@ const CasinoQueenComponent: React.FC<CasinoQueenProps> = ({
               return (
                 <div
                   key={item.mid || `result-${item.win}-${index}`}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold text-white cursor-pointer hover:scale-110 transition-transform`}
-                  onClick={() => handleResultClick(item)}
-                  title={`Round ID: ${item.mid || "N/A"} - Winner: ${resultDisplay.title} - Click to view details`}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold text-white`}
+                  title={`Round ID: ${item.mid || "N/A"} - Winner: ${resultDisplay.title}`}
                 >
                   {resultDisplay.label}
                 </div>
@@ -343,10 +334,10 @@ const CasinoQueenComponent: React.FC<CasinoQueenProps> = ({
         </div>
       </div>
 
-      {/* Result Details Modal */}
-      <CasinoModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
+      {/* Result Details Modal - Disabled for admin view */}
+      {/* <CasinoModal
+        isOpen={false}
+        onClose={() => {}}
         title="Casino Queen Result"
         size="xl"
         resultDetails={true}
@@ -473,7 +464,7 @@ const CasinoQueenComponent: React.FC<CasinoQueenProps> = ({
             </div>
           )}
         </div>
-      </CasinoModal>
+      </CasinoModal> */}
     </div>
   );
 };

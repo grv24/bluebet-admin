@@ -68,152 +68,6 @@ const CasinoWarComponent = ({
       remark: casinoData?.data?.remark,
     });
   
-      if (!currentBet?.data || !casinoData?.data?.mid) return 0;
-  
-      const currentMatchId = casinoData.data.mid;
-      let profitLoss = 0;
-  
-      // Only bets for this match
-      const bets = currentBet.data.filter(
-        (bet: any) => String(bet.matchId) === String(currentMatchId)
-      );
-  
-      bets.forEach((bet: any) => {
-        const { betName, oddCategory, stake } = bet.betData;
-  
-        // Normalize bet name for comparison
-        const normalizedBetName = betName?.toLowerCase() || "";
-        const normalizedBetType = betType.toLowerCase();
-  
-        // Check if this bet matches the current bet type
-        let isMatch = false;
-  
-        // Handle different War bet types
-        if (
-          normalizedBetType.includes("winner") &&
-          normalizedBetName.includes("winner")
-        ) {
-          // Extract position number from bet type (e.g., "Winner 1" -> "1")
-          const positionMatch = betType.match(/(\d+)/);
-          const betPositionMatch = betName?.match(/(\d+)/);
-  
-          if (positionMatch && betPositionMatch) {
-            isMatch = positionMatch[1] === betPositionMatch[1];
-          }
-        } else if (
-          normalizedBetType.includes("red") &&
-          normalizedBetName.includes("red")
-        ) {
-          const positionMatch = betType.match(/(\d+)/);
-          const betPositionMatch = betName?.match(/(\d+)/);
-  
-          if (positionMatch && betPositionMatch) {
-            isMatch = positionMatch[1] === betPositionMatch[1];
-          }
-        } else if (
-          normalizedBetType.includes("black") &&
-          normalizedBetName.includes("black")
-        ) {
-          const positionMatch = betType.match(/(\d+)/);
-          const betPositionMatch = betName?.match(/(\d+)/);
-  
-          if (positionMatch && betPositionMatch) {
-            isMatch = positionMatch[1] === betPositionMatch[1];
-          }
-        } else if (
-          normalizedBetType.includes("odd") &&
-          normalizedBetName.includes("odd")
-        ) {
-          const positionMatch = betType.match(/(\d+)/);
-          const betPositionMatch = betName?.match(/(\d+)/);
-  
-          if (positionMatch && betPositionMatch) {
-            isMatch = positionMatch[1] === betPositionMatch[1];
-          }
-        } else if (
-          normalizedBetType.includes("even") &&
-          normalizedBetName.includes("even")
-        ) {
-          const positionMatch = betType.match(/(\d+)/);
-          const betPositionMatch = betName?.match(/(\d+)/);
-  
-          if (positionMatch && betPositionMatch) {
-            isMatch = positionMatch[1] === betPositionMatch[1];
-          }
-        } else if (
-          normalizedBetType.includes("spade") &&
-          normalizedBetName.includes("spade")
-        ) {
-          const positionMatch = betType.match(/(\d+)/);
-          const betPositionMatch = betName?.match(/(\d+)/);
-  
-          if (positionMatch && betPositionMatch) {
-            isMatch = positionMatch[1] === betPositionMatch[1];
-          }
-        } else if (
-          normalizedBetType.includes("heart") &&
-          normalizedBetName.includes("heart")
-        ) {
-          const positionMatch = betType.match(/(\d+)/);
-          const betPositionMatch = betName?.match(/(\d+)/);
-  
-          if (positionMatch && betPositionMatch) {
-            isMatch = positionMatch[1] === betPositionMatch[1];
-          }
-        } else if (
-          normalizedBetType.includes("diamond") &&
-          normalizedBetName.includes("diamond")
-        ) {
-          const positionMatch = betType.match(/(\d+)/);
-          const betPositionMatch = betName?.match(/(\d+)/);
-  
-          if (positionMatch && betPositionMatch) {
-            isMatch = positionMatch[1] === betPositionMatch[1];
-          }
-        } else if (
-          normalizedBetType.includes("club") &&
-          normalizedBetName.includes("club")
-        ) {
-          const positionMatch = betType.match(/(\d+)/);
-          const betPositionMatch = betName?.match(/(\d+)/);
-  
-          if (positionMatch && betPositionMatch) {
-            isMatch = positionMatch[1] === betPositionMatch[1];
-          }
-        }
-  
-        if (isMatch) {
-          // Calculate profit/loss for War bets (loss-only display like dt6 Odd/Even)
-          if (oddCategory.toLowerCase() === "back") {
-            profitLoss += -stake; // Show loss potential
-          } else if (oddCategory.toLowerCase() === "lay") {
-            profitLoss += stake; // Show profit potential
-          }
-        }
-      });
-  
-      return profitLoss;
-    };
-  
-    /**
-     * Handle clicking on individual result to show details
-     */
-    const handleResultClick = (result: any) => {
-      const resultId = result?.mid || result?.roundId || result?.id || result?.matchId;
-      
-      if (!resultId) {
-        console.error("🎰 CasinoWar: No result ID found in result", result);
-        return;
-      }
-      
-      if (!normalizedGameSlug) {
-        console.error("🎰 CasinoWar: No gameSlug available", { gameSlug, normalizedGameSlug });
-        return;
-      }
-      
-      // resultModal.openModal(String(resultId), result);
-    };
-  
     const isLocked = (row: any) => {
       const status = row?.gstatus as string | number | undefined;
       return (
@@ -290,41 +144,14 @@ const CasinoWarComponent = ({
           return (
             <td
               key={`${baseLabel}-${col}`}
-              className="relative border min-w-14 leading-10 text-sm font-semibold text-[var(--bg-secondary)] bg-[var(--bg-back)] text-center border-gray-300 cursor-pointer"
-              onClick={() => !locked && onBetClick?.(String(row?.sid), "back")}
+              className="relative border min-w-14 leading-10 text-sm font-semibold text-[var(--bg-secondary)] bg-[var(--bg-back)] text-center border-gray-300"
             >
               {locked && (
                 <div className="absolute inset-0 bg-black/60 flex flex-col items-center gap-3.5 justify-center">
                   <RiLockFill className="text-white text-lg" />
-                  {/* profit loss book */}
-                  <h2
-                    className={`text-xs font-semibold text-center ${
-                      getBetProfitLoss(`${baseLabel} ${col}`) > 0
-                        ? "text-green-600"
-                        : getBetProfitLoss(`${baseLabel} ${col}`) < 0
-                          ? "text-red-600"
-                          : "text-gray-600"
-                    }`}
-                  >
-                    {getBetProfitLoss(`${baseLabel} ${col}`) > 0 ? "+" : ""}
-                    {getBetProfitLoss(`${baseLabel} ${col}`).toFixed(0)}
-                  </h2>
                 </div>
               )}
               {value}
-              {/* profit loss book */}
-              <h2
-                className={`text-xs font-semibold leading-2 mb-2 text-center ${
-                  getBetProfitLoss(`${baseLabel} ${col}`) > 0
-                    ? "text-green-600"
-                    : getBetProfitLoss(`${baseLabel} ${col}`) < 0
-                      ? "text-red-600"
-                      : "text-gray-600"
-                }`}
-              >
-                {getBetProfitLoss(`${baseLabel} ${col}`) > 0 ? "+" : ""}
-                {getBetProfitLoss(`${baseLabel} ${col}`).toFixed(0)}
-              </h2>
             </td>
           );
         })}
@@ -342,7 +169,6 @@ const CasinoWarComponent = ({
         <div
           key={`${baseLabel}-${position}`}
           className="flex items-center justify-between h-12 border-b border-gray-200 bg-white"
-          onClick={() => !locked && onBetClick?.(String(row?.sid), "back")}
         >
           <div className="flex w-full items-center gap-2 ps-2">
             {baseLabel === "Red" ? (
@@ -392,34 +218,10 @@ const CasinoWarComponent = ({
             {locked && (
               <div className="absolute inset-0 bg-black/60 flex flex-col gap-1.5 items-center justify-center">
                 <RiLockFill className="text-white text-sm" />
-                <h2
-                  className={`text-xs font-semibold text-center ${
-                    getBetProfitLoss(`${baseLabel} ${position}`) > 0
-                      ? "text-green-600"
-                      : getBetProfitLoss(`${baseLabel} ${position}`) < 0
-                        ? "text-red-600"
-                        : "text-gray-600"
-                  }`}
-                >
-                  {getBetProfitLoss(`${baseLabel} ${position}`) > 0 ? "+" : ""}
-                  {getBetProfitLoss(`${baseLabel} ${position}`).toFixed(0)}
-                </h2>
               </div>
             )}
             <div className="flex flex-col justify-center items-center text-[var(--bg-secondary)] bg-[var(--bg-back)] h-full w-full">
               <h2 className="text-sm font-semibold">{value}</h2>
-              <h2
-                className={`text-xs font-semibold ${
-                  getBetProfitLoss(`${baseLabel} ${position}`) > 0
-                    ? "text-green-600"
-                    : getBetProfitLoss(`${baseLabel} ${position}`) < 0
-                      ? "text-red-600"
-                      : "text-gray-600"
-                }`}
-              >
-                {getBetProfitLoss(`${baseLabel} ${position}`) > 0 ? "+" : ""}
-                {getBetProfitLoss(`${baseLabel} ${position}`).toFixed(0)}
-              </h2>
             </div>
           </div>
         </div>
@@ -591,8 +393,7 @@ const CasinoWarComponent = ({
               return (
                 <h2
                   key={index}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold text-yellow-400 cursor-pointer hover:scale-110 transition-transform`}
-                  onClick={() => handleResultClick(item)}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold text-yellow-400`}
                   title={`Result: ${item.result}`}
                 >
                   {"R"}
