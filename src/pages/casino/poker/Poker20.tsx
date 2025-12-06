@@ -107,116 +107,6 @@ const Poker20Component = ({
       remainingTime <= 3
     );
   };
-
-
-    const currentMatchId = casinoData.data.mid;
-    let book: Record<string, number> = { Dragon: 0, Tiger: 0 };
-
-    // Only bets for this match
-      (bet: any) => String(bet.matchId) === String(currentMatchId)
-    );
-
-    bets.forEach((bet: any) => {
-      const { sid, betName, name, nation, oddCategory, stake, betRate } = bet.betData;
-      const result = bet.betData?.result;
-
-      if (!result || !result.settled) return;
-
-      // Use the actual profit/loss from the result
-      let profitLoss = 0;
-
-      if (result.status === "won" || result.status === "profit") {
-        profitLoss = Number(result.profitLoss) || 0;
-      } else if (result.status === "lost") {
-        profitLoss = Number(result.profitLoss) || 0;
-      }
-
-      // Determine which side this bet belongs to based on sid
-      if (sid) {
-        const sidStr = String(sid);
-        if (sidStr.startsWith('1')) {
-          // Player A bets
-          book.Dragon += profitLoss;
-        } else if (sidStr.startsWith('2')) {
-          // Player B bets
-          book.Tiger += profitLoss;
-        }
-      }
-    });
-
-    console.log(book, "📘 book (combined Dragon & Tiger)");
-    return book;
-  };
-
-  const getBetProfitLoss = (nation: string, side: "A" | "B") => {
-
-    const currentMatchId = casinoData.data.mid;
-    
-    // Only bets for this match
-      (bet: any) => String(bet.matchId) === String(currentMatchId)
-    );
-
-    let totalProfitLoss = 0;
-
-    bets.forEach((bet: any) => {
-      const result = bet.betData?.result;
-
-      // Determine which side this bet belongs to based on sid
-      let betSide = null;
-      if (sid) {
-        const sidStr = String(sid);
-        if (sidStr.startsWith('1')) {
-          betSide = 'A';
-        } else if (sidStr.startsWith('2')) {
-          betSide = 'B';
-        }
-      }
-
-      // Use either betName, name, or nation field
-      
-      if (actualBetName && typeof actualBetName === 'string' && betSide === side) {
-        const actualBetNameLower = actualBetName.toLowerCase();
-        const requestedNationLower = nation.toLowerCase();
-        
-        // Match by poker hand type - more flexible matching
-        const isMatch = 
-          actualBetNameLower === requestedNationLower ||
-          actualBetNameLower.includes(requestedNationLower) ||
-          requestedNationLower.includes(actualBetNameLower) ||
-          // Match by poker hand type
-          (requestedNationLower.includes('winner') && actualBetNameLower.includes('winner')) ||
-          (requestedNationLower.includes('one pair') && actualBetNameLower.includes('one pair')) ||
-          (requestedNationLower.includes('two pair') && actualBetNameLower.includes('two pair')) ||
-          (requestedNationLower.includes('three of a kind') && actualBetNameLower.includes('three of a kind')) ||
-          (requestedNationLower.includes('straight') && actualBetNameLower.includes('straight')) ||
-          (requestedNationLower.includes('flush') && actualBetNameLower.includes('flush')) ||
-          (requestedNationLower.includes('full house') && actualBetNameLower.includes('full house')) ||
-          (requestedNationLower.includes('four of a kind') && actualBetNameLower.includes('four of a kind')) ||
-          (requestedNationLower.includes('straight flush') && actualBetNameLower.includes('straight flush'));
-        
-        if (isMatch) {
-          // If bet is settled, use the actual profit/loss from the result
-          if (result && result.settled) {
-            let profitLoss = 0;
-
-            if (result.status === "won" || result.status === "profit") {
-              profitLoss = Number(result.profitLoss) || 0;
-            } else if (result.status === "lost") {
-              profitLoss = Number(result.profitLoss) || 0;
-            }
-
-            totalProfitLoss += profitLoss;
-          } else {
-            // For unsettled bets, show the stake as potential loss (like DT6 does)
-            totalProfitLoss -= Number(stake) || 0;
-          }
-        }
-      }
-    });
-
-    return totalProfitLoss;
-  };
-
   const RateBox: React.FC<{ nation: string; side: "A" | "B" }> = ({
     nation,
     side,
@@ -224,32 +114,11 @@ const Poker20Component = ({
     const market = findSide(nation, side);
     const suspended = isSuspended(market);
     
-    // Get profit/loss for this specific nation and side
-    const profitLoss = getBetProfitLoss(nation, side);
-    
     return (
-      <div
-        className="flex flex-col items-center bg-[var(--bg-back)] leading-6 py-2 w-full justify-center text-sm font-semibold relative"
-            
-        }}
-      >
+      <div className="flex flex-col items-center bg-[var(--bg-back)] leading-6 py-2 w-full justify-center text-sm font-semibold relative">
         {/* Odds display */}
         <div className="text-sm font-semibold">
           {(market?.b || market?.rate) ?? "0"}
-        </div>
-        
-        {/* Profit/Loss display */}
-        <div
-          className={`text-xs font-semibold leading-3 text-center ${
-            profitLoss > 0
-              ? "text-green-600"
-              : profitLoss < 0
-                ? "text-red-600"
-                : "text-gray-600"
-          }`}
-        >
-          {profitLoss > 0 ? "+" : ""}
-          {profitLoss.toFixed(0)}
         </div>
         
         {/* Suspended overlay */}
