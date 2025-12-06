@@ -8,19 +8,15 @@ import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 const InstantWorliComponent = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results,
   gameCode,
   gameName,
-  currentBet,
 }: {
   casinoData: any;
   remainingTime: number;
-  onBetClick: (sid: string, type: "back" | "lay") => void;
   results?: any[];
   gameCode?: string;
   gameName?: string;
-  currentBet?: any;
 }) => {
   // const resultModal = useIndividualResultModal();
   const navigate = useNavigate();
@@ -96,12 +92,6 @@ const InstantWorliComponent = ({
     return oddsData.b1 ? formatOdds(oddsData.b1) : "9";
   };
 
-  // Handle bet click
-  const handleBetClick = (sid: string, type: "back" | "lay") => {
-    if (isGameSuspended) return;
-    onBetClick(sid, type);
-  };
-
   // Fancy mapping: Line 1, Odd, Line 2, Even
   const FANCY_MAP: {
     [key: number]: { sid: number; label: string; number: string };
@@ -110,43 +100,6 @@ const InstantWorliComponent = ({
     1: { sid: 13, label: "Odd", number: "1 | 3 | 5 | 7 | 9" },
     2: { sid: 12, label: "Line 2", number: "6 | 7 | 8 | 9 | 0" },
     3: { sid: 14, label: "Even", number: "2 | 4 | 6 | 8 | 0" },
-  };
-
-  // Handle clicking on individual result to show details
-  const handleResultClick = (result: any) => {
-    console.log("🎰 InstantWorli: handleResultClick called", {
-      result,
-      mid: result?.mid,
-      roundId: result?.roundId,
-      id: result?.id,
-      allKeys: Object.keys(result || {}),
-      gameSlug: actualGameSlug,
-    });
-
-    // Try to get result ID from different possible fields
-    const resultId =
-      result?.mid || result?.roundId || result?.id || result?.matchId;
-
-    if (!resultId) {
-      console.error("🎰 InstantWorli: No result ID found in result", result);
-      alert("Unable to open result details: Missing result ID");
-      return;
-    }
-
-    if (!actualGameSlug) {
-      console.error("🎰 InstantWorli: No gameSlug available", {
-        gameCode,
-        actualGameSlug,
-      });
-      alert("Unable to open result details: Missing game type");
-      return;
-    }
-
-    console.log("🎰 InstantWorli: Opening modal with", {
-      resultId: String(resultId),
-      gameSlug: actualGameSlug,
-    });
-    // resultModal.openModal(String(resultId), result);
   };
 
   // Handle different result formats
@@ -181,10 +134,9 @@ const InstantWorliComponent = ({
                   key={index}
                   className={`bg-[var(--bg-back)] flex justify-center items-center w-full relative ${
                     isGameSuspended
-                      ? "opacity-50 cursor-not-allowed"
-                      : "cursor-pointer hover:opacity-80 transition-opacity"
+                      ? "opacity-50"
+                      : ""
                   }`}
-                  onClick={() => handleBetClick(String(sid), "back")}
                 >
                   <h2 className="lg:text-4xl text-xl py-4 font-normal casino-text">
                     {item}
@@ -207,10 +159,9 @@ const InstantWorliComponent = ({
                   key={index}
                   className={`bg-[var(--bg-back)] flex flex-col py-2 justify-center items-center w-full relative ${
                     isGameSuspended
-                      ? "opacity-50 cursor-not-allowed"
-                      : "cursor-pointer hover:opacity-80 transition-opacity"
+                      ? "opacity-50"
+                      : ""
                   }`}
-                  onClick={() => handleBetClick(String(fancy.sid), "back")}
                 >
                   <h2 className="lg:text-4xl text-xl  font-normal casino-text">
                     {fancy.label}
@@ -247,9 +198,8 @@ const InstantWorliComponent = ({
               return (
                 <h2
                   key={index}
-                  className="h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold text-yellow-400 cursor-pointer hover:scale-110 transition-transform"
-                  onClick={() => handleResultClick(item)}
-                  title="Click to view details"
+                  className="h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold text-yellow-400"
+                  title={`Round ID: ${item.mid || "N/A"}`}
                 >
                   {"R"}
                 </h2>
@@ -257,16 +207,6 @@ const InstantWorliComponent = ({
             })}
         </div>
       </div>
-
-      {/* Individual Result Details Modal */}
-      {/* <IndividualResultModal
-        isOpen={resultModal.isOpen}
-        onClose={resultModal.closeModal}
-        resultId={resultModal.selectedResultId || undefined}
-        gameType={actualGameSlug}
-        title="Instant Worli Result"
-        enableBetFiltering={true}
-      /> */}
     </div>
   );
 };
