@@ -8,22 +8,17 @@ import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 const ThirtyTwoCardBComponent: React.FC<{
   casinoData: any;
   remainingTime: number;
-  onBetClick: (sid: string, type: string) => void;
   results: any[];
   gameName: string;
   gameSlug: string;
-  currentBet: any;
 }> = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results,
   gameName,
   gameSlug,
-  currentBet,
 }) => {
   const navigate = useNavigate();
-  // const resultModal = useIndividualResultModal();
 
   // Convert gameSlug to actual game slug format if needed
   const actualGameSlug = React.useMemo(() => {
@@ -36,24 +31,6 @@ const ThirtyTwoCardBComponent: React.FC<{
   // Handle both new API format (casinoData?.data?.sub) and legacy format (casinoData?.data?.data?.data?.t2)
   const t2: any[] = casinoData?.data?.sub || casinoData?.data?.data?.data?.t2 || [];
 
-  /**
-   * Handle clicking on individual result to show details
-   */
-  const handleResultClick = (result: any) => {
-    const resultId = result?.mid || result?.roundId || result?.id || result?.matchId;
-    
-    if (!resultId) {
-      console.error("🎰 32CardB: No result ID found in result", result);
-      return;
-    }
-    
-    if (!actualGameSlug) {
-      console.error("🎰 32CardB: No gameSlug available", { gameSlug, actualGameSlug });
-      return;
-    }
-    
-    // resultModal.openModal(String(resultId), result);
-  };
 
   const isSuspended = (odds: any) => {
     const status = odds?.gstatus as string | number | undefined;
@@ -75,26 +52,6 @@ const ThirtyTwoCardBComponent: React.FC<{
     );
   };
 
-  // Function to filter user bets based on selected filter
-  const getFilteredBets = (bets: any[], filter: string) => {
-    if (filter === "all") return bets;
-
-    return bets.filter((bet: any) => {
-      const oddCategory = bet.betData?.oddCategory?.toLowerCase();
-      const status = bet.status?.toLowerCase();
-
-      switch (filter) {
-        case "back":
-          return oddCategory === "back";
-        case "lay":
-          return oddCategory === "lay";
-        case "deleted":
-          return status === "deleted" || status === "cancelled";
-        default:
-          return true;
-      }
-    });
-  };
 
 
 
@@ -488,7 +445,6 @@ const ThirtyTwoCardBComponent: React.FC<{
               const row = getByNation(label) || {};
               const backLocked = isSuspended(row);
               const layLocked = isSuspended(row);
-              const profitLoss = getPlayerBetProfitLoss(label);
               return (
                 <tr key={label} className="w-full border border-gray-300">
                   <td className="text-base font-semibold px-2 text-[var(--bg-secondary)]">
@@ -507,10 +463,7 @@ const ThirtyTwoCardBComponent: React.FC<{
                     </h2>
                   </td>
                   <td
-                    className="relative text-base border border-gray-300 text-center leading-10 font-semibold bg-[var(--bg-back)] text-[var(--bg-secondary)] cursor-pointer"
-                    onClick={() =>
-                      !backLocked && onBetClick(String(row?.sid), "back")
-                    }
+                    className="relative text-base border border-gray-300 text-center leading-10 font-semibold bg-[var(--bg-back)] text-[var(--bg-secondary)]"
                   >
                     {backLocked && (
                       <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
@@ -520,10 +473,7 @@ const ThirtyTwoCardBComponent: React.FC<{
                     {row?.b || 0}
                   </td>
                   <td
-                    className="relative text-base border border-gray-300 text-center leading-10 font-semibold bg-[var(--bg-lay)] text-[var(--bg-secondary)] cursor-pointer"
-                    onClick={() =>
-                      !layLocked && onBetClick(String(row?.sid), "lay")
-                    }
+                    className="relative text-base border border-gray-300 text-center leading-10 font-semibold bg-[var(--bg-lay)] text-[var(--bg-secondary)]"
                   >
                     {layLocked && (
                       <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
@@ -557,8 +507,6 @@ const ThirtyTwoCardBComponent: React.FC<{
               const even = getByNation(`${label} Even`) || {};
               const oddLocked = isSuspended(odd);
               const evenLocked = isSuspended(even);
-              const oddProfitLoss = getBetProfitLoss(`${label} Odd`);
-              const evenProfitLoss = getBetProfitLoss(`${label} Even`);
               return (
                 <tr
                   key={`oe-${label}`}
@@ -568,10 +516,7 @@ const ThirtyTwoCardBComponent: React.FC<{
                     {label}
                   </td>
                   <td
-                    className="relative text-base text-center border border-gray-300 leading-10 font-semibold bg-[var(--bg-back)] text-[var(--bg-secondary)] cursor-pointer"
-                    onClick={() =>
-                      !evenLocked && onBetClick(String(even?.sid), "back")
-                    }
+                    className="relative text-base text-center border border-gray-300 leading-10 font-semibold bg-[var(--bg-back)] text-[var(--bg-secondary)]"
                   >
                     {evenLocked && (
                       <div className="absolute inset-0 bg-black/60 flex flex-col w-full h-full justify-center items-center font-bold uppercase z-20">
@@ -611,10 +556,7 @@ const ThirtyTwoCardBComponent: React.FC<{
                     </div>
                   </td>
                   <td
-                    className="relative text-base text-center border border-gray-300 leading-10 font-semibold bg-[var(--bg-back)] text-[var(--bg-secondary)] cursor-pointer"
-                    onClick={() =>
-                      !oddLocked && onBetClick(String(odd?.sid), "back")
-                    }
+                    className="relative text-base text-center border border-gray-300 leading-10 font-semibold bg-[var(--bg-back)] text-[var(--bg-secondary)]"
                   >
                     {oddLocked && (
                       <div className="absolute inset-0 bg-black/60 flex flex-col w-full h-full justify-center items-center font-bold uppercase z-20">
@@ -684,7 +626,6 @@ const ThirtyTwoCardBComponent: React.FC<{
               const row = getByNationAny(names as string[]) || {};
               const backLocked = isSuspended(row);
               const layLocked = isSuspended(row);
-              const profitLoss = getAnyThreeCardBetProfitLoss(String(names[0]));
               return (
                 <tr
                   key={String(names[0])}
@@ -706,10 +647,7 @@ const ThirtyTwoCardBComponent: React.FC<{
                         </h2>
                   </td>
                   <td
-                    className="relative text-base border border-gray-300 text-center leading-10 font-semibold bg-[var(--bg-back)] text-[var(--bg-secondary)] cursor-pointer"
-                    onClick={() =>
-                      !backLocked && onBetClick(String(row?.sid), "back")
-                    }
+                    className="relative text-base border border-gray-300 text-center leading-10 font-semibold bg-[var(--bg-back)] text-[var(--bg-secondary)]"
                   >
                     {backLocked && (
                       <div className="absolute inset-0 bg-black/60 flex flex-col w-full h-full justify-center items-center font-bold uppercase z-20">
@@ -727,10 +665,7 @@ const ThirtyTwoCardBComponent: React.FC<{
                     </div>
                   </td>
                   <td
-                    className="relative text-base border border-gray-300 text-center leading-10 font-semibold bg-[var(--bg-lay)] text-[var(--bg-secondary)] cursor-pointer"
-                    onClick={() =>
-                      !layLocked && onBetClick(String(row?.sid), "lay")
-                    }
+                    className="relative text-base border border-gray-300 text-center leading-10 font-semibold bg-[var(--bg-lay)] text-[var(--bg-secondary)]"
                   >
                     {layLocked && (
                       <div className="absolute inset-0 bg-black/60 flex flex-col w-full h-full justify-center items-center font-bold uppercase z-20">
@@ -767,7 +702,6 @@ const ThirtyTwoCardBComponent: React.FC<{
             {["8 & 9 Total", "10 & 11 Total"].map((label) => {
               const row = getByNation(label) || {};
               const backLocked = isSuspended(row);
-              const profitLoss = getTotalBetProfitLoss(label);
               return (
                 <tr key={label} className="w-full border border-gray-300">
                   <td className="text-base font-semibold px-2 text-[var(--bg-secondary)]">
@@ -815,12 +749,10 @@ const ThirtyTwoCardBComponent: React.FC<{
             const label = `Single ${num}`;
             const row = getByNation(label) || {};
             const locked = isSuspended(row);
-            const profitLoss = getBetProfitLoss(label);
             return (
               <div
                 key={`single-${num}`}
-                className="relative w-full col-span-1 border bg-[var(--bg-back)] text-center text-lg leading-14 font-semibold text-[var(--bg-secondary)] border-gray-300 cursor-pointer"
-                onClick={() => !locked && onBetClick(String(row?.sid), "back")}
+                className="relative w-full col-span-1 border bg-[var(--bg-back)] text-center text-lg leading-14 font-semibold text-[var(--bg-secondary)] border-gray-300"
               >
                 {locked && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
@@ -865,9 +797,8 @@ const ThirtyTwoCardBComponent: React.FC<{
           {results?.slice(0, 10).map((item: any, index: number) => (
             <h2
               key={index}
-              className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${item.win === "1" ? "text-red-500" : "text-yellow-400"} cursor-pointer hover:scale-110 transition-transform`}
-              onClick={() => handleResultClick(item)}
-              title="Click to view details"
+              className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${item.win === "1" ? "text-red-500" : "text-yellow-400"}`}
+              title="View details"
             >
               {item.win == "1"
                 ? "8"
