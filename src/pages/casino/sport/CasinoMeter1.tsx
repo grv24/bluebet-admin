@@ -27,26 +27,6 @@ const isStatusLocked = (status: string): boolean => {
 };
 
 
-// Function to filter user bets based on selected filter
-  if (filter === "all") return bets;
-
-  return bets.filter((bet: any) => {
-    const oddCategory = bet.betData?.oddCategory?.toLowerCase();
-    const status = bet.status?.toLowerCase();
-
-    switch (filter) {
-      case "back":
-        return oddCategory === "back";
-      case "lay":
-        return oddCategory === "lay";
-      case "deleted":
-        return status === "deleted" || status === "cancelled";
-      default:
-        return true;
-    }
-  });
-};
-
 const CasinoMeter1Component: React.FC<CasinoMeter1Props> = ({
   casinoData,
   remainingTime,
@@ -153,15 +133,6 @@ const CasinoMeter1Component: React.FC<CasinoMeter1Props> = ({
     return "cmeter1"; // Default fallback
   }, [gameCode]);
 
-  // Handle clicking on individual result to show details
-    const resultId = result?.mid || result?.roundId || result?.id || result?.matchId;
-    if (!resultId) {
-      console.error("🎰 CasinoMeter1: No result ID found in result", result);
-      alert("Unable to open result details: Missing result ID");
-      return;
-    }
-    resultModal.openModal(String(resultId), result);
-  };
 
   // Map win value to display info
   const getResultDisplay = (win: string) => {

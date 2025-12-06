@@ -156,12 +156,6 @@ const GoalComponent: React.FC<GoalProps> = ({
                 >
                   <td className="w-1/2">
                     <h2 className="text-sm font-semibold px-2">{player.nat}</h2>
-                    <h2 className={`text-xs px-2 font-semibold ${
-                          ? "text-green-600"
-                            ? "text-red-600"
-                            : "text-gray-600"
-                      }`}>
-                      </h2>
                   </td>
                   <td
                     className="bg-[var(--bg-back)] text-sm font-semibold relative"
@@ -218,12 +212,6 @@ const GoalComponent: React.FC<GoalProps> = ({
                 >
                   <td className="w-1/2">
                     <h2 className="text-sm font-semibold px-2">{method.nat}</h2>
-                    <h2 className={`text-xs font-semibold px-2 ${
-                          ? "text-green-600"
-                            ? "text-red-600"
-                            : "text-gray-600"
-                      }`}>
-                      </h2>
                   </td>
                   <td
                     className="bg-[var(--bg-back)] relative hover:bg-blue-100"

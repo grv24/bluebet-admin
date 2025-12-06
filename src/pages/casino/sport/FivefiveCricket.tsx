@@ -247,98 +247,6 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
     return markets.filter((market: any) => market.mname === "Fancy");
   }, [markets]);
 
-  // Profit/Loss calculation function
-
-    let totalProfitLoss = 0;
-
-    // Only bets for this match
-      (bet: any) => String(bet.matchId) === String(matchId)
-    );
-
-    bets.forEach((bet: any) => {
-      const result = bet.betData?.result;
-
-      // Use either betName, name, or nation field
-      const betSid = sid ? String(sid) : null;
-      const requestedSid = sectionSid ? String(sectionSid) : null;
-      
-      // Match by market name first (Bookmaker vs Fancy)
-      const betMarketName = betMarket || betMname || "";
-      const isSameMarket = betMarketName === marketName;
-      
-      if (!isSameMarket) {
-        // Different markets don't affect each other
-        return;
-      }
-      
-      // Check if this bet matches the requested section
-      let isMatch = false;
-      
-      // Match by sid first (most reliable)
-      if (requestedSid && betSid && requestedSid === betSid) {
-        isMatch = true;
-      }
-      // Match by name
-      else if (actualBetName && typeof actualBetName === 'string' && sectionName) {
-        const actualBetNameLower = actualBetName.toLowerCase().trim();
-        const requestedNameLower = sectionName.toLowerCase().trim();
-        
-        // Exact match
-        if (actualBetNameLower === requestedNameLower) {
-          isMatch = true;
-        }
-        // Partial match for team names
-        else if (actualBetNameLower.includes(requestedNameLower) || requestedNameLower.includes(actualBetNameLower)) {
-          isMatch = true;
-        }
-      }
-      
-      if (isMatch) {
-        // If bet is settled, use the actual profit/loss from the result
-        if (result && result.settled) {
-
-          if (result.status === "won" || result.status === "profit") {
-          } else if (result.status === "lost") {
-          }
-
-        } else {
-          // For unsettled bets, calculate potential profit
-          const stakeAmount = Number(stake) || 0;
-          const rate = Number(betRate) || 0;
-          
-          if (oddCategory?.toLowerCase() === "back" || oddCategory?.toLowerCase() === "yes") {
-            // Calculate profit if this bet wins
-            let profit = 0;
-            if (rate > 0) {
-              if (rate < 1) {
-                profit = stakeAmount * rate;
-              } else {
-                profit = stakeAmount * (rate - 1);
-              }
-            }
-            totalProfitLoss += profit;
-          } else if (oddCategory?.toLowerCase() === "lay" || oddCategory?.toLowerCase() === "no") {
-            // For lay bets, if it wins, you get the stake, if it loses, you pay the loss
-            // For unsettled lay bets, show potential profit (stake)
-            totalProfitLoss += stakeAmount;
-          }
-        }
-      } else {
-        // For other options in the same market (mutually exclusive), show potential loss if this bet loses
-        // If bet is settled and lost, show the loss
-        if (result && result.settled) {
-          if (result.status === "lost") {
-          }
-        } else {
-          // For unsettled bets on other options, show potential loss (stake)
-          totalProfitLoss -= Number(stake) || 0;
-        }
-      }
-    });
-
-    return totalProfitLoss;
-  }, [, matchId]);
-
   // Extract odds from section odds array
   const getOddsFromSection = (section: any, oname: string) => {
     if (!section?.odds || !Array.isArray(section.odds)) return null;
@@ -490,20 +398,6 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
     }
     return "cricket_v3"; // Default fallback
   }, [gameCode]);
-
-  // Handle clicking on individual result to show details
-    const resultId = result?.mid || result?.roundId || result?.id || result?.matchId;
-    if (!resultId) {
-      console.error("🎰 FivefiveCricket: No result ID found in result", result);
-      alert("Unable to open result details: Missing result ID");
-      return;
-    }
-    // resultModal.openModal(String(resultId), result);
-  };
-
-  // Function to filter user bets based on selected filter (kept for customGetFilteredBets)
-
-
   return (
     <div className="flex flex-col gap-1">
       {/* Game Info Header */}
@@ -555,8 +449,6 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
                   // Extract odds - only back1 and lay1 for Bookmaker
                   const back1 = getOddsFromSection(section, "back1");
                   const lay1 = getOddsFromSection(section, "lay1");
-                  
-                  // Calculate profit/loss
 
                   return (
                     <tr
@@ -569,12 +461,6 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
                             <span className="truncate md:text-[12px] text-xs md:font-semibold font-normal px-2 text-wrap">
                               {teamName}
                             </span>
-                              <span
-                                className={`text-[10px] font-semibold ${
-                                }`}
-                              >
-                              </span>
-                            )}
                           </div>
                         </div>
                       </td>
@@ -678,8 +564,6 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
 
                       const back1 = getOddsFromSection(section, "back1");
                       const lay1 = getOddsFromSection(section, "lay1");
-                      
-                      // Calculate profit/loss
 
                       return (
                         <tr key={`fancy-${idx}-${section.sid || idx}`} className="border-[var(--border)]">
@@ -689,12 +573,6 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
                                 <span className="truncate md:w-72 w-50 md:text-[12px] md:font-semibold text-xs font-normal px-2 text-wrap">
                                   {section.nat}
                                 </span>
-                                  <span
-                                    className={`text-[10px] font-semibold ${
-                                    }`}
-                                  >
-                                  </span>
-                                )}
                               </div>
                             </div>
                           </td>

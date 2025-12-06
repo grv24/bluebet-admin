@@ -254,95 +254,6 @@ const SuperOverComponent: React.FC<SuperOverProps> = ({
 
   // Profit/Loss calculation function
 
-    let totalProfitLoss = 0;
-
-    // Only bets for this match
-      (bet: any) => String(bet.matchId) === String(matchId)
-    );
-
-    bets.forEach((bet: any) => {
-      const result = bet.betData?.result;
-
-      // Use either betName, name, or nation field
-      const betSid = sid ? String(sid) : null;
-      const requestedSid = sectionSid ? String(sectionSid) : null;
-      
-      // Match by market name first (Bookmaker vs Fancy)
-      const betMarketName = betMarket || betMname || "";
-      const isSameMarket = betMarketName === marketName;
-      
-      if (!isSameMarket) {
-        // Different markets don't affect each other
-        return;
-      }
-      
-      // Check if this bet matches the requested section
-      let isMatch = false;
-      
-      // Match by sid first (most reliable)
-      if (requestedSid && betSid && requestedSid === betSid) {
-        isMatch = true;
-      }
-      // Match by name
-      else if (actualBetName && typeof actualBetName === 'string' && sectionName) {
-        const actualBetNameLower = actualBetName.toLowerCase().trim();
-        const requestedNameLower = sectionName.toLowerCase().trim();
-        
-        // Exact match
-        if (actualBetNameLower === requestedNameLower) {
-          isMatch = true;
-        }
-        // Partial match for team names
-        else if (actualBetNameLower.includes(requestedNameLower) || requestedNameLower.includes(actualBetNameLower)) {
-          isMatch = true;
-        }
-      }
-      
-      if (isMatch) {
-        // If bet is settled, use the actual profit/loss from the result
-        if (result && result.settled) {
-
-          if (result.status === "won" || result.status === "profit") {
-          } else if (result.status === "lost") {
-          }
-
-        } else {
-          // For unsettled bets, calculate potential profit
-          const stakeAmount = Number(stake) || 0;
-          const rate = Number(betRate) || 0;
-          
-          if (oddCategory?.toLowerCase() === "back" || oddCategory?.toLowerCase() === "yes") {
-            // Calculate profit if this bet wins
-            let profit = 0;
-            if (rate > 0) {
-              if (rate < 1) {
-                profit = stakeAmount * rate;
-              } else {
-                profit = stakeAmount * (rate - 1);
-              }
-            }
-            totalProfitLoss += profit;
-          } else if (oddCategory?.toLowerCase() === "lay" || oddCategory?.toLowerCase() === "no") {
-            // For lay bets, if it wins, you get the stake, if it loses, you pay the loss
-            // For unsettled lay bets, show potential profit (stake)
-            totalProfitLoss += stakeAmount;
-          }
-        }
-      } else {
-        // For other options in the same market (mutually exclusive), show potential loss if this bet loses
-        // If bet is settled and lost, show the loss
-        if (result && result.settled) {
-          if (result.status === "lost") {
-          }
-        } else {
-          // For unsettled bets on other options, show potential loss (stake)
-          totalProfitLoss -= Number(stake) || 0;
-        }
-      }
-    });
-
-    return totalProfitLoss;
-  }, [, matchId]);
 
   // Format max value (convert to "L" notation if >= 100000)
   const formatMax = (max: number | string | undefined): string => {
@@ -556,13 +467,7 @@ const SuperOverComponent: React.FC<SuperOverProps> = ({
                           <span className="truncate md:text-[12px] text-xs md:font-semibold font-normal px-2 text-wrap">
                             {teamName}
                           </span>
-                            <span
-                              className={`text-[10px] font-semibold ${
-                              }`}
-                            >
-                            </span>
-                          )}
-                        </div>
+                          )}</div>
                       </div>
                     </td>
                     <td colSpan={2} className="relative p-0">
@@ -675,13 +580,7 @@ const SuperOverComponent: React.FC<SuperOverProps> = ({
                               <span className="truncate md:w-72 w-50 md:text-[12px] md:font-semibold text-xs font-normal px-2 text-wrap">
                                 {section.nat}
                               </span>
-                                <span
-                                  className={`text-[10px] font-semibold ${
-                                  }`}
-                                >
-                                </span>
-                              )}
-                            </div>
+                          )}</div>
                           </div>
                         </td>
                         <td className="border-[var(--border)] w-full">
@@ -770,15 +669,7 @@ const SuperOverComponent: React.FC<SuperOverProps> = ({
         </div>
       )}
 
-      {/* Individual Result Details Modal */}
-      {/* <IndividualResultModal
-        isOpen={resultModal.isOpen}
-        onClose={resultModal.closeModal}
-        gameType={normalizedGameSlug}
-        title={`${gameCode || "SuperOver"} Result Details`}
-        enableBetFiltering={true}
-      /> */}
-    </div>
+      {/* Individual Result Details Modal */}</div>
   );
 };
 

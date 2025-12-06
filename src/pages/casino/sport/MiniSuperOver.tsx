@@ -203,71 +203,6 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
   }, [markets]);
 
 
-    let totalProfitLoss = 0;
-
-      (bet: any) => String(bet.matchId) === String(matchId)
-    );
-
-    bets.forEach((bet: any) => {
-      const result = bet.betData?.result;
-
-      const betSid = sid ? String(sid) : null;
-      const requestedSid = sectionSid ? String(sectionSid) : null;
-
-      const betMarketName = betMarket || betMname || "";
-      const isSameMarket = betMarketName === marketName;
-
-      if (!isSameMarket) return;
-
-      let isMatch = false;
-
-      if (requestedSid && betSid && requestedSid === betSid) {
-        isMatch = true;
-      } else if (actualBetName && typeof actualBetName === "string") {
-        const actualBetNameLower = actualBetName.toLowerCase().trim();
-        const requestedNameLower = sectionName.toLowerCase().trim();
-
-        if (actualBetNameLower === requestedNameLower) {
-          isMatch = true;
-        } else if (
-          actualBetNameLower.includes(requestedNameLower) ||
-          requestedNameLower.includes(actualBetNameLower)
-        ) {
-          isMatch = true;
-        }
-      }
-
-      if (isMatch) {
-        if (result && result.settled) {
-
-          if (result.status === "won" || result.status === "profit") {
-          } else if (result.status === "lost") {
-          }
-        } else {
-          const stakeAmount = Number(stake) || 0;
-          const rate = Number(betRate) || 0;
-
-          if (oddCategory?.toLowerCase() === "back" || oddCategory?.toLowerCase() === "yes") {
-            let profit = 0;
-            if (rate > 0) {
-              if (rate < 1) profit = stakeAmount * rate;
-              else profit = stakeAmount * (rate - 1);
-            }
-            totalProfitLoss += profit;
-          } else if (oddCategory?.toLowerCase() === "lay" || oddCategory?.toLowerCase() === "no") {
-            totalProfitLoss += stakeAmount;
-          }
-        }
-      } else {
-        if (result && result.settled && result.status === "lost") {
-        } else {
-          totalProfitLoss -= Number(stake) || 0;
-        }
-      }
-    });
-
-    return totalProfitLoss;
-  }, [, matchId]);
 
   const formatMax = (max: number | string | undefined): string => {
     if (!max) return "";
@@ -338,14 +273,7 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
                           <span className="truncate md:text-[12px] text-xs px-2">
                             {section.nat}
                           </span>
-
-                            <span
-                              className={`text-[10px] font-semibold ${
-                              }`}
-                            >
-                            </span>
-                          )}
-                        </div>
+                          )}</div>
                       </div>
                     </td>
 
@@ -434,14 +362,7 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
                               <span className="truncate text-xs md:text-[12px] px-2">
                                 {section.nat}
                               </span>
-
-                                <span
-                                  className={`text-[10px] font-semibold ${
-                                  }`}
-                                >
-                                </span>
-                              )}
-                            </div>
+                          )}</div>
                           </div>
                         </td>
 
@@ -526,14 +447,7 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
                             <span className="truncate text-xs md:text-[12px] px-2">
                               {section.nat}
                             </span>
-
-                              <span
-                                className={`text-[10px] font-semibold ${
-                                }`}
-                              >
-                              </span>
-                            )}
-                          </div>
+                          )}</div>
                         </div>
                       </td>
 
@@ -620,14 +534,7 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
                               <span className="truncate text-xs md:text-[12px] px-2">
                                 {section.nat}
                               </span>
-
-                                <span
-                                  className={`text-[10px] font-semibold ${
-                                  }`}
-                                >
-                                </span>
-                              )}
-                            </div>
+                          )}</div>
                           </div>
                         </td>
 
