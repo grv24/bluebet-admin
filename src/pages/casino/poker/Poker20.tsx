@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { RiLockFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-import IndividualResultModal from "@/components/casino/IndividualResultModal";
-import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
-import { memoizeCasinoComponent } from "@/utils/casinoMemo";
+// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 const Poker20Component = ({
   casinoData,
@@ -23,7 +23,7 @@ const Poker20Component = ({
   currentBet: any;
 }) => {
   const navigate = useNavigate();
-  const resultModal = useIndividualResultModal();
+  // const resultModal = useIndividualResultModal();
 
   // Convert gameSlug to actual game slug format if needed
   // gameSlug might be "poker20" or "POKER_20", normalize it
@@ -87,7 +87,7 @@ const Poker20Component = ({
       return;
     }
     
-    resultModal.openModal(String(resultId), result);
+    // resultModal.openModal(String(resultId), result);
   };
 
   const findSide = (nation: string, side: "A" | "B") => {
@@ -455,14 +455,14 @@ const Poker20Component = ({
       </div>
 
       {/* Individual Result Details Modal */}
-      <IndividualResultModal
+      {/* <IndividualResultModal
         isOpen={resultModal.isOpen}
         onClose={resultModal.closeModal}
         resultId={resultModal.selectedResultId || undefined}
         gameType={actualGameSlug}
         title={`${gameName || "Poker 20"} Result Details`}
         customGetFilteredBets={getFilteredBets}
-      />
+      /> */}
     </React.Fragment>
   );
 };

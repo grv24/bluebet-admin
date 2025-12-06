@@ -1,9 +1,9 @@
 import React from "react";
 import { RiLockFill } from "react-icons/ri";
-import IndividualResultModal from "@/components/casino/IndividualResultModal";
-import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
 import { useNavigate } from "react-router-dom";
-import { memoizeCasinoComponent } from "@/utils/casinoMemo";
+import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 interface Lucky715Props {
   casinoData: any;
@@ -24,7 +24,7 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
   gameName,
   currentBet,
 }) => {
-  const resultModal = useIndividualResultModal();
+  // const resultModal = useIndividualResultModal();
   const navigate = useNavigate();
   // Get game slug from gameCode for navigation
   const gameSlug = React.useMemo(() => {
@@ -192,7 +192,7 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
       return;
     }
     
-    resultModal.openModal(String(resultId), result);
+    // resultModal.openModal(String(resultId), result);
   };
 
   // Map win value to display info
@@ -560,13 +560,13 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
       </div>
 
       {/* Individual Result Details Modal */}
-      <IndividualResultModal
+      {/* <IndividualResultModal
         isOpen={resultModal.isOpen}
         onClose={resultModal.closeModal}
         resultId={resultModal.selectedResultId || undefined}
         gameType={gameSlug}
         title={`${gameName || "Lucky15"} Result Details`}
-      />
+      /> */}
     </div>
   );
 };

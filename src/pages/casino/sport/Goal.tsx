@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from "react";
 import { RiLockFill } from "react-icons/ri";
-import IndividualResultModal from "@/components/casino/IndividualResultModal";
-import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
 import { useNavigate } from "react-router-dom";
-import { memoizeCasinoComponent } from "@/utils/casinoMemo";
+import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 interface GoalProps {
   casinoData: any;
@@ -25,7 +25,7 @@ const GoalComponent: React.FC<GoalProps> = ({
   currentBet,
 }) => {
   const navigate = useNavigate();
-  const resultModal = useIndividualResultModal();
+  // const resultModal = useIndividualResultModal();
 
   // Normalize game slug for IndividualResultModal
   const normalizedGameSlug = useMemo(() => {
@@ -84,7 +84,7 @@ const GoalComponent: React.FC<GoalProps> = ({
       alert("Unable to open result details: Missing result ID");
       return;
     }
-    resultModal.openModal(String(resultId), result);
+    // resultModal.openModal(String(resultId), result);
   };
 
   const isSuspended = (sid: string) => {
@@ -437,7 +437,7 @@ const GoalComponent: React.FC<GoalProps> = ({
       </div>
 
       {/* Individual Result Details Modal */}
-      <IndividualResultModal
+      {/* <IndividualResultModal
         isOpen={resultModal.isOpen}
         onClose={resultModal.closeModal}
         resultId={resultModal.selectedResultId || undefined}
@@ -445,7 +445,7 @@ const GoalComponent: React.FC<GoalProps> = ({
         title={`${gameName || "Goal"} Result Details`}
         enableBetFiltering={true}
         customGetFilteredBets={getFilteredBets}
-      />
+      /> */}
     </div>
   );
 };

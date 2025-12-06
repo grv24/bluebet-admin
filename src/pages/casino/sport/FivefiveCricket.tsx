@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState, useContext } from 'react';
-import { PlaceBetUseContext } from '@/context/placebet';
+// import { PlaceBetUseContext } from '@/context/placebet';
 import { useNavigate } from 'react-router-dom';
-import IndividualResultModal from '@/components/casino/IndividualResultModal';
-import { useIndividualResultModal } from '@/hooks/useIndividualResultModal';
-import { memoizeCasinoComponent } from '@/utils/casinoMemo';
+// import IndividualResultModal from '@/components/casino/IndividualResultModal';
+// import { useIndividualResultModal } from '@/hooks/useIndividualResultModal';
+import { memoizeCasinoComponent } from '../../../utils/casinoMemo';
 
 interface FivefiveCricketProps {
   casinoData: any;
@@ -216,9 +216,9 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
   currentBet,
 }) => {
   const navigate = useNavigate();
-  const placeBetContext = useContext(PlaceBetUseContext);
-  const { setPlaceBet, setBetData, setLatestBetData } = placeBetContext || {};
-  const resultModal = useIndividualResultModal();
+  // const placeBetContext = useContext(PlaceBetUseContext);
+  // const { setPlaceBet, setBetData, setLatestBetData } = placeBetContext || {};
+  // const resultModal = useIndividualResultModal();
 
   // Get data from t1 and t2 structure
   const gameInfo = useMemo(() => {
@@ -365,13 +365,13 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
     betType: "back" | "lay",
     oddsValue: string | number
   ) => {
-    if (!setPlaceBet || !setBetData || !setLatestBetData) {
+    // if (!setPlaceBet || !setBetData || !setLatestBetData) {
       // Fallback to onBetClick if context not available
-      if (onBetClick) {
-        onBetClick(String(section.sid), betType);
-      }
-      return;
-    }
+    //   if (onBetClick) {
+    //     onBetClick(String(section.sid), betType);
+    //   }
+    //   return;
+    // }
 
     const oddsNum = parseFloat(String(oddsValue));
     const betData = {
@@ -408,9 +408,9 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
       gameName: gameCode,
     };
 
-    setBetData(betData);
-    setLatestBetData(betData);
-    setPlaceBet(true);
+    // setBetData(betData);
+    // setLatestBetData(betData);
+    // setPlaceBet(true);
   };
 
   // Handle bet click for Fancy
@@ -420,13 +420,13 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
     betType: "back" | "lay",
     oddsValue: string | number
   ) => {
-    if (!setPlaceBet || !setBetData || !setLatestBetData) {
+    //  if (!setPlaceBet || !setBetData || !setLatestBetData) {
       // Fallback to onBetClick if context not available
-      if (onBetClick) {
-        onBetClick(String(section.sid), betType);
-      }
-      return;
-    }
+    //   if (onBetClick) {
+    //     onBetClick(String(section.sid), betType);
+    // //   }
+    //   return;
+    // }
 
     const oddsNum = parseFloat(String(oddsValue));
     const betData = {
@@ -463,9 +463,9 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
       gameName: gameCode,
     };
 
-    setBetData(betData);
-    setLatestBetData(betData);
-    setPlaceBet(true);
+    // setBetData(betData);
+    // setLatestBetData(betData);
+    // setPlaceBet(true);
   };
 
   // Map win value to display info
@@ -519,7 +519,7 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
       alert("Unable to open result details: Missing result ID");
       return;
     }
-    resultModal.openModal(String(resultId), result);
+    // resultModal.openModal(String(resultId), result);
   };
 
   // Function to filter user bets based on selected filter (kept for customGetFilteredBets)
@@ -829,7 +829,7 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
       )}
 
       {/* Individual Result Details Modal */}
-      <IndividualResultModal
+      {/* <IndividualResultModal
         isOpen={resultModal.isOpen}
         onClose={resultModal.closeModal}
         resultId={resultModal.selectedResultId || undefined}
@@ -837,7 +837,7 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
         title={`${gameCode || "CRICKET_V3"} Result Details`}
         enableBetFiltering={true}
         customGetFilteredBets={getFilteredBets}
-      />
+      /> */}
     </div>
   );
 };

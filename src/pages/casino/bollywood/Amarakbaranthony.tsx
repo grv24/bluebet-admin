@@ -1,10 +1,10 @@
-import { cardImage, cardType, getBlackShapes, getNumberCard, getRedShapes } from "@/utils/card";
+import { cardImage, cardType, getBlackShapes, getNumberCard, getRedShapes } from "../../../utils/card";
 import { RiLockFill } from "react-icons/ri";
 import React from "react";
-import IndividualResultModal from "@/components/casino/IndividualResultModal";
-import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
 import { useNavigate } from "react-router-dom";
-import { memoizeCasinoComponent } from "@/utils/casinoMemo";
+import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 const AmarakbaranthonyComponent = ({
   casinoData,
@@ -15,7 +15,7 @@ const AmarakbaranthonyComponent = ({
   gameName,
   currentBet,
 }: any) => {
-  const resultModal = useIndividualResultModal();
+  // const resultModal = useIndividualResultModal();
   const navigate = useNavigate();
 
   // Function to filter user bets based on selected filter
@@ -61,7 +61,7 @@ const AmarakbaranthonyComponent = ({
       alert("Unable to open result details: Missing result ID");
       return;
     }
-    resultModal.openModal(String(resultId), result);
+    // resultModal.openModal(String(resultId), result);
   };
   // Handle both new API format (casinoData?.data?.sub) and legacy format (casinoData?.data?.data?.data?.t2)
   const t2: any[] = casinoData?.data?.sub || casinoData?.data?.data?.data?.t2 || [];
@@ -272,7 +272,7 @@ const AmarakbaranthonyComponent = ({
       </div>
 
       {/* Individual Result Details Modal */}
-      <IndividualResultModal
+      {/* <IndividualResultModal
         isOpen={resultModal.isOpen}
         onClose={resultModal.closeModal}
         resultId={resultModal.selectedResultId || undefined}
@@ -280,7 +280,7 @@ const AmarakbaranthonyComponent = ({
         title={`${gameName || "Amar Akbar Anthony"} Result Details`}
         enableBetFiltering={true}
         customGetFilteredBets={getFilteredBets}
-      />
+      /> */}
     </div>
   );
         })}
@@ -562,7 +562,7 @@ const AmarakbaranthonyComponent = ({
       </div>
 
       {/* Individual Result Details Modal */}
-      <IndividualResultModal
+      {/* <IndividualResultModal
         isOpen={resultModal.isOpen}
         onClose={resultModal.closeModal}
         resultId={resultModal.selectedResultId || undefined}
@@ -570,7 +570,7 @@ const AmarakbaranthonyComponent = ({
         title={`${gameName || "Amar Akbar Anthony"} Result Details`}
         enableBetFiltering={true}
         customGetFilteredBets={getFilteredBets}
-      />
+      /> */}
     </div>
   );
 };

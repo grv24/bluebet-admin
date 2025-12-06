@@ -4,15 +4,15 @@ import {
   getNumberCard,
   getRedShapes,
   getCardByCode,
-} from "@/utils/card";
+} from "../../../utils/card";
 import React, { useState } from "react";
 import { RiLockFill } from "react-icons/ri";
-import { getCasinoIndividualResult } from "@/helper/casino";
+// import { getCasinoIndividualResult } from "../../../helper/casino";
 import { useCookies } from "react-cookie";
 import { useQuery } from "@tanstack/react-query";
-import CasinoModal from "@/components/common/CasinoModal";
+// import CasinoModal from "../../../components/common/CasinoModal";
 import { useNavigate } from "react-router-dom";
-import { memoizeCasinoComponent } from "@/utils/casinoMemo";
+import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 const formatDateTime = (value: string | number | undefined | null): string => {
   if (value === undefined || value === null) return "N/A";
@@ -264,55 +264,33 @@ const Lucky7cComponent = ({
   });
 
   // React Query for individual result details
-  const {
-    data: resultDetails,
-    isLoading,
-    error,
-  } = useQuery<any>({
-    queryKey: ["casinoIndividualResult", selectedResult?.mid],
-    queryFn: () =>
-      getCasinoIndividualResult(selectedResult?.mid, cookies, gameSlug),
-    enabled: !!selectedResult?.mid && isModalOpen,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 10, // 10 minutes
-    retry: 2,
-  });
+  // const {
+  //   data: resultDetails,
+  //   isLoading,
+  //   error,
+  // } = useQuery<any>({
+  //   queryKey: ["casinoIndividualResult", selectedResult?.mid],
+  //   queryFn: () =>
+  //     getCasinoIndividualResult(selectedResult?.mid, cookies, gameSlug),
+  //   enabled: !!selectedResult?.mid && isModalOpen,
+  //   staleTime: 1000 * 60 * 5, // 5 minutes
+  //   gcTime: 1000 * 60 * 10, // 10 minutes
+  //   retry: 2,
+  // });
 
   // Parse cards and winner info from result details
-  const resultData = resultDetails?.data?.matchData;
-  const cards = parseCards(resultData?.cards || "");
-  const { winner, description } = getWinnerInfo(resultData);
-  const formattedDescription = formatDescription(description);
-  const {
-    result: lucky7Result,
-    oddEven,
-    color,
-    card,
-    cardSequence,
-  } = parseLucky7Description(resultData?.desc || "", resultData?.newdesc || "");
+  // const resultData = resultDetails?.data?.matchData;
+  // const cards = parseCards(resultData?.cards || "");
+  // const { winner, description } = getWinnerInfo(resultData);
+  // const formattedDescription = formatDescription(description);
+  // const {
+  //   result: lucky7Result,
+  //   oddEven,
+  //   color,
+  //   card,
+  //   cardSequence,
+  // } = parseLucky7Description(resultData?.desc || "", resultData?.newdesc || "");
 
-  // Debug: Log result details when available
-  React.useEffect(() => {
-    if (resultDetails?.data?.matchData) {
-      console.log("🎰 Lucky7EU Individual Result Details:", {
-        mid: resultDetails.data.matchData.mid,
-        win: resultDetails.data.matchData.win,
-        cards: resultDetails.data.matchData.cards,
-        desc: resultDetails.data.matchData.desc,
-        newdesc: resultDetails.data.matchData.newdesc,
-        winAt: resultDetails.data.matchData.winAt,
-        mtime: resultDetails.data.matchData.mtime,
-        parsedDesc: resultDetails.data.matchData.desc?.split("#") || [],
-        parsedNewdesc: resultDetails.data.matchData.newdesc?.split("#") || [],
-        winner,
-        lucky7Result,
-        oddEven,
-        color,
-        card,
-        cardSequence,
-      });
-    }
-  }, [resultDetails, winner, lucky7Result, oddEven, color, card, cardSequence]);
 
   /**
    * Handle clicking on individual result to show details
@@ -923,339 +901,7 @@ const Lucky7cComponent = ({
         </div>
       </div>
 
-      {/* Individual Result Details Modal */}
-      <CasinoModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        title="Lucky7EU Result Details"
-        size="xl"
-        resultDetails={true}
-      >
-        <div className="flex flex-col px-2">
-          {/* Header Information */}
-          <div className="flex justify-between items-center">
-            <h2 className="text-xs md:text-sm font-semibold leading-8 text-black">
-              Round Id:{" "}
-              <span className="text-black font-normal pl-1">
-                {resultDetails?.data?.matchData?.mid}
-              </span>
-            </h2>
-            <h2 className="text-xs md:text-sm font-semibold leading-8 text-black capitalize">
-              Match Time:{" "}
-              <span className="text-black font-normal pl-1">
-                {formatDateTime(
-                  resultDetails?.data?.matchData?.winAt ||
-                    resultDetails?.data?.matchData?.matchTime ||
-                    resultDetails?.data?.matchData?.mtime
-                )}
-              </span>
-            </h2>
-          </div>
-
-          {/* Loading State */}
-          {isLoading && (
-            <div className="flex justify-center items-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--bg-primary)]"></div>
-            </div>
-          )}
-
-          {/* Error State */}
-          {error && (
-            <div className="flex justify-center items-center py-8">
-              <div className="text-red-500 text-center">
-                <p>Failed to load result details</p>
-                <p className="text-sm text-gray-500 mt-1">
-                  Please try again later
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* No Data State */}
-          {!isLoading && !error && !resultDetails?.data?.matchData && (
-            <div className="flex justify-center items-center py-8">
-              <div className="text-gray-500 text-center">
-                <p>No result data available</p>
-              </div>
-            </div>
-          )}
-
-          {/* Content Display - Only show when not loading and no error */}
-          {!isLoading && !error && resultData && (
-            <>
-              {/* Result Display */}
-              <div className="flex flex-col gap-1 justify-center items-center py-2">
-                {/* Cards display if available */}
-                {cards.length > 0 && (
-                  <div className="text-center">
-                    <div className="flex gap-2 justify-center flex-wrap">
-                      {cards.map((card: string, index: number) => (
-                        <img
-                          key={index}
-                          src={getCardByCode(card, "lucky7eu", "individual")}
-                          alt={`Card ${index + 1}`}
-                          className="w-8"
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Description */}
-              <div
-                className="max-w-lg pyt- my-2 mx-auto w-full mb-2 box-shadow-lg border border-gray-100"
-                style={{ boxShadow: "0 0 4px -1px rgba(0, 0, 0, 0.5);" }}
-              >
-                <div className="flex flex-col gap-1 justify-center items-center">
-                  <h2 className="text-sm font-normal leading-8 text-[var(--bg-secondary)]">
-                    Winner:{" "}
-                    <span className="text-black font-normal pl-1">
-                      {winner || "N/A"}
-                    </span>
-                  </h2>
-                  <h2 className="text-sm font-normal leading-8 text-[var(--bg-secondary)]">
-                    Odd/Even:{" "}
-                    <span className="text-black font-normal pl-1">
-                      {oddEven}
-                    </span>
-                  </h2>
-                  <h2 className="text-sm font-normal leading-8 text-[var(--bg-secondary)]">
-                    Color:{" "}
-                    <span className="text-black font-normal pl-1">{color}</span>
-                  </h2>
-                  <h2 className="text-sm font-normal leading-8 text-[var(--bg-secondary)]">
-                    Card:{" "}
-                    <span className="text-black font-normal pl-1">{card}</span>
-                  </h2>
-                  <h2 className="text-sm font-normal leading-8 text-[var(--bg-secondary)]">
-                    Line:{" "}
-                    <span className="text-black font-normal pl-1">
-                      {cardSequence}
-                    </span>
-                  </h2>
-                </div>
-              </div>
-
-              {/* User Bets Table */}
-              {resultDetails?.data?.userBets &&
-                resultDetails.data.userBets.length > 0 && (
-                  <div className="max-w-4xl mx-auto w-full mb-4">
-                    <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
-                      <h3 className="text-sm font-semibold text-gray-700">
-                        User Bets
-                      </h3>
-                    </div>
-
-                    {/* Filter Options */}
-                    <div className="bg-white px-4 py-2 border-b border-gray-200">
-                      <div className="flex items-center gap-4">
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            name="betFilter"
-                            value="all"
-                            checked={betFilter === "all"}
-                            onChange={(e) => setBetFilter(e.target.value)}
-                            className="text-blue-600"
-                          />
-                          <span className="text-sm">All</span>
-                        </label>
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            name="betFilter"
-                            value="back"
-                            checked={betFilter === "back"}
-                            onChange={(e) => setBetFilter(e.target.value)}
-                            className="text-blue-600"
-                          />
-                          <span className="text-sm">Back</span>
-                        </label>
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            name="betFilter"
-                            value="lay"
-                            checked={betFilter === "lay"}
-                            onChange={(e) => setBetFilter(e.target.value)}
-                            className="text-blue-600"
-                          />
-                          <span className="text-sm">Lay</span>
-                        </label>
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            name="betFilter"
-                            value="deleted"
-                            checked={betFilter === "deleted"}
-                            onChange={(e) => setBetFilter(e.target.value)}
-                            className="text-blue-600"
-                          />
-                          <span className="text-sm">Deleted</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    {/* Summary */}
-                    <div className="bg-white px-4 py-2 border-b border-gray-200">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">
-                          Total Bets:{" "}
-                          {
-                            getFilteredBets(
-                              resultDetails.data.userBets,
-                              betFilter
-                            ).length
-                          }
-                        </span>
-                        <span className="text-sm font-medium">
-                          Total Amount:{" "}
-                          {(() => {
-                            const totalAmount = getFilteredBets(
-                              resultDetails.data.userBets,
-                              betFilter
-                            ).reduce((sum: number, bet: any) => {
-                              const result = bet.betData?.result;
-
-                              if (!result || !result.settled) return sum;
-
-                              let profitLoss = 0;
-
-                              if (
-                                result.status === "won" ||
-                                result.status === "profit"
-                              ) {
-                                profitLoss = Number(result.profitLoss) || 0;
-                              } else if (result.status === "lost") {
-                                profitLoss = Number(result.profitLoss) || 0;
-                              }
-
-                              return sum + profitLoss;
-                            }, 0);
-
-                            return (
-                              <span
-                                className={
-                                  totalAmount >= 0
-                                    ? "text-green-600"
-                                    : "text-red-600"
-                                }
-                              >
-                                {totalAmount.toFixed(2)}
-                              </span>
-                            );
-                          })()}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Table */}
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm border-collapse">
-                        <thead>
-                          <tr className="bg-gray-100 text-gray-700">
-                            <th className="border border-gray-300 px-3 py-2 text-left font-medium">
-                              Nation
-                            </th>
-                            <th className="border border-gray-300 px-3 py-2 text-left font-medium">
-                              Rate
-                            </th>
-                            <th className="border border-gray-300 px-3 py-2 text-left font-medium">
-                              Amount
-                            </th>
-                            <th className="border border-gray-300 px-3 py-2 text-left font-medium">
-                              Profit/Loss
-                            </th>
-                            <th className="border border-gray-300 px-3 py-2 text-left font-medium">
-                              Date
-                            </th>
-                            <th className="border border-gray-300 px-3 py-2 text-left font-medium text-nowrap">
-                              IP Address
-                            </th>
-                            <th className="border border-gray-300 px-3 py-2 text-left font-medium text-nowrap">
-                              Browser Details
-                            </th>
-                            <th className="border border-gray-300 px-3 py-2 text-center font-medium">
-                              <input
-                                type="checkbox"
-                                className="text-blue-600"
-                              />
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {getFilteredBets(
-                            resultDetails.data.userBets,
-                            betFilter
-                          ).map((bet: any, index: number) => (
-                            <tr
-                              key={bet.id}
-                              className={`hover:bg-gray-50 ${
-                                bet.betData?.oddCategory?.toLowerCase() ===
-                                "back"
-                                  ? "bg-[var(--bg-back)]"
-                                  : bet.betData?.oddCategory?.toLowerCase() ===
-                                      "lay"
-                                    ? "bg-[var(--bg-lay)]"
-                                    : "bg-white"
-                              }`}
-                            >
-                              <td className="border text-nowrap border-gray-300 px-3 py-2">
-                                {bet.betData?.name ||
-                                  bet.betData?.betName ||
-                                  "N/A"}
-                              </td>
-                              <td className="border text-nowrap border-gray-300 px-3 py-2">
-                                {bet.betData?.betRate ||
-                                  bet.betData?.matchOdd ||
-                                  "N/A"}
-                              </td>
-                              <td className="border text-nowrap border-gray-300 px-3 py-2">
-                                {bet.betData?.stake || "N/A"}
-                              </td>
-                              <td
-                                className={`border text-nowrap border-gray-300 px-3 py-2 ${
-                                  bet.betData?.result?.status === "won"
-                                    ? "text-green-600"
-                                    : "text-red-600"
-                                }`}
-                              >
-                                {bet.betData?.result?.status === "won"
-                                  ? "+"
-                                  : ""}{" "}
-                                {bet.betData?.result?.profitLoss?.toFixed(2) ||
-                                  "N/A"}
-                              </td>
-                              <td className="border text-nowrap border-gray-300 px-3 py-2">
-                                {new Date(bet.createdAt).toLocaleString()}
-                              </td>
-                              <td className="border text-nowrap border-gray-300 px-3 py-2 text-xs">
-                                {/* IP address would come from bet data if available */}
-                                N/A
-                              </td>
-                              <td className="border border-gray-300 px-3 py-2">
-                                <button className="text-blue-600 hover:text-blue-800 text-sm">
-                                  Detail
-                                </button>
-                              </td>
-                              <td className="border border-gray-300 px-3 py-2 text-center">
-                                <input
-                                  type="checkbox"
-                                  className="text-blue-600"
-                                />
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-            </>
-          )}
-        </div>
-      </CasinoModal>
+      
     </div>
   );
 };

@@ -4,13 +4,13 @@ import {
   getNumberCard,
   getRedShapes,
   getCardByCode,
-} from "@/utils/card";
+} from "../../../utils/card";
 import React from "react";
 import { RiLockFill } from "react-icons/ri";
-import IndividualResultModal from "@/components/casino/IndividualResultModal";
-import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
 import { useNavigate } from "react-router-dom";
-import { memoizeCasinoComponent } from "@/utils/casinoMemo";
+import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 const Lucky7Component = ({
   casinoData,
@@ -21,7 +21,7 @@ const Lucky7Component = ({
   name,
   currentBet,
 }: any) => {
-  const resultModal = useIndividualResultModal();
+  // const resultModal = useIndividualResultModal();
   const navigate = useNavigate();
 
   // Normalize game slug
@@ -182,7 +182,7 @@ const Lucky7Component = ({
       return;
     }
     
-    resultModal.openModal(String(resultId), result);
+    // resultModal.openModal(String(resultId), result);
   };
 
   const getByNat = (name: string) =>
@@ -776,14 +776,14 @@ const Lucky7Component = ({
       </div>
 
       {/* Individual Result Details Modal */}
-      <IndividualResultModal
+      {/* <IndividualResultModal
         isOpen={resultModal.isOpen}
         onClose={resultModal.closeModal}
         resultId={resultModal.selectedResultId || undefined}
         gameType={normalizedGameSlug}
         title={`${name || "Lucky7EU"} Result Details`}
         customGetFilteredBets={getFilteredBets}
-      />
+      /> */}
     </div>
   );
 };

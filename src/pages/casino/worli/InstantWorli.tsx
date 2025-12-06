@@ -1,9 +1,9 @@
 import React from "react";
 import { RiLockFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-import IndividualResultModal from "@/components/casino/IndividualResultModal";
-import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
-import { memoizeCasinoComponent } from "@/utils/casinoMemo";
+// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 const InstantWorliComponent = ({
   casinoData,
@@ -22,7 +22,7 @@ const InstantWorliComponent = ({
   gameName?: string;
   currentBet?: any;
 }) => {
-  const resultModal = useIndividualResultModal();
+  // const resultModal = useIndividualResultModal();
   const navigate = useNavigate();
 
   // Convert gameCode to gameSlug if gameCode is provided
@@ -146,7 +146,7 @@ const InstantWorliComponent = ({
       resultId: String(resultId),
       gameSlug: actualGameSlug,
     });
-    resultModal.openModal(String(resultId), result);
+    // resultModal.openModal(String(resultId), result);
   };
 
   // Handle different result formats
@@ -259,14 +259,14 @@ const InstantWorliComponent = ({
       </div>
 
       {/* Individual Result Details Modal */}
-      <IndividualResultModal
+      {/* <IndividualResultModal
         isOpen={resultModal.isOpen}
         onClose={resultModal.closeModal}
         resultId={resultModal.selectedResultId || undefined}
         gameType={actualGameSlug}
         title="Instant Worli Result"
         enableBetFiltering={true}
-      />
+      /> */}
     </div>
   );
 };

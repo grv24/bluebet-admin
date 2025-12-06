@@ -5,13 +5,13 @@ import {
     getCardByCode,
     getRedShapes,
     getShapeColor,
-  } from "@/utils/card";
+  } from "../../../utils/card";
   import React, { useState } from "react";
   import { RiLockFill } from "react-icons/ri";
-  import IndividualResultModal from "@/components/casino/IndividualResultModal";
-  import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+  // import IndividualResultModal from "@/components/casino/IndividualResultModal";
+  // import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
   import { useNavigate } from "react-router-dom";
-  import { memoizeCasinoComponent } from "@/utils/casinoMemo";
+  import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
   
   const CasinoWarComponent = ({
     casinoData,
@@ -22,7 +22,7 @@ import {
     gameName,
     currentBet,
   }: any) => {
-    const resultModal = useIndividualResultModal();
+    // const resultModal = useIndividualResultModal();
     const navigate = useNavigate();
   
     const t2: any[] =
@@ -240,7 +240,7 @@ import {
         return;
       }
       
-      resultModal.openModal(String(resultId), result);
+      // resultModal.openModal(String(resultId), result);
     };
   
     const isLocked = (row: any) => {
@@ -632,14 +632,14 @@ import {
         </div>
   
         {/* Individual Result Details Modal */}
-        <IndividualResultModal
+        {/* <IndividualResultModal
           isOpen={resultModal.isOpen}
           onClose={resultModal.closeModal}
           resultId={resultModal.selectedResultId || undefined}
           gameType={normalizedGameSlug}
           title={`${gameName || "Casino War"} Result Details`}
           customGetFilteredBets={getFilteredBets}
-        />
+        /> */}
       </div>
     );
   };

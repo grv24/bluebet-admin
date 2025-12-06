@@ -1,8 +1,8 @@
 import React, { useMemo } from "react";
 import { RiLockFill } from "react-icons/ri";
-import IndividualResultModal from "@/components/casino/IndividualResultModal";
-import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
-import { getCardByCode } from "@/utils/card";
+// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import { getCardByCode } from "../../../utils/card";
 import KSS from "../../../assets/card/other/KSS.webp";
 import KHH from "../../../assets/card/other/KHH.webp";
 import KDD from "../../../assets/card/other/KDD.webp";
@@ -14,7 +14,7 @@ import DD from '../../../assets/card/shapes/DD.webp'
 import CC from '../../../assets/card/shapes/CC.webp'
 
 import { useNavigate } from "react-router-dom";
-import { memoizeCasinoComponent } from "@/utils/casinoMemo";
+import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 interface Race20Props {
   casinoData: any;
@@ -34,7 +34,7 @@ const Race20Component: React.FC<Race20Props> = ({
   gameCode,
 }) => {
   const navigate = useNavigate();
-  const resultModal = useIndividualResultModal();
+  // const resultModal = useIndividualResultModal();
   
   // Get game slug from gameCode for navigation
   const gameSlug = gameCode || "";
@@ -161,7 +161,7 @@ const Race20Component: React.FC<Race20Props> = ({
   // Handle clicking on individual result to show details
   const handleResultClick = (result: any) => {
     if (!result?.mid) return;
-    resultModal.openModal(result.mid, result);
+    // resultModal.openModal(result.mid, result);
   };
 
   // Function to filter user bets based on selected filter
@@ -453,7 +453,7 @@ const Race20Component: React.FC<Race20Props> = ({
       </div>
 
       {/* Individual Result Details Modal */}
-      <IndividualResultModal
+      {/* <IndividualResultModal
         isOpen={resultModal.isOpen}
         onClose={resultModal.closeModal}
         resultId={resultModal.selectedResultId || undefined}
@@ -461,7 +461,7 @@ const Race20Component: React.FC<Race20Props> = ({
         title="Race 20 Result Details"
         enableBetFiltering={true}
         customGetFilteredBets={getFilteredBets}
-      />
+      /> */}
     </div>
   );
 };

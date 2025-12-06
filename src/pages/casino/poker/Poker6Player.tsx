@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { RiLockFill } from "react-icons/ri";
-import { getCardByCode, cardImage } from "@/utils/card";
+import { getCardByCode, cardImage } from "../../../utils/card";
 import { useNavigate } from "react-router-dom";
-import IndividualResultModal from "@/components/casino/IndividualResultModal";
-import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
-import { memoizeCasinoComponent } from "@/utils/casinoMemo";
+// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 type Poker6PlayerProps = {  
   casinoData: any;
@@ -20,7 +20,7 @@ const Poker6PlayerComponent: React.FC<Poker6PlayerProps> = (_props) => {
     _props;
 
   const navigate = useNavigate();
-  const resultModal = useIndividualResultModal();
+  // const resultModal = useIndividualResultModal();
 
   // Convert gameSlug to actual game slug format if needed
   // gameSlug might be "poker6" or "POKER_6", normalize it
@@ -72,7 +72,7 @@ const Poker6PlayerComponent: React.FC<Poker6PlayerProps> = (_props) => {
       return;
     }
     
-    resultModal.openModal(String(resultId), result);
+    // resultModal.openModal(String(resultId), result);
   };
   // Handle both new API format (casinoData?.data?.sub) and legacy format (casinoData?.data?.data?.data?.t2)
   const t1 = (casinoData as any)?.data?.data?.data?.t1?.[0] ?? null;
@@ -380,14 +380,14 @@ const Poker6PlayerComponent: React.FC<Poker6PlayerProps> = (_props) => {
       </div>
 
       {/* Individual Result Details Modal */}
-      <IndividualResultModal
+      {/* <IndividualResultModal
         isOpen={resultModal.isOpen}
         onClose={resultModal.closeModal}
         resultId={resultModal.selectedResultId || undefined}
         gameType={actualGameSlug}
         title={`${gameName || "Poker 6 Player"} Result Details`}
         customGetFilteredBets={getFilteredBets}
-      />
+      /> */}
     </div>
   );
 };

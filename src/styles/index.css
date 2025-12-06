@@ -1,4 +1,14 @@
 @import "tailwindcss";
+
+@font-face {
+  font-family: "casino3dmarquee";
+  src: url("../assets/font/casino3dmarquee-webfont.ttf")
+    format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --bg-primary: #0088cc;
   --bg-primary65: #0088cca5;
@@ -9,14 +19,8 @@
   --bg-secondary85: #2c3e50d9;
   --text-secondary: #fff;
   --bg-aside-menu: #bbbbbb;
-  --back: #72bbef;
-  --back-hover: #4fa1dc;
-  --back1: #72bbefcc;
-  --back2: #72bbefa3;
-  --lay: #f994ba;
-  --lay-hover: #e16f9a;
-  --lay1: #f994bacc;
-  --lay2: #f994baa3;
+  --bg-lay: #faa9ba;
+  --bg-back: #72bbef;
   --bg-casino-result: #355e3b;
 }
 body {
@@ -37,4 +41,8 @@ body {
 
 .animate-marquee {
   animation: marquee 15s linear infinite;
+}
+
+.casino-text {
+  font-family: "casino3dmarquee", sans-serif;
 }

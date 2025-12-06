@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { RiLockFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-import IndividualResultModal from "@/components/casino/IndividualResultModal";
-import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
-import { memoizeCasinoComponent } from "@/utils/casinoMemo";
+// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 type ThirtyTwoCardAProps = {
   casinoData: any;
@@ -25,7 +25,7 @@ const ThirtyTwoCardAComponent: React.FC<ThirtyTwoCardAProps> = ({
   currentBet,
 }) => {
   const navigate = useNavigate();
-  const resultModal = useIndividualResultModal();
+  // const resultModal = useIndividualResultModal();
 
   // Normalize gameSlug for display in CasinoMatchDetailsDisplay
   // The API expects the original format (e.g., "CARD_32"), but display needs normalized version
@@ -69,7 +69,7 @@ const ThirtyTwoCardAComponent: React.FC<ThirtyTwoCardAProps> = ({
       return;
     }
     
-    resultModal.openModal(String(resultId), result);
+    // resultModal.openModal(String(resultId), result);
   };
 
   const isSuspended = (odds: any) => {
@@ -390,14 +390,14 @@ const ThirtyTwoCardAComponent: React.FC<ThirtyTwoCardAProps> = ({
       </div>
 
       {/* Individual Result Details Modal */}
-      <IndividualResultModal
+      {/* <IndividualResultModal
         isOpen={resultModal.isOpen}
         onClose={resultModal.closeModal}
         resultId={resultModal.selectedResultId || undefined}
         gameType={apiGameType}
         title={`${gameName || "32 Card A"} Result Details`}
         customGetFilteredBets={getFilteredBets}
-      />
+      /> */}
     </div>
   );
 };

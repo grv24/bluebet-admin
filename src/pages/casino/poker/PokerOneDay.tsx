@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from "react";
 import { RiLockFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-import IndividualResultModal from "@/components/casino/IndividualResultModal";
-import { memoizeCasinoComponent } from "@/utils/casinoMemo";
+// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 type PokerOneDayProps = {
   casinoData: any;
@@ -61,7 +62,8 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
 }) => {
   const navigate = useNavigate();
   const [selectedResult, setSelectedResult] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+  // const resultModal = useIndividualResultModal();
 
   // Normalize gameSlug to lowercase format (e.g., "POKER_1DAY" -> "poker1day" or "poker")
   const normalizedGameType = useMemo(() => {
@@ -324,14 +326,14 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
     if (!result?.mid) return;
 
     setSelectedResult(result);
-    setIsModalOpen(true);
+    // setIsModalOpen(true);
   };
 
   /**
    * Close the result details modal
    */
   const closeModal = () => {
-    setIsModalOpen(false);
+    // setIsModalOpen(false);
     setSelectedResult(null);
   };
 
@@ -648,7 +650,7 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
       </div>
 
       {/* Individual Result Details Modal */}
-      <IndividualResultModal
+      {/* <IndividualResultModal
         isOpen={isModalOpen}
         onClose={closeModal}
         resultId={selectedResult?.mid}
@@ -656,7 +658,7 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
         title={`${gameName || "Poker One Day"} Result Details`}
         enableBetFiltering={true}
         customGetFilteredBets={getFilteredBets}
-      />
+      /> */}
     </div>
   );
 };

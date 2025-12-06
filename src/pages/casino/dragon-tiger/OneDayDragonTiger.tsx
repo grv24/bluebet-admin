@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { RiLockFill } from "react-icons/ri";
-import { cardType } from "@/utils/card";
+import { cardType } from "../../../utils/card";
 import { useNavigate } from "react-router-dom";
-import { getCardByCode } from "@/utils/card";
-import IndividualResultModal from "@/components/casino/IndividualResultModal";
-import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
-import { memoizeCasinoComponent } from "@/utils/casinoMemo";
+import { getCardByCode } from "../../../utils/card";
+// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 interface DT6Props {
   casinoData: any;
@@ -87,7 +87,7 @@ const OneDayDragonTigerComponent: React.FC<DT6Props> = ({
   currentBet,
 }) => {
   const navigate = useNavigate();
-  const resultModal = useIndividualResultModal();
+  // const resultModal = useIndividualResultModal();
 
   // Convert gameSlug to actual game slug format if needed
   const actualGameSlug = React.useMemo(() => {
@@ -125,7 +125,7 @@ const OneDayDragonTigerComponent: React.FC<DT6Props> = ({
       return;
     }
     
-    resultModal.openModal(String(resultId), result);
+    // resultModal.openModal(String(resultId), result);
   };
 
 
@@ -1343,14 +1343,14 @@ const OneDayDragonTigerComponent: React.FC<DT6Props> = ({
       </div>
 
       {/* Individual Result Details Modal */}
-      <IndividualResultModal
+      {/* <IndividualResultModal
         isOpen={resultModal.isOpen}
         onClose={resultModal.closeModal}
         resultId={resultModal.selectedResultId || undefined}
         gameType={actualGameSlug}
         title={`${gameName || "One Day Dragon Tiger"} Result Details`}
         customGetFilteredBets={getFilteredBets}
-      />
+      /> */}
     </div>
   );
 };

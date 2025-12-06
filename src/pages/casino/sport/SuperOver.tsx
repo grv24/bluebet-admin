@@ -1,9 +1,9 @@
 import React, { useMemo, useEffect, useRef, useState, useContext } from "react";
-import { PlaceBetUseContext } from "@/context/placebet";
+// import { PlaceBetUseContext } from '@/context/placebet';
 import { useNavigate } from "react-router-dom";
-import IndividualResultModal from "@/components/casino/IndividualResultModal";
-import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
-import { memoizeCasinoComponent } from "@/utils/casinoMemo";
+// import IndividualResultModal from '@/components/casino/IndividualResultModal';
+// import { useIndividualResultModal } from '@/hooks/useIndividualResultModal';
+import { memoizeCasinoComponent } from '../../../utils/casinoMemo';
 
 interface SuperOverProps {
   casinoData: any;
@@ -221,9 +221,9 @@ const SuperOverComponent: React.FC<SuperOverProps> = ({
   currentBet,
 }) => {
   const navigate = useNavigate();
-  const placeBetContext = useContext(PlaceBetUseContext);
-  const { setPlaceBet, setBetData, setLatestBetData } = placeBetContext || {};
-  const resultModal = useIndividualResultModal();
+  // const placeBetContext = useContext(PlaceBetUseContext);
+  // const { setPlaceBet, setBetData, setLatestBetData } = placeBetContext || {};
+  // const resultModal = useIndividualResultModal();
 
   // Get data from t1 and t2 structure
   const gameInfo = useMemo(() => {
@@ -376,13 +376,13 @@ const SuperOverComponent: React.FC<SuperOverProps> = ({
     betType: "back" | "lay",
     oddsValue: string | number
   ) => {
-    if (!setPlaceBet || !setBetData || !setLatestBetData) {
+    // if (!setPlaceBet || !setBetData || !setLatestBetData) {
       // Fallback to onBetClick if context not available
-      if (onBetClick) {
-        onBetClick(String(section.sid), betType);
-      }
-      return;
-    }
+    //   if (onBetClick) {
+    //     onBetClick(String(section.sid), betType);
+    //   }
+    //   return;
+    // }
 
     const oddsNum = parseFloat(String(oddsValue));
     const betData = {
@@ -419,9 +419,9 @@ const SuperOverComponent: React.FC<SuperOverProps> = ({
       gameName: gameCode,
     };
 
-    setBetData(betData);
-    setLatestBetData(betData);
-    setPlaceBet(true);
+    // setBetData(betData);
+    // setLatestBetData(betData);
+    // setPlaceBet(true);
   };
 
   // Handle bet click for Fancy
@@ -431,13 +431,13 @@ const SuperOverComponent: React.FC<SuperOverProps> = ({
     betType: "back" | "lay",
     oddsValue: string | number
   ) => {
-    if (!setPlaceBet || !setBetData || !setLatestBetData) {
-      // Fallback to onBetClick if context not available
-      if (onBetClick) {
-        onBetClick(String(section.sid), betType);
-      }
-      return;
-    }
+    // if (!setPlaceBet || !setBetData || !setLatestBetData) {
+    //   // Fallback to onBetClick if context not available
+    //   if (onBetClick) {
+    //     onBetClick(String(section.sid), betType);
+    //   }
+    //   return;
+    // }
 
     const oddsNum = parseFloat(String(oddsValue));
     const betData = {
@@ -474,9 +474,9 @@ const SuperOverComponent: React.FC<SuperOverProps> = ({
       gameName: gameCode,
     };
 
-    setBetData(betData);
-    setLatestBetData(betData);
-    setPlaceBet(true);
+    // setBetData(betData);
+    // setLatestBetData(betData);
+    // setPlaceBet(true);
   };
 
   // Map win value to display info
@@ -519,7 +519,7 @@ const SuperOverComponent: React.FC<SuperOverProps> = ({
       alert("Unable to open result details: Missing result ID");
       return;
     }
-    resultModal.openModal(String(resultId), result);
+    // resultModal.openModal(String(resultId), result);
   };
 
   // Function to filter user bets based on selected filter (kept for customGetFilteredBets)
@@ -819,7 +819,7 @@ const SuperOverComponent: React.FC<SuperOverProps> = ({
       )}
 
       {/* Individual Result Details Modal */}
-      <IndividualResultModal
+      {/* <IndividualResultModal
         isOpen={resultModal.isOpen}
         onClose={resultModal.closeModal}
         resultId={resultModal.selectedResultId || undefined}
@@ -827,7 +827,7 @@ const SuperOverComponent: React.FC<SuperOverProps> = ({
         title={`${gameCode || "SuperOver"} Result Details`}
         enableBetFiltering={true}
         customGetFilteredBets={getFilteredBets}
-      />
+      /> */}
     </div>
   );
 };

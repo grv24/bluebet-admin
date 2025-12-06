@@ -1,9 +1,9 @@
 import React, { useMemo } from "react";
 import { RiLockFill } from "react-icons/ri";
-import IndividualResultModal from "@/components/casino/IndividualResultModal";
-import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
 import { useNavigate } from "react-router-dom";
-import { memoizeCasinoComponent } from "@/utils/casinoMemo";
+import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 interface Race17Props {
   casinoData: any;
@@ -23,7 +23,7 @@ const Race17Component: React.FC<Race17Props> = ({
   gameCode,
 }) => {
   const navigate = useNavigate();
-  const resultModal = useIndividualResultModal();
+  // const resultModal = useIndividualResultModal();
   
   // Get game slug from gameCode for navigation
   const gameSlug = gameCode || "";
@@ -133,7 +133,7 @@ const Race17Component: React.FC<Race17Props> = ({
   // Handle clicking on individual result to show details
   const handleResultClick = (result: any) => {
     if (!result?.mid) return;
-    resultModal.openModal(result.mid, result);
+    // resultModal.openModal(result.mid, result);
   };
 
   // Function to filter user bets based on selected filter
@@ -288,7 +288,7 @@ const Race17Component: React.FC<Race17Props> = ({
       </div>
 
       {/* Individual Result Details Modal */}
-      <IndividualResultModal
+      {/* <IndividualResultModal
         isOpen={resultModal.isOpen}
         onClose={resultModal.closeModal}
         resultId={resultModal.selectedResultId || undefined}
@@ -296,7 +296,7 @@ const Race17Component: React.FC<Race17Props> = ({
         title="Race to 17 Result Details"
         enableBetFiltering={true}
         customGetFilteredBets={getFilteredBets}
-      />
+      /> */}
     </div>
   );
 };

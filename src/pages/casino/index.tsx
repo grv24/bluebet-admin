@@ -32,12 +32,12 @@ import {
   // Instant2O,
   // Instant3O,
 } from "./teen-patti";
-// import {
-//   DrgonTiger20,
-//   OneDayDragonTiger,
-//   DragonTiger202,
-//   DragonTigerLion20,
-// } from "./dragon-tiger";
+import {
+  DrgonTiger20,
+  OneDayDragonTiger,
+  DragonTiger202,
+  DragonTigerLion20,
+} from "./dragon-tiger";
 import {
   Onecard2020,
   Onecard1day,
@@ -47,8 +47,8 @@ import {
   Notenumber,
 } from "./other";
 // import RulesComponent from "../casino/Rules";
-// import { Poker6Player, Poker20, PokerOneDay } from "./poker";
-// import { Lucky7, Lucky715, Lucky7b, Lucky7c } from "./lucky7";
+import { Poker6Player, Poker20, PokerOneDay } from "./poker";
+import { Lucky7, Lucky715, Lucky7b, Lucky7c } from "./lucky7";
 
 import {
   AndarBahar,
@@ -56,30 +56,30 @@ import {
   AndarBahar50,
   AndarBahar150,
 } from "./andar-bahar";
-// import { ThirtyTwoCardA, ThirtyTwoCardB } from "./32card";
+import { ThirtyTwoCardA, ThirtyTwoCardB } from "./32card";
 import { Baccarat2, Baccarat, Baccarat29 } from "./baccarat";
-// import {
-//   Bollywoodtable,
-//   Amarakbaranthony,
-//   Amarakbaranthony2O,
-// } from "./bollywood";
+import {
+  Bollywoodtable,
+  Amarakbaranthony,
+  Amarakbaranthony2O,
+} from "./bollywood";
 
-// import {
-//   Goal,
-//   FivefiveCricket,
-//   SuperOver,
-//   MiniSuperOver,
-//   CasinoMeter1,
-// } from "./sport";
+import {
+  Goal,
+  FivefiveCricket,
+  SuperOver,
+  MiniSuperOver,
+  // CasinoMeter1,
+} from "./sport";
 
-// import { CasinoQueen, CasinoWar } from "./casino";
+import {  CasinoWar } from "./casino";
 
-// import { Race17, Race20, Race2 } from "./race";
+import { Race17, Race20, Race2 } from "./race";
 
 // import { UniqueRoulette } from "./roulette";
 // import { Lottery } from "./lottery";
 
-// import { InstantWorli } from "./worli";
+import { InstantWorli } from "./worli";
 
 type GameCode =
   //teen patti variants
@@ -197,54 +197,54 @@ const GAME_COMPONENTS: Partial<Record<GameCode, React.ComponentType<any>>> = {
   // TEEN_32: Instant2O,
   // TEEN_33: Instant3O,
   //dragon tiger variants
-  // DRAGON_TIGER_20: DrgonTiger20,
-  // DRAGON_TIGER_6: OneDayDragonTiger,
-  // DRAGON_TIGER_20_2: DragonTiger202,
-  // DRAGON_TIGER_LION_20: DragonTigerLion20,
+  DRAGON_TIGER_20: DrgonTiger20,
+  DRAGON_TIGER_6: OneDayDragonTiger,
+  DRAGON_TIGER_20_2: DragonTiger202,
+  DRAGON_TIGER_LION_20: DragonTigerLion20,
   //poker variants
-  // POKER_9: Poker6Player,
-  // POKER_20: Poker20,
-  // POKER_1_DAY: PokerOneDay,
+  POKER_9: Poker6Player,
+  POKER_20: Poker20,
+  POKER_1_DAY: PokerOneDay,
   //lucky7 variants
-  // LUCKY7: Lucky7,
-  // LUCKY7EU: Lucky7b,
-  // LUCKY7EU_2: Lucky7c,
-  // LUCKY15: Lucky715,
+  LUCKY7: Lucky7,
+  LUCKY7EU: Lucky7b,
+  LUCKY7EU_2: Lucky7c,
+  LUCKY15: Lucky715,
   //andar bahar variants
   ABJ: AndarBahar2,
   AB_20: AndarBahar,
   AB_3: AndarBahar50,
   AB_4: AndarBahar150,
   //32 card variants
-  // CARD_32: ThirtyTwoCardA,
-  // CARD32EU: ThirtyTwoCardB,
+  CARD_32: ThirtyTwoCardA,
+  CARD32EU: ThirtyTwoCardB,
   //baccarat variants
   BACCARAT2: Baccarat2,
   BACCARAT: Baccarat,
   TEENS_IN: Baccarat29,
   //bollywood variants
-  // BOLLYWOOD_TABLE: Bollywoodtable,
-  // AAA: Amarakbaranthony,
-  // AAA_2: Amarakbaranthony2O,
+  BOLLYWOOD_TABLE: Bollywoodtable,
+  AAA: Amarakbaranthony,
+  AAA_2: Amarakbaranthony2O,
   //sport variants
-  // GOAL: Goal,
-  // CRICKET_V3: FivefiveCricket,
-  // SUPEROVER: SuperOver,
-  // SUPEROVER_3: MiniSuperOver,
+  GOAL: Goal,
+  CRICKET_V3: FivefiveCricket,
+  SUPEROVER: SuperOver,
+  SUPEROVER_3: MiniSuperOver,
   // CASINO_METER_1: CasinoMeter1,
   // casino variants
   // CASINO_QUEEN: CasinoQueen,
-  // CASINO_WAR: CasinoWar,
+  CASINO_WAR: CasinoWar,
   // race variants
-  // RACE_17: Race17,
-  // RACE20: Race20,
-  // RACE_2: Race2,
+  RACE_17: Race17,
+  RACE20: Race20,
+  RACE_2: Race2,
   //roulette variants
   // OUR_ROULETTE: UniqueRoulette,
   //lottery variants
   // LOT_CARD: Lottery,
   //worli variants
-  // WORLI2: InstantWorli,
+  WORLI2: InstantWorli,
   //other games
   TEEN_120: Onecard2020,
   TEEN_1: Onecard1day,

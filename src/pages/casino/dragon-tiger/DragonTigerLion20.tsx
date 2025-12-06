@@ -1,10 +1,10 @@
-import { getNumberCard } from "@/utils/card";
+import { getNumberCard } from "../../../utils/card";
 import React, { useState } from "react";
 import { RiLockFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-import IndividualResultModal from "@/components/casino/IndividualResultModal";
-import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
-import { memoizeCasinoComponent } from "@/utils/casinoMemo";
+// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 type TabType = "Dragon" | "Tiger" | "Lion";
 
@@ -26,7 +26,7 @@ const DragonTigerLion20Component: React.FC<{
   currentBet,
 }) => {
   const navigate = useNavigate();
-  const resultModal = useIndividualResultModal();
+  // const resultModal = useIndividualResultModal();
   const [selectedTab, setSelectedTab] = useState<TabType>("Dragon");
 
   // Convert gameSlug to actual game slug format if needed
@@ -81,7 +81,7 @@ const DragonTigerLion20Component: React.FC<{
       return;
     }
 
-    resultModal.openModal(String(resultId), result);
+    // resultModal.openModal(String(resultId), result);
   };
 
   // Handle both new API format (casinoData?.data?.sub) and legacy format
@@ -573,14 +573,14 @@ const DragonTigerLion20Component: React.FC<{
       </div>
 
       {/* Individual Result Details Modal */}
-      <IndividualResultModal
+      {/* <IndividualResultModal
         isOpen={resultModal.isOpen}
         onClose={resultModal.closeModal}
         resultId={resultModal.selectedResultId || undefined}
         gameType={actualGameSlug}
         title={`${gameName || "Dragon Tiger Lion 20"} Result Details`}
         customGetFilteredBets={getFilteredBets}
-      />
+      /> */}
     </div>
   );
 };

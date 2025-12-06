@@ -1,9 +1,9 @@
 import React, { useMemo, useCallback } from "react";
 import { RiLockFill } from "react-icons/ri";
-import IndividualResultModal from "@/components/casino/IndividualResultModal";
-import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
 import { useNavigate } from "react-router-dom";
-import { memoizeCasinoComponent } from "@/utils/casinoMemo";
+import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 interface Race2Props {
   casinoData: any;
@@ -24,7 +24,7 @@ const Race2Component: React.FC<Race2Props> = ({
   currentBet,
 }) => {
   const navigate = useNavigate();
-  const resultModal = useIndividualResultModal();
+  // const resultModal = useIndividualResultModal();
   
   // Get game slug from gameCode for navigation
   const gameSlug = gameCode || "";
@@ -226,7 +226,7 @@ const Race2Component: React.FC<Race2Props> = ({
   // Handle clicking on individual result to show details
   const handleResultClick = (result: any) => {
     if (!result?.mid) return;
-    resultModal.openModal(result.mid, result);
+    // resultModal.openModal(result.mid, result);
   };
 
   // Function to filter user bets based on selected filter
@@ -397,7 +397,7 @@ const Race2Component: React.FC<Race2Props> = ({
       </div>
 
       {/* Individual Result Details Modal */}
-      <IndividualResultModal
+      {/* <IndividualResultModal
         isOpen={resultModal.isOpen}
         onClose={resultModal.closeModal}
         resultId={resultModal.selectedResultId || undefined}
@@ -405,7 +405,7 @@ const Race2Component: React.FC<Race2Props> = ({
         title="Race 2 Result Details"
         enableBetFiltering={true}
         customGetFilteredBets={getFilteredBets}
-      />
+      /> */}
     </div>
   );
 };

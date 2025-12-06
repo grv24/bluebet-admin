@@ -4,12 +4,12 @@ import {
   getNumberCard,
   getRedShapes,
   getCardByCode,
-} from "@/utils/card";
+} from "../../../utils/card";
 import { RiLockFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-import IndividualResultModal from "@/components/casino/IndividualResultModal";
-import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
-import { memoizeCasinoComponent } from "@/utils/casinoMemo";
+// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 const BollywoodtableComponent = ({
   casinoData,
@@ -29,7 +29,7 @@ const BollywoodtableComponent = ({
   currentBet: any;
 }) => {
   const navigate = useNavigate();
-  const resultModal = useIndividualResultModal();
+  // const resultModal = useIndividualResultModal();
 
   // Convert gameSlug to actual game slug format if needed
   const actualGameSlug = React.useMemo(() => {
@@ -316,7 +316,7 @@ const BollywoodtableComponent = ({
       return;
     }
 
-    resultModal.openModal(String(resultId), result);
+    // resultModal.openModal(String(resultId), result);
   };
 
   // Helper functions
@@ -713,14 +713,14 @@ const BollywoodtableComponent = ({
       </div>
 
       {/* Individual Result Details Modal */}
-      <IndividualResultModal
+      {/* <IndividualResultModal
         isOpen={resultModal.isOpen}
         onClose={resultModal.closeModal}
         resultId={resultModal.selectedResultId || undefined}
         gameType={actualGameSlug}
         title={`${gameName || "Bollywood Table"} Result Details`}
         customGetFilteredBets={getFilteredBets}
-      />
+      /> */}
     </React.Fragment>
   );
 };
