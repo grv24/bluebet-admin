@@ -125,18 +125,6 @@ const Poker20Component = ({
         {suspended && (
           <div className="absolute inset-0 bg-black/60 flex flex-col gap-1 items-center justify-center">
             <RiLockFill className="text-white text-xl" />
-            <div
-              className={`text-xs font-semibold leading-3 text-center ${
-                profitLoss > 0
-                  ? "text-green-400"
-                  : profitLoss < 0
-                    ? "text-red-400"
-                    : "text-gray-400"
-              }`}
-            >
-              {profitLoss > 0 ? "+" : ""}
-              {profitLoss.toFixed(0)}
-            </div>
           </div>
         )}
       </div>
