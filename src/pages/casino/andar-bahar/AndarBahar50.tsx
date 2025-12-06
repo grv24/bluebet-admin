@@ -1,6 +1,6 @@
 import React from "react";
 import { cardImage, getNumberCard } from "../../../utils/card";
-import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
+  import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 const AndarBahar50Component = ({
   casinoData,

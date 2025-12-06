@@ -13,14 +13,14 @@ import {
   import { useNavigate } from "react-router-dom";
   import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
   
-const CasinoWarComponent = ({
-  casinoData,
-  remainingTime,
-  results,
-  gameSlug,
-  gameName,
-}: any) => {
-  const navigate = useNavigate();
+  const CasinoWarComponent = ({
+    casinoData,
+    remainingTime,
+    results,
+    gameSlug,
+    gameName,
+  }: any) => {
+    const navigate = useNavigate();
   
     const t2: any[] =
       casinoData?.data?.sub || casinoData?.data?.data?.data?.t2 || [];

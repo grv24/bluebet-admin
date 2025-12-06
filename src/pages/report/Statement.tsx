@@ -1,4 +1,9 @@
 import React, { useState, useRef } from "react";
+import { FaFilePdf, FaFileExcel } from "react-icons/fa6";
+import toast from "react-hot-toast";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 const accountTypes = ["All", "User", "Admin"];
 const gameNames = ["All", "Game 1", "Game 2"];
@@ -14,6 +19,8 @@ const Statement = () => {
   const [search, setSearch] = useState("");
   const [pageSize, setPageSize] = useState(25);
   const [page, setPage] = useState(1);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [isExportingExcel, setIsExportingExcel] = useState(false);
   const clientInputRef = useRef<HTMLInputElement>(null);
 
   // Table columns
@@ -29,8 +36,166 @@ const Statement = () => {
   // No client options for now
   const clientOptions: string[] = [];
 
+  // Sample data for demonstration (will be replaced with actual API data)
+  const statementData: any[] = [];
+
   // Pagination (empty for now)
   const totalPages = 1;
+
+  /**
+   * Export statement data to PDF
+   */
+  const exportToPDF = (data: any[]) => {
+    try {
+      console.log("📄 Starting PDF export with data:", data.length, "records");
+      
+      const doc = new jsPDF('landscape', 'mm', 'a4');
+      
+      // Add title
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Account Statement Report', 14, 20);
+      
+      // Add subtitle
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Report Date: ${new Date().toLocaleDateString()}`, 14, 30);
+      doc.text(`Account Type: ${accountType}`, 14, 35);
+      doc.text(`Game Name: ${gameName}`, 14, 40);
+      if (fromDate && toDate) {
+        doc.text(`Period: ${fromDate} to ${toDate}`, 14, 45);
+      }
+      doc.text(`Total Records: ${data.length}`, 14, 50);
+      
+      // Prepare table data
+      const tableData = data.map((row, index) => [
+        row.date || '-',
+        row.credit || '0',
+        row.debit || '0',
+        row.closing || '0',
+        row.description || '-',
+        row.fromto || '-',
+      ]);
+      
+      // Table headers
+      const headers = ['Date', 'Credit', 'Debit', 'Closing', 'Description', 'From/To'];
+      
+      console.log("📊 Creating PDF table with headers:", headers.length, "columns");
+      
+      // Create table
+      autoTable(doc, {
+        head: [headers],
+        body: tableData,
+        startY: 60,
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+          overflow: 'linebreak',
+          halign: 'center'
+        },
+        headStyles: {
+          fillColor: [66, 139, 202],
+          textColor: 255,
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245]
+        },
+        columnStyles: {
+          0: { halign: 'left', cellWidth: 40 },   // Date
+          1: { halign: 'right', cellWidth: 30 },  // Credit
+          2: { halign: 'right', cellWidth: 30 },  // Debit
+          3: { halign: 'right', cellWidth: 30 },  // Closing
+          4: { halign: 'left', cellWidth: 60 },   // Description
+          5: { halign: 'left', cellWidth: 40 },   // From/To
+        }
+      });
+      
+      // Save the PDF
+      const fileName = `Account_Statement_${new Date().toISOString().split('T')[0]}.pdf`;
+      console.log("💾 Saving PDF with filename:", fileName);
+      doc.save(fileName);
+      
+      toast.success('PDF exported successfully!');
+    } catch (error: any) {
+      console.error('❌ PDF export error:', error);
+      toast.error(`Failed to export PDF: ${error?.message || 'Unknown error'}`);
+    }
+  };
+
+  /**
+   * Export statement data to Excel
+   */
+  const exportToExcel = (data: any[]) => {
+    try {
+      // Prepare worksheet data
+      const worksheetData = [
+        // Header row
+        ['Date', 'Credit', 'Debit', 'Closing', 'Description', 'From/To'],
+        // Data rows
+        ...data.map((row) => [
+          row.date || '-',
+          row.credit || '0',
+          row.debit || '0',
+          row.closing || '0',
+          row.description || '-',
+          row.fromto || '-',
+        ]),
+      ];
+      
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+      
+      // Set column widths
+      const columnWidths = [
+        { wch: 20 },  // Date
+        { wch: 15 },  // Credit
+        { wch: 15 },  // Debit
+        { wch: 15 },  // Closing
+        { wch: 40 },  // Description
+        { wch: 20 },  // From/To
+      ];
+      worksheet['!cols'] = columnWidths;
+      
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Account Statement');
+      
+      // Save the Excel file
+      const fileName = `Account_Statement_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+      
+      toast.success('Excel file exported successfully!');
+    } catch (error: any) {
+      console.error('Excel export error:', error);
+      toast.error(`Failed to export Excel file: ${error?.message || 'Unknown error'}`);
+    }
+  };
+
+  // Export handlers
+  const handleExportPDF = async () => {
+    if (isExportingPDF) return;
+    
+    setIsExportingPDF(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for UI feedback
+      exportToPDF(statementData);
+    } finally {
+      setIsExportingPDF(false);
+    }
+  };
+
+  const handleExportExcel = async () => {
+    if (isExportingExcel) return;
+    
+    setIsExportingExcel(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for UI feedback
+      exportToExcel(statementData);
+    } finally {
+      setIsExportingExcel(false);
+    }
+  };
 
   // Handle click outside for dropdown
   React.useEffect(() => {
@@ -144,6 +309,35 @@ const Statement = () => {
           </button>
         </div>
       </div>
+
+      {/* Export Buttons */}
+      <div className="flex flex-wrap gap-1 mb-2">
+        <button 
+          className={`flex cursor-pointer items-center gap-2 px-3 leading-8 rounded font-medium text-white text-xs transition ${
+            isExportingPDF 
+              ? 'bg-gray-400 cursor-not-allowed' 
+              : 'bg-[#cb0606] hover:opacity-90'
+          }`}
+          onClick={handleExportPDF}
+          disabled={isExportingPDF || statementData.length === 0}
+        >
+          <FaFilePdf className="w-3 h-3" /> 
+          {isExportingPDF ? 'Exporting...' : 'PDF'}
+        </button>
+        <button 
+          className={`flex cursor-pointer items-center gap-2 px-3 leading-8 rounded font-medium text-white text-xs transition ${
+            isExportingExcel 
+              ? 'bg-gray-400 cursor-not-allowed' 
+              : 'bg-[#217346] hover:opacity-90'
+          }`}
+          onClick={handleExportExcel}
+          disabled={isExportingExcel || statementData.length === 0}
+        >
+          <FaFileExcel className="w-3 h-3" /> 
+          {isExportingExcel ? 'Exporting...' : 'Excel'}
+        </button>
+      </div>
+
       {/* Show entries and search */}
       <div className="flex flex-wrap items-center gap-2 mb-3 w-full">
         <span className="text-xs">Show</span>
