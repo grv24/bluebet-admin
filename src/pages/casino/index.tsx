@@ -985,7 +985,7 @@ const Casino: React.FC = () => {
         {/* Right Side */}
         <div className="col-span-3  min-h-40">
           <div className="flex flex-col gap-2">
-            <Bet />
+            <Bet roundId={roundId} />
             <Rules />
           </div>
         </div>

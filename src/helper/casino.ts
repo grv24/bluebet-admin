@@ -91,3 +91,35 @@ export const getCasinoTopTenResult = async (
   );
 };
 
+// Fetch user match bets for a specific round
+export interface UserMatchBet {
+  id: string;
+  userName: string;
+  nation: string;
+  rate: number;
+  amount: number;
+  placeDate: string;
+  gameType: string;
+  betType?: string;
+  marketName?: string;
+}
+
+export interface UserMatchBetsResponse {
+  status: boolean;
+  data: UserMatchBet[];
+  message?: string;
+}
+
+export const getCasinoUserMatchBets = async (
+  roundId: string | number,
+  cookie: any
+): Promise<UserMatchBetsResponse> => {
+  return apiRequest(
+    `/api/v1/casino/user-match-bets/${roundId}`,
+    cookie,
+    {
+      method: "GET",
+    }
+  );
+};
+
