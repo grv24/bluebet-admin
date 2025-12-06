@@ -123,6 +123,8 @@ export interface BetData {
   oddCategory: string;
   fancyMultiplier?: number;
   matchOddVariant?: string;
+  userIp?: string;
+  userAgent?: string;
 }
 
 export interface UserMatchBet {
