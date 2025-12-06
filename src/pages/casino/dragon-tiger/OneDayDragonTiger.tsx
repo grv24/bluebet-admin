@@ -121,28 +121,12 @@ const OneDayDragonTigerComponent: React.FC<DT6Props> = ({
               </thead>
               <tbody>
                 {(() => {
-                  // ✅ Pass sid into getProfitLoss
-                  const book = getProfitLoss();
-                  const { Dragon = 0, Tiger = 0 } = book;
-
                   return (
                     <>
                       {/* Dragon Row */}
                       <tr className="hover:bg-gray-100">
                         <td className="border border-gray-300 px-1 py-1.5 text-sm font-semibold">
                           Dragon
-                          <h2
-                            className={`text-xs font-medium ${
-                              Dragon > 0
-                                ? "text-green-600"
-                                : Dragon < 0
-                                  ? "text-red-600"
-                                  : "text-gray-600"
-                            }`}
-                          >
-                            {Dragon > 0 ? "+" : ""}
-                            {Dragon.toFixed(0)}
-                          </h2>
                         </td>
 
                         {/* Back Button */}
@@ -186,18 +170,6 @@ const OneDayDragonTigerComponent: React.FC<DT6Props> = ({
                       <tr className="hover:bg-gray-100">
                         <td className="border border-gray-300 px-1 py-1.5 text-sm font-semibold">
                           Tiger
-                          <h2
-                            className={`text-xs font-medium ${
-                              Tiger > 0
-                                ? "text-green-600"
-                                : Tiger < 0
-                                  ? "text-red-600"
-                                  : "text-gray-600"
-                            }`}
-                          >
-                            {Tiger > 0 ? "+" : ""}
-                            {Tiger.toFixed(0)}
-                          </h2>
                         </td>
 
                         {/* Back Button */}
