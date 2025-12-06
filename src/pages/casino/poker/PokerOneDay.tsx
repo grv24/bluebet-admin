@@ -216,8 +216,6 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold px-2">
                 Player A
-
-              <h2 className={`text-xs font-semibold ${
               </div>
               
               <div className="grid grid-cols-2 w-28 sm:w-36">
@@ -263,7 +261,6 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
           <div className="bg-white border border-gray-200">
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold px-2">Player B
-              <h2 className={`text-xs font-semibold ${
               </div>
               <div className="grid grid-cols-2 w-28 sm:w-36">
                 <div
@@ -319,11 +316,9 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
               {isSuspended(a2Card, remainingTime) && (
                 <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
                   <RiLockFill className="text-white text-2xl" />
-                  <h2 className={`text-xs font-semibold text-center ${
                 </div>
               )}
               <h2 className="text-sm font-semibold">2 Cards Bonus</h2>
-              <h2 className={`text-xs font-semibold ${
             </button>
             <button
               className={`relative w-full bg-[var(--bg-back)] text-sm leading-10 font-extrabold tracking-wide border border-gray-300 flex flex-col items-center justify-center`}
@@ -333,11 +328,9 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
               {isSuspended(a7Card, remainingTime) && (
                 <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
                   <RiLockFill className="text-white text-2xl" />
-                  <h2 className={`text-xs font-semibold text-center ${
                 </div>
               )}
               <h2 className="text-sm font-semibold">7 Cards Bonus</h2>
-              <h2 className={`text-xs font-semibold ${
             </button>
           </div>
 
@@ -354,11 +347,9 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
               {isSuspended(b2Card, remainingTime) && (
                 <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
                   <RiLockFill className="text-white text-2xl" />
-                  <h2 className={`text-xs font-semibold text-center ${
                 </div>
               )}
               <h2 className="text-sm font-semibold">2 Cards Bonus</h2>
-              <h2 className={`text-xs font-semibold ${
             </button>
             <button
               className={`relative w-full bg-[var(--bg-back)] text-sm leading-10 font-extrabold tracking-wide border border-gray-300 flex flex-col items-center justify-center`}
@@ -368,11 +359,9 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
               {isSuspended(b7Card, remainingTime) && (
                 <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
                   <RiLockFill className="text-white text-2xl" />
-                  <h2 className={`text-xs font-semibold text-center ${
                 </div>
               )}
               <h2 className="text-sm font-semibold">7 Cards Bonus</h2>
-              <h2 className={`text-xs font-semibold ${
             </button>
           </div>
         </div>
