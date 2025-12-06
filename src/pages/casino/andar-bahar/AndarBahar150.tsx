@@ -1,68 +1,17 @@
-import React, { useState } from "react";
-import { cardImage, getCardByCode, getNumberCard } from "../../../utils/card";
-// import { getCasinoIndividualResult } from "../../../helper/casino";
-import { useCookies } from "react-cookie";
-import { useQuery } from "@tanstack/react-query";
-// import CasinoModal from "../../../components/common/CasinoModal";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import React from "react";
+import { cardImage, getNumberCard } from "../../../utils/card";
 import { RiLockFill } from "react-icons/ri";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
-
-const formatDateTime = (
-  value: string | number | Date | null | undefined
-): string => {
-  if (value === undefined || value === null) return "N/A";
-
-  if (value instanceof Date) {
-    if (Number.isNaN(value.getTime())) return "N/A";
-    return value.toLocaleString();
-  }
-
-  if (typeof value === "string") {
-    const trimmedValue = value.trim();
-    if (!trimmedValue) return "N/A";
-
-    const dateFromString = new Date(trimmedValue);
-    if (!Number.isNaN(dateFromString.getTime())) {
-      return dateFromString.toLocaleString();
-    }
-
-    const numericValue = Number(trimmedValue);
-    if (!Number.isNaN(numericValue)) {
-      const dateFromNumeric = new Date(numericValue);
-      if (!Number.isNaN(dateFromNumeric.getTime())) {
-        return dateFromNumeric.toLocaleString();
-      }
-    }
-
-    return trimmedValue;
-  }
-
-  const dateFromNumber = new Date(value);
-  if (!Number.isNaN(dateFromNumber.getTime())) {
-    return dateFromNumber.toLocaleString();
-  }
-
-  return String(value);
-};
 
 const AndarBahar150Component = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results,
 }: {
   casinoData: any;
   remainingTime: number;
-  onBetClick: (sid: string, type: string, options?: any) => void;
   results: any;
 }) => {
-  const [cookies] = useCookies(["clientToken"]);
-  const [selectedResult, setSelectedResult] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [firstRowIndex, setFirstRowIndex] = useState(0);
-  const [secondRowIndex, setSecondRowIndex] = useState(0);
-  const [betFilter, setBetFilter] = useState("all");
 
   // Debug logging for AndarBahar150 component
   console.log("🎰 AndarBahar150 component debug:", {
@@ -156,97 +105,6 @@ const AndarBahar150Component = ({
     }
   });
 
-  // React Query for individual result details
-  // const {
-  //   data: resultDetails,
-  //   isLoading,
-  //   error,
-  // } = useQuery<any>({
-  //   queryKey: ["casinoIndividualResult", selectedResult?.mid],
-  //   queryFn: () =>
-  //     getCasinoIndividualResult(selectedResult?.mid, cookies, "ab4"),
-  //   enabled: !!selectedResult?.mid && isModalOpen,
-  //   staleTime: 1000 * 60 * 5, // 5 minutes
-  //   gcTime: 1000 * 60 * 10, // 10 minutes
-  //   retry: 2,
-  // });
-
-  // Debug logging for individual result details
-  // React.useEffect(() => {
-  //   if (resultDetails?.data?.matchData) {
-  //     console.log("🎰 AB4 Individual Result Details:", {
-  //       mid: resultDetails.data.matchData.mid,
-  //       win: resultDetails.data.matchData.win,
-  //       cards: resultDetails.data.matchData.cards,
-  //       desc: resultDetails.data.matchData.desc,
-  //       winAt: resultDetails.data.matchData.winAt,
-  //       dateAndTime: resultDetails.data.matchData.dateAndTime,
-  //       // Legacy format fields
-  //       resultMid: resultDetails.data.matchData.result?.mid,
-  //       resultWin: resultDetails.data.matchData.result?.win,
-  //       resultCards: resultDetails.data.matchData.result?.cards,
-  //     });
-  //   }
-  // }, [resultDetails]);
-
-  /**
-   * Handle clicking on individual result to show details
-   */
-  const handleResultClick = (result: any) => {
-    if (!result?.mid) return;
-
-    setSelectedResult(result);
-    setIsModalOpen(true);
-  };
-
-  /**
-   * Close the result details modal
-   */
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedResult(null);
-  };
-
-  const getFilteredBets = (bets: any[], filter: string) => {
-    if (!Array.isArray(bets) || bets.length === 0) return [];
-    if (filter === "all") return bets;
-
-    return bets.filter((bet: any) => {
-      const oddCategory =
-        bet.betData?.oddCategory?.toLowerCase() ||
-        bet.betData?.betType?.toLowerCase() ||
-        "";
-      const status = bet.status?.toLowerCase();
-
-      switch (filter) {
-        case "back":
-          return oddCategory === "back" || oddCategory === "yes";
-        case "lay":
-          return oddCategory === "lay" || oddCategory === "no";
-        case "deleted":
-          return status === "deleted" || status === "cancelled";
-        default:
-          return true;
-      }
-    });
-  };
-
-  // Array of card ranks to display
-  const cardRanks = [
-    "A",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "8",
-    "9",
-    "10",
-    "J",
-    "Q",
-    "K",
-  ];
 
   // Calculate next card side (Andar or Bahar) based on next card count
   // Extract next card count from sub array
@@ -305,115 +163,6 @@ const AndarBahar150Component = ({
     return index >= 0 ? index : 99; // Put unknown cards at the end
   };
 
-  const handleBetClick = (
-    item: any,
-    cardItem: any,
-    betType: "back" | "lay"
-  ) => {
-    console.log("🎰 AB4 bet click:", { 
-      andarBaharItem: item, 
-      cardItem: cardItem, 
-      betType: betType 
-    });
-
-    // Don't check Andar/Bahar item status - it's always suspended
-    // Only check Card X item status and general conditions
-    
-    // Check general betting conditions (time-based suspension)
-    if (remainingTime <= 3) {
-      console.log("🎰 AB4 bet suspended: remaining time too low");
-      return;
-    }
-
-    // Check if card item is available and open (this is the only status check we need)
-    if (!cardItem || cardItem?.gstatus !== "OPEN") {
-      console.log("🎰 AB4 card item not available or not open:", cardItem);
-      return;
-    }
-
-    // Use the Card X item's sid for placing bets
-    // The sid should be the Card X sid (e.g., 93), not the Andar/Bahar sid (e.g., 25)
-    const betSid = cardItem.sid;
-    
-    // Combine nat: "Bahar 5 / Card 93"
-    const combinedNat = `${item.nat} / ${cardItem.nat}`;
-    
-    // Use the Card X item's back odds (b) as the rate
-    const betRate = cardItem.b || 0;
-    
-    console.log("🎰 AB4 placing bet with:", {
-      betSid: betSid,
-      combinedNat: combinedNat,
-      betRate: betRate,
-      betType: betType,
-      andarBaharItem: item,
-      cardItem: cardItem,
-    });
-
-    // Trigger global bet popup handled in parent/component registry
-    // Pass the Card X sid, combined nat, and rate from card item
-    onBetClick(String(betSid), betType, {
-      nat: combinedNat,
-      rate: betRate,
-      displayName: combinedNat,
-    });
-  };
-
-  // const cards = resultDetails?.data?.matchData?.cards?.split(",") || [];
-
-  // Filter and split cards into two rows with alternating pattern
-  // const validCards = cards.filter((card: string) => card && card.trim());
-
-  // Distribute cards alternately: 0th index -> second row, 1st index -> first row, etc.
-  const firstRowCards: string[] = [];
-  const secondRowCards: string[] = [];
-
-  //   validCards.forEach((card: string, index: number) => {
-  //     if (index % 2 === 0) {
-  //       // Even indices (0, 2, 4, ...) go to second row
-  //       secondRowCards.push(card);
-  //     } else {
-  //       // Odd indices (1, 3, 5, ...) go to first row
-  //       firstRowCards.push(card);
-  //     }
-  // });
-
-  // Get visible cards for each row based on current index
-  const getVisibleCards = (
-    cards: string[],
-    startIndex: number,
-    maxVisible: number = 5
-  ) => {
-    return cards.slice(startIndex, startIndex + maxVisible);
-  };
-
-  const visibleFirstRow = getVisibleCards(firstRowCards, firstRowIndex);
-  const visibleSecondRow = getVisibleCards(secondRowCards, secondRowIndex);
-
-  // Navigation functions
-  const nextFirstRow = () => {
-    if (firstRowIndex + 5 < firstRowCards.length) {
-      setFirstRowIndex(firstRowIndex + 1);
-    }
-  };
-
-  const prevFirstRow = () => {
-    if (firstRowIndex > 0) {
-      setFirstRowIndex(firstRowIndex - 1);
-    }
-  };
-
-  const nextSecondRow = () => {
-    if (secondRowIndex + 5 < secondRowCards.length) {
-      setSecondRowIndex(secondRowIndex + 1);
-    }
-  };
-
-  const prevSecondRow = () => {
-    if (secondRowIndex > 0) {
-      setSecondRowIndex(secondRowIndex - 1);
-    }
-  };
 
   return (
     <div className="flex flex-col mt-1">
@@ -490,17 +239,12 @@ const AndarBahar150Component = ({
                             ? cardImage?.back
                             : getNumberCard(rank || "")
                         }
-                        className={`w-8 h-full 
-                         `}
-                        onClick={
-                          isSideLocked
-                            ? undefined
-                            : () => handleBetClick(item, openCardItem, "back")
-                        }
+                        className="w-8 h-full"
+                        alt={item?.nat || "card"}
                         title={
                           isSideLocked
-                            ? "Bet suspended"
-                            : `Back: ${displayRate || 0}`
+                            ? "Side locked"
+                            : `Rate: ${displayRate || 0}`
                         }
                       />
                     </div>
@@ -582,17 +326,12 @@ const AndarBahar150Component = ({
                             ? cardImage?.back
                             : getNumberCard(rank || "")
                         }
-                        className={`w-8 h-full`}
+                        className="w-8 h-full"
                         alt={item?.nat || "card"}
-                        onClick={
-                          isSideLocked
-                            ? undefined
-                            : () => handleBetClick(item, openCardItem, "back")
-                        }
                         title={
                           isSideLocked
-                            ? "Bahar side is locked"
-                            : `Back: ${displayRate || 0}`
+                            ? "Side locked"
+                            : `Rate: ${displayRate || 0}`
                         }
                       />
                     </div>
@@ -635,11 +374,10 @@ const AndarBahar150Component = ({
                 return (
                   <h2
                     key={index}
-                    className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor} cursor-pointer hover:scale-110 transition-transform`}
-                    onClick={() => handleResultClick(item)}
+                    className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor}`}
                     title={`Result: ${resultValue}`}
                   >
-                    R
+                    {displayText}
                   </h2>
                 );
               })
