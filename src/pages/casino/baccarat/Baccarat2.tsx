@@ -8,27 +8,21 @@ import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 interface Baccarat2Props {
   casinoData?: any;
   remainingTime?: number;
-  onBetClick?: (sid: string, type: "back" | "lay") => void;
   results?: any[];
   gameSlug?: string;
   gameCode?: string;
   gameName?: string;
-  currentBet?: any;
 }
 
 const Baccarat2Component: React.FC<Baccarat2Props> = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results = [],
   gameSlug,
   gameCode,
   gameName,
-  currentBet,
 }) => {
   const navigate = useNavigate();
-  const [selectedResult, setSelectedResult] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Normalize gameSlug/gameCode to lowercase format (e.g., "BACCARAT2" -> "baccarat2")
   // Use gameCode as fallback if gameSlug is not provided
@@ -54,23 +48,6 @@ const Baccarat2Component: React.FC<Baccarat2Props> = ({
     C6: cards[5] || "1",
   };
 
-  /**
-   * Handle clicking on individual result to show details
-   */
-  const handleResultClick = (result: any) => {
-    if (!result?.mid) return;
-
-    setSelectedResult(result);
-    setIsModalOpen(true);
-  };
-
-  /**
-   * Close the result details modal
-   */
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedResult(null);
-  };
 
   // Helper function to get data by nat
   const getByNat = (nat: string) => {
@@ -95,9 +72,6 @@ const Baccarat2Component: React.FC<Baccarat2Props> = ({
   const getCardImage = (cardCode: string) => {
     if (!cardCode || cardCode === "1") return cardImage.back;
     return getCardByCode(cardCode, "baccarat2") || cardImage.back;
-  };
-  const handleSliceClick = (slice: string) => {
-    console.log(`Clicked on ${slice} slice`);
   };
 
   // Get profit/loss for individual bet types (independent calculation like DT6 Odd/Even)
@@ -170,13 +144,6 @@ const Baccarat2Component: React.FC<Baccarat2Props> = ({
     return profitLoss;
   };
 
-  // Helper function to handle bet clicks properly
-  const handleBetClick = (data: any) => {
-    if (!data || !onBetClick) return;
-
-    // Call the parent's onBetClick with sid and type
-    onBetClick(data.sid, "back");
-  };
 
   return (
     <div className="flex mt-1 flex-col gap-1">
@@ -238,10 +205,7 @@ const Baccarat2Component: React.FC<Baccarat2Props> = ({
               {/* 3D Pie Chart Slices with Click Effects */}
               <g>
                 {/* Player (Blue) - 38% - Top Slice */}
-                <g
-                  onClick={() => handleSliceClick("Player")}
-                  className="cursor-pointer"
-                >
+                <g>
                   <path
                     d="M210,72.3L210,87.7A77,61.6,0,0,1,185.71012715650903,132.60446744915896L185.71012715650903,117.20446744915895A77,61.6,0,0,0,210,72.3"
                     stroke="#06518a"
@@ -276,10 +240,7 @@ const Baccarat2Component: React.FC<Baccarat2Props> = ({
                 </g>
 
                 {/* Tie (Green) - 10% - Left Slice */}
-                <g
-                  onClick={() => handleSliceClick("Tie")}
-                  className="cursor-pointer"
-                >
+                <g>
                   <path
                     d="M133,72.3L133,87.7L87.74053557347956,37.86455314650324L87.74053557347956,22.464553146503242"
                     stroke="#1d7026"
@@ -307,10 +268,7 @@ const Baccarat2Component: React.FC<Baccarat2Props> = ({
                 </g>
 
                 {/* Banker (Red) - 52% - Right Slice */}
-                <g
-                  onClick={() => handleSliceClick("Banker")}
-                  className="cursor-pointer"
-                >
+                <g>
                   <path
                     d="M185.71012715650903,117.20446744915895L185.71012715650903,132.60446744915896A77,61.6,0,0,1,56,87.70000000000002L56,72.3A77,61.6,0,0,0,185.71012715650903,117.20446744915895"
                     stroke="#831924"
@@ -355,8 +313,7 @@ const Baccarat2Component: React.FC<Baccarat2Props> = ({
               return (
                 <div key={index} className="flex flex-col items-center">
                   <div
-                    className={`flex flex-col md:w-16 w-full items-center justify-center text-white px-2 bg-[var(--bg-secondary)] relative cursor-pointer `}
-                    onClick={() => !locked && handleBetClick(data)}
+                    className="flex flex-col md:w-16 w-full items-center justify-center text-white px-2 bg-[var(--bg-secondary)] relative"
                   >
                     <h2 className="md:text-sm text-[10px] font-semibold text-nowrap">
                       {item}
@@ -388,11 +345,7 @@ const Baccarat2Component: React.FC<Baccarat2Props> = ({
             {/* Player Pair */}
             <div className="flex flex-col items-center">
               <div
-                className={`w-24 flex px-2 py-1 rounded-s-4xl flex-col items-center justify-center bg-[var(--bg-primary)] relative cursor-pointer h-20 `}
-                onClick={() =>
-                  !isLocked("Player Pair") &&
-                  handleBetClick(getByNat("Player Pair"))
-                }
+                className="w-24 flex px-2 py-1 rounded-s-4xl flex-col items-center justify-center bg-[var(--bg-primary)] relative h-20"
               >
                 <h2 className="text-white text-sm text-nowrap font-semibold">
                   Player Pair
@@ -424,10 +377,7 @@ const Baccarat2Component: React.FC<Baccarat2Props> = ({
               {/* Player */}
               <div className="flex flex-col items-center flex-1">
                 <div
-                  className={`bg-[var(--bg-primary)] flex flex-col items-center justify-center w-full h-20 p-1.5 px-2 relative cursor-pointer`}
-                  onClick={() =>
-                    !isLocked("Player") && handleBetClick(getByNat("Player"))
-                  }
+                  className="bg-[var(--bg-primary)] flex flex-col items-center justify-center w-full h-20 p-1.5 px-2 relative"
                 >
                   <h2 className="text-sm font-semibold text-nowrap text-white">
                     Player {playerRate}:1
@@ -477,10 +427,7 @@ const Baccarat2Component: React.FC<Baccarat2Props> = ({
               {/* Tie */}
               <div className="flex flex-col items-center flex-1">
                 <div
-                  className={`bg-[#279532] flex flex-col items-center justify-center w-full h-20 py-1.5 relative cursor-pointer `}
-                  onClick={() =>
-                    !isLocked("Tie") && handleBetClick(getByNat("Tie"))
-                  }
+                  className="bg-[#279532] flex flex-col items-center justify-center w-full h-20 py-1.5 relative"
                 >
                   <h2 className="text-sm font-semibold leading-5.5 text-white">
                     Tie
@@ -511,10 +458,7 @@ const Baccarat2Component: React.FC<Baccarat2Props> = ({
               {/* Banker */}
               <div className="flex flex-col items-center flex-1">
                 <div
-                  className={`bg-[#ae2130] flex flex-col items-center justify-center w-full h-20 p-1 relative cursor-pointer`}
-                  onClick={() =>
-                    !isLocked("Banker") && handleBetClick(getByNat("Banker"))
-                  }
+                  className="bg-[#ae2130] flex flex-col items-center justify-center w-full h-20 p-1 relative"
                 >
                   <h2 className="text-sm font-semibold text-nowrap text-white">
                     Banker {bankerRate}:1
@@ -558,11 +502,7 @@ const Baccarat2Component: React.FC<Baccarat2Props> = ({
             {/* Banker Pair */}
             <div className="flex flex-col items-center">
               <div
-                className={`w-24 flex px-4 py-1 rounded-e-4xl flex-col items-center justify-center bg-[#ae2130] relative cursor-pointer h-20 `}
-                onClick={() =>
-                  !isLocked("Banker Pair") &&
-                  handleBetClick(getByNat("Banker Pair"))
-                }
+                className="w-24 flex px-4 py-1 rounded-e-4xl flex-col items-center justify-center bg-[#ae2130] relative h-20"
               >
                 <h2 className="text-white text-nowrap text-sm font-semibold">
                   Banker Pair
@@ -627,9 +567,7 @@ const Baccarat2Component: React.FC<Baccarat2Props> = ({
                 return (
                   <h2
                     key={index}
-                    className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor} cursor-pointer hover:scale-110 transition-transform`}
-                    onClick={() => handleResultClick(item)}
-                    title="Click to view details"
+                    className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor}`}
                   >
                     {resultText}
                   </h2>
@@ -657,9 +595,7 @@ const Baccarat2Component: React.FC<Baccarat2Props> = ({
                   return (
                     <h2
                       key={index}
-                      className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor} cursor-pointer hover:scale-110 transition-transform`}
-                      onClick={() => handleResultClick(item)}
-                      title="Click to view details"
+                      className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor}`}
                     >
                       {resultText}
                     </h2>
