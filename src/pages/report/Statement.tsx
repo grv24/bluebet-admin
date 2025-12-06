@@ -12,7 +12,7 @@ const accountTypes = [
   "Casino Report",
   "Third Party Casino Report",
 ];
-const sportListOptions = ["Football", "Tennis", "Cricket"];
+const sportListOptions = ["All", "Football", "Tennis", "Cricket"];
 const pageSizeOptions = [25, 50, 100];
 
 // Function to get game names based on account type
@@ -44,7 +44,7 @@ const getGameNamesByAccountType = (accountType: string): string[] => {
 const Statement = () => {
   const [accountType, setAccountType] = useState("All");
   const [gameName, setGameName] = useState("All");
-  const [sportList, setSportList] = useState("Football");
+  const [sportList, setSportList] = useState("All");
   const [clientName, setClientName] = useState("");
   const [clientDropdownOpen, setClientDropdownOpen] = useState(false);
   const [fromDate, setFromDate] = useState("");
@@ -275,21 +275,6 @@ const Statement = () => {
             ))}
           </select>
         </div>
-        <div className="flex flex-col min-w-[140px] w-full">
-          <label className="text-sm font-medium mb-1">Game Name</label>
-          <select
-            className="border border-gray-300 rounded px-3 py-2 text-sm text-gray-500 focus:border-gray-300 focus:ring-0 outline-none transition w-full disabled:bg-gray-100 disabled:cursor-not-allowed"
-            value={gameName}
-            onChange={(e) => setGameName(e.target.value)}
-            disabled={accountType === "All"}
-          >
-            {gameNames.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </div>
         {/* Sport List - Only show for Sports Report */}
         {accountType === "Sports Report" && (
           <div className="flex flex-col min-w-[140px] w-full">
@@ -307,6 +292,21 @@ const Statement = () => {
             </select>
           </div>
         )}
+        <div className="flex flex-col min-w-[140px] w-full">
+          <label className="text-sm font-medium mb-1">Game Name</label>
+          <select
+            className="border border-gray-300 rounded px-3 py-2 text-sm text-gray-500 focus:border-gray-300 focus:ring-0 outline-none transition w-full disabled:bg-gray-100 disabled:cursor-not-allowed"
+            value={gameName}
+            onChange={(e) => setGameName(e.target.value)}
+            disabled={accountType === "All"}
+          >
+            {gameNames.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </div>
         {/* Improved Search By Client Name */}
         <div className="flex flex-col min-w-[160px] w-full relative">
           <label className="text-sm font-medium mb-1">Search By Client Name</label>
