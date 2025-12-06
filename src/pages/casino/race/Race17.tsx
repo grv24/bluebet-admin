@@ -178,10 +178,9 @@ const Race17Component: React.FC<Race17Props> = ({
           {/* Back Odds */}
           <h2
             className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-back)] relative ${
-              !locked && oddsItem?.b ? "hover:opacity-90" : ""
+              ""
             }`}
-            onClick={() =>
-            }
+            
           >
             {locked && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -193,10 +192,9 @@ const Race17Component: React.FC<Race17Props> = ({
           {/* Lay Odds */}
           <h2
             className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-lay)] relative ${
-              !locked && oddsItem?.l ? "hover:opacity-90" : ""
+              ""
             }`}
-            onClick={() =>
-            }
+            
           >
             {locked && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">

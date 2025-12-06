@@ -219,10 +219,9 @@ const Race20Component: React.FC<Race20Props> = ({
             {/* Back Odds */}
             <h2
               className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-back)] relative ${
-              !locked && oddsItem?.b ? "hover:opacity-90" : ""
+              ""
             }`}
-            onClick={() =>
-            }
+            
           >
             {locked && (
         <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -234,10 +233,9 @@ const Race20Component: React.FC<Race20Props> = ({
             {/* Lay Odds */}
             <h2
               className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-lay)] relative ${
-              !locked && oddsItem?.l ? "hover:opacity-90" : ""
+              ""
             }`}
-            onClick={() =>
-            }
+            
           >
             {locked && (
         <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -271,10 +269,9 @@ const Race20Component: React.FC<Race20Props> = ({
         </td>
         <td
           className={`w-1/3 min-w-14 bg-[var(--bg-back)] relative ${
-            !locked && oddsItem?.b ? "hover:opacity-90" : ""
+            ""
           }`}
-          onClick={() =>
-          }
+          
         >
           {locked && (
         <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -290,10 +287,9 @@ const Race20Component: React.FC<Race20Props> = ({
         </td>
         <td
           className={`w-1/3 min-w-14 bg-[var(--bg-lay)] relative ${
-            !locked && oddsItem?.l ? "hover:opacity-90" : ""
+            ""
           }`}
-          onClick={() =>
-          }
+          
         >
           {locked && (
         <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -327,10 +323,9 @@ const Race20Component: React.FC<Race20Props> = ({
             </h2>
         <h2
           className={`w-full bg-[var(--bg-back)] flex justify-center items-center leading-8 relative ${
-            !locked && oddsItem?.b ? "hover:opacity-90" : ""
+            ""
           }`}
-          onClick={() =>
-          }
+          
         >
           {locked && (
         <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
