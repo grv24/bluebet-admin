@@ -92,31 +92,38 @@ const Bet: React.FC<BetProps> = ({ roundId }) => {
                 </td>
               </tr>
             ) : (
-              bets.map((bet, index) => (
-                <tr
-                  key={bet.betId || index}
-                  className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
-                >
-                  <td className="text-xs leading-6 py-2 px-3 text-left">
+              bets.map((bet, index) => {
+                // Determine bet type from betData.betType or oddCategory
+                const betType = bet.betData?.betType?.toLowerCase() || bet.oddCategory?.toLowerCase() || 'back';
+                const isBackBet = betType === 'back';
+                const bgColor = isBackBet ? 'bg-[var(--bg-back)]' : 'bg-[var(--bg-lay)]';
+                
+                return (
+                  <tr
+                    key={bet.betId || index}
+                    className={`border-b border-gray-200 hover:opacity-90 transition-all ${bgColor}`}
+                  >
+                  <td className="text-xs leading-6 py px-1 text-left">
                     {bet.userName}
                   </td>
-                  <td className="text-xs leading-6 py-2 px-3 text-left">
+                  <td className="text-xs leading-6 py px text-left">
                     {bet.name}
                   </td>
-                  <td className="text-xs leading-6 py-2 px-3 text-center font-medium">
+                  <td className="text-xs leading-6 py px text-center font-medium">
                     {Number(bet.betRate).toFixed(2)}
                   </td>
-                  <td className="text-xs leading-6 py-2 px-3 text-center font-medium">
+                  <td className="text-xs leading-6 py px text-center font-medium">
                     {Number(bet.betAmount).toFixed(2)}
                   </td>
-                  <td className="text-xs leading-6 py-2 px-3 text-left text-gray-700">
+                  <td className="text-xs leading-6 py px text-left text-gray-700">
                     {formatDate(bet.createdAt)}
                   </td>
-                  <td className="text-xs leading-6 py-2 px-3 text-left">
+                  <td className="text-xs leading-6 py p text-left">
                     {bet.gameSlug.toLowerCase()}
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>
