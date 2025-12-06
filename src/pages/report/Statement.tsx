@@ -13,6 +13,7 @@ const accountTypes = [
   "Third Party Casino Report",
 ];
 const sportListOptions = ["All", "Football", "Tennis", "Cricket"];
+const casinoListOptions = ["All", "Casino 1", "Casino 2", "Casino 3"]; // Will be replaced with actual casino names
 const pageSizeOptions = [25, 50, 100];
 
 // Function to get game names based on account type
@@ -45,6 +46,7 @@ const Statement = () => {
   const [accountType, setAccountType] = useState("All");
   const [gameName, setGameName] = useState("All");
   const [sportList, setSportList] = useState("All");
+  const [casinoList, setCasinoList] = useState("All");
   const [clientName, setClientName] = useState("");
   const [clientDropdownOpen, setClientDropdownOpen] = useState(false);
   const [fromDate, setFromDate] = useState("");
@@ -292,21 +294,41 @@ const Statement = () => {
             </select>
           </div>
         )}
-        <div className="flex flex-col min-w-[140px] w-full">
-          <label className="text-sm font-medium mb-1">Game Name</label>
-          <select
-            className="border border-gray-300 rounded px-3 py-2 text-sm text-gray-500 focus:border-gray-300 focus:ring-0 outline-none transition w-full disabled:bg-gray-100 disabled:cursor-not-allowed"
-            value={gameName}
-            onChange={(e) => setGameName(e.target.value)}
-            disabled={accountType === "All"}
-          >
-            {gameNames.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Casino List - Only show for Casino Report */}
+        {accountType === "Casino Report" && (
+          <div className="flex flex-col min-w-[140px] w-full">
+            <label className="text-sm font-medium mb-1">Casino List</label>
+            <select
+              className="border border-gray-300 rounded px-3 py-2 text-sm text-gray-500 focus:border-gray-300 focus:ring-0 outline-none transition w-full"
+              value={casinoList}
+              onChange={(e) => setCasinoList(e.target.value)}
+            >
+              {casinoListOptions.map((casino) => (
+                <option key={casino} value={casino}>
+                  {casino}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        {/* Game Name - Hide for Casino Report */}
+        {accountType !== "Casino Report" && (
+          <div className="flex flex-col min-w-[140px] w-full">
+            <label className="text-sm font-medium mb-1">Game Name</label>
+            <select
+              className="border border-gray-300 rounded px-3 py-2 text-sm text-gray-500 focus:border-gray-300 focus:ring-0 outline-none transition w-full disabled:bg-gray-100 disabled:cursor-not-allowed"
+              value={gameName}
+              onChange={(e) => setGameName(e.target.value)}
+              disabled={accountType === "All"}
+            >
+              {gameNames.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         {/* Improved Search By Client Name */}
         <div className="flex flex-col min-w-[160px] w-full relative">
           <label className="text-sm font-medium mb-1">Search By Client Name</label>
