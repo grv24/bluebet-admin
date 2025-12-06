@@ -129,6 +129,8 @@ export interface UserMatchBet {
   betId: string;
   matchId: string;
   userId: string;
+  userName: string;
+  loginId: string;
   userType: string;
   betStatus: string;
   betAmount: number;
@@ -151,16 +153,19 @@ export interface UserMatchBet {
   sportType: string;
   isFancyBet: boolean;
   betData: BetData;
-  user?: {
-    userName: string;
-    name?: string;
-  };
+}
+
+export interface TargetUser {
+  userId: string;
+  userName: string;
+  loginId: string;
 }
 
 export interface UserMatchBetsResponse {
   success: boolean;
   matchId: string;
   targetUserIds: string[];
+  targetUsers: TargetUser[];
   userType: string;
   totalBets: number;
   bets: UserMatchBet[];

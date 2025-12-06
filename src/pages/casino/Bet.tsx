@@ -39,7 +39,7 @@ const Bet: React.FC<BetProps> = ({ roundId }) => {
 
   return (
     <div className="flex flex-col bg-white">
-      <div className="bg-[#5a6c7d] py-1.5 px-3 flex items-center justify-between">
+      <div className="bg-[#5a6c7d] py-1 px-3 flex items-center justify-between">
         <h2 className="text-xs tracking-tight leading-6 uppercase text-white font-semibold">
           MY BETS
         </h2>
@@ -98,7 +98,7 @@ const Bet: React.FC<BetProps> = ({ roundId }) => {
                   className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
                 >
                   <td className="text-xs leading-6 py-2 px-3 text-left">
-                    {bet.user?.userName || bet.userId}
+                    {bet.userName}
                   </td>
                   <td className="text-xs leading-6 py-2 px-3 text-left">
                     {bet.name}
