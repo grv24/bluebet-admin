@@ -347,9 +347,9 @@ const Header: React.FC = () => {
     });
 
     // Create menu items for each game type
-    return sortedGameTypes.map((gameType, index) => ({
+    return sortedGameTypes.map((gameType) => ({
       name: formatGameTypeName(gameType === "other" ? null : gameType),
-      id: `game-type-${index}`,
+      id: gameType, // Use game type as ID instead of index for stable keys
       href: `/live-market/${gameType === "other" ? "others" : gameType}`,
     }));
   }, [casinoGamesData]);
@@ -407,17 +407,17 @@ const Header: React.FC = () => {
       items: [
         {
           name: "Account Statement",
-          id: 1,
+          id: "account-statement",
           href: "/reports/account-statement",
         },
-        { name: "Current Bets", id: 2, href: "/reports/current-bets" },
-        { name: "General Report", id: 3, href: "/reports/general-report" },
-        { name: "Game Report", id: 4, href: "/reports/game-report" },
-        { name: "Casino Report", id: 5, href: "/reports/casino-report" },
-        { name: "Profit And Loss", id: 6, href: "/reports/profit-and-loss" },
+        { name: "Current Bets", id: "current-bets", href: "/reports/current-bets" },
+        { name: "General Report", id: "general-report", href: "/reports/general-report" },
+        { name: "Game Report", id: "game-report", href: "/reports/game-report" },
+        { name: "Casino Report", id: "casino-report", href: "/reports/casino-report" },
+        { name: "Profit And Loss", id: "profit-and-loss", href: "/reports/profit-and-loss" },
         {
           name: "Casino Result Report",
-          id: 7,
+          id: "casino-result-report",
           href: "/reports/casino-result-report",
         },
       ],
