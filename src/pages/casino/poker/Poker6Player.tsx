@@ -9,14 +9,13 @@ import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 type Poker6PlayerProps = {  
   casinoData: any;
   remainingTime: number;
-  onBetClick: (sid: string, type: "back" | "lay") => void;
   results: any;
   gameSlug: string;
   gameName: string;
 };
 
 const Poker6PlayerComponent: React.FC<Poker6PlayerProps> = (_props) => {
-  const { casinoData, remainingTime, onBetClick, results, gameSlug, gameName } =
+  const { casinoData, remainingTime, results, gameSlug, gameName } =
     _props;
 
   const navigate = useNavigate();
@@ -122,7 +121,7 @@ const Poker6PlayerComponent: React.FC<Poker6PlayerProps> = (_props) => {
           onClick={() => {
             setActiveTab("hands");
           }}
-          className={`text-base font-normal px-4 py-1.5 cursor-pointer ${
+          className={`text-base font-normal px-4 py-1.5 ${
             activeTab === "hands"
               ? "bg-[var(--bg-secondary)] text-white"
               : "bg-[var(--bg-table-row)] text-[var(--bg-secondary)]"
@@ -134,7 +133,7 @@ const Poker6PlayerComponent: React.FC<Poker6PlayerProps> = (_props) => {
           onClick={() => {
             setActiveTab("patterns");
           }}
-          className={`text-base font-normal px-4 py-1.5 cursor-pointer ${
+          className={`text-base font-normal px-4 py-1.5 ${
             activeTab === "patterns"
               ? "bg-[var(--bg-secondary)] text-white"
               : "bg-[var(--bg-table-row)] text-[var(--bg-secondary)]"
@@ -151,7 +150,7 @@ const Poker6PlayerComponent: React.FC<Poker6PlayerProps> = (_props) => {
             {players.map((item: any) => (
               <div
                 key={item?.sid}
-                className="flex relative justify-between bg-[var(--bg-back)] py-1.5 px-2 items-center cursor-pointer hover:bg-gray-100"
+                className="flex relative justify-between bg-[var(--bg-back)] py-1.5 px-2 items-center hover:bg-gray-100"
                 onClick={() => {
                   console.log("🎰 Poker6 Player bet click:", {
                     sid: item.sid,
@@ -159,7 +158,6 @@ const Poker6PlayerComponent: React.FC<Poker6PlayerProps> = (_props) => {
                     suspended: isSusp(item),
                   });
                   if (!isSusp(item)) {
-                    onBetClick(item.sid, "back");
                   }
                 }}
               >
@@ -276,7 +274,7 @@ const Poker6PlayerComponent: React.FC<Poker6PlayerProps> = (_props) => {
             {patternOdds.map((item: any) => (
               <div
                 key={item?.sid}
-                className="flex relative justify-between bg-[var(--bg-back)] py-1.5 px-2 items-center cursor-pointer hover:bg-gray-100"
+                className="flex relative justify-between bg-[var(--bg-back)] py-1.5 px-2 items-center hover:bg-gray-100"
                 onClick={() => {
                   console.log("🎰 Poker6 Pattern bet click:", {
                     sid: item.sid,
@@ -284,7 +282,6 @@ const Poker6PlayerComponent: React.FC<Poker6PlayerProps> = (_props) => {
                     suspended: isSusp(item),
                   });
                   if (!isSusp(item)) {
-                    onBetClick(item.sid, "back");
                   }
                 }}
               >
@@ -326,7 +323,7 @@ const Poker6PlayerComponent: React.FC<Poker6PlayerProps> = (_props) => {
           </h2>
           <h2
             onClick={() => navigate(`/casino-result?game=POKER_9`)}
-            className="text-sm font-normal leading-8 text-white cursor-pointer hover:text-gray-200"
+            className="text-sm font-normal leading-8 text-white hover:text-gray-200"
           >
             View All
           </h2>
@@ -368,7 +365,7 @@ const Poker6PlayerComponent: React.FC<Poker6PlayerProps> = (_props) => {
               return (
                 <h2
                   key={index}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${color} cursor-pointer hover:scale-110 transition-transform`}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${color} hover:scale-110 transition-transform`}
                   onClick={() => handleResultClick(item)}
                   title="Click to view details"
                 >

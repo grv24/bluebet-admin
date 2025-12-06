@@ -8,11 +8,9 @@ import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 type PokerOneDayProps = {
   casinoData: any;
   remainingTime: number;
-  onBetClick: (sid: string, type: string) => void;
   results?: any[];
   gameSlug: string;
   gameName: string;
-  currentBet: any;
 };
 
 const getT2Odds = (casinoData: any, sid: string) => {
@@ -54,15 +52,11 @@ const isSuspended = (odds: any, remainingTime: number) => {
 const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results = [],
   gameSlug,
   gameName,
-  currentBet,
 }) => {
   const navigate = useNavigate();
-  const [selectedResult, setSelectedResult] = useState<any>(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
   // const resultModal = useIndividualResultModal();
 
   // Normalize gameSlug to lowercase format (e.g., "POKER_1DAY" -> "poker1day" or "poker")
@@ -92,16 +86,6 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
    * Calculate profit/loss book for Poker game
    * Returns a complete profit/loss book for all outcomes
    */
-  const getPokerProfitLossBook = () => {
-    if (!currentBet?.data || !casinoData?.data?.mid) {
-      return {
-        "Player A": 0,
-        "Player B": 0,
-        "2 Cards Bonus A": 0,
-        "7 Cards Bonus A": 0,
-        "2 Cards Bonus B": 0,
-        "7 Cards Bonus B": 0,
-      };
     }
 
     const currentMatchId = casinoData.data.mid;
@@ -115,7 +99,6 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
     };
 
     // Only bets for this match
-    const bets = currentBet.data.filter(
       (bet: any) => String(bet.matchId) === String(currentMatchId)
     );
 
@@ -211,7 +194,7 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
   };
 
   // Memoize the profit/loss book to avoid recalculating on every render
-  const profitLossBook = React.useMemo(() => getPokerProfitLossBook(), [currentBet?.data, casinoData?.data?.mid]);
+
 
   // Debug logging to understand data structure
   React.useEffect(() => {
@@ -349,15 +332,6 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
                 Player A
 
               <h2 className={`text-xs font-semibold ${
-                    profitLossBook["Player A"] > 0
-                      ? "text-green-600"
-                      : profitLossBook["Player A"] < 0
-                        ? "text-red-600"
-                        : "text-gray-600"
-                  }`}>
-                    {profitLossBook["Player A"] > 0 ? "+" : ""}
-                    {profitLossBook["Player A"].toFixed(0)}
-                  </h2>
               </div>
               
               <div className="grid grid-cols-2 w-28 sm:w-36">
@@ -365,7 +339,6 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
                   className="relative h-10 sm:h-12 flex flex-col items-center justify-center text-base sm:text-lg font-semibold bg-[var(--bg-back)] text-black border border-gray-200"
                   onClick={() =>
                     !isSuspended(playerA, remainingTime) &&
-                    onBetClick("1", "back")
                   }
                 >
                   {isSuspended(playerA, remainingTime) && (
@@ -383,7 +356,6 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
                   className="relative h-10 sm:h-12 flex flex-col items-center justify-center text-base sm:text-lg font-semibold bg-[var(--bg-lay)] text-black border border-gray-200"
                   onClick={() =>
                     !isSuspended(playerA, remainingTime) &&
-                    onBetClick("1", "lay")
                   }
                 >
                   {isSuspended(playerA, remainingTime) && (
@@ -406,22 +378,12 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold px-2">Player B
               <h2 className={`text-xs font-semibold ${
-                    profitLossBook["Player B"] > 0
-                      ? "text-green-600"
-                      : profitLossBook["Player B"] < 0
-                        ? "text-red-600"
-                        : "text-gray-600"
-                  }`}>
-                    {profitLossBook["Player B"] > 0 ? "+" : ""}
-                    {profitLossBook["Player B"].toFixed(0)}
-                  </h2>
               </div>
               <div className="grid grid-cols-2 w-28 sm:w-36">
                 <div
                   className="relative h-10 sm:h-12 flex flex-col items-center justify-center text-base sm:text-lg font-semibold bg-[var(--bg-back)] text-black border border-gray-200"
                   onClick={() =>
                     !isSuspended(playerB, remainingTime) &&
-                    onBetClick("2", "back")
                   }
                 >
                   {isSuspended(playerB, remainingTime) && (
@@ -439,7 +401,6 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
                   className="relative h-10 sm:h-12 flex flex-col items-center justify-center text-base sm:text-lg font-semibold bg-[var(--bg-lay)] text-black border border-gray-200"
                   onClick={() =>
                     !isSuspended(playerB, remainingTime) &&
-                    onBetClick("2", "lay")
                   }
                 >
                   {isSuspended(playerB, remainingTime) && (
@@ -466,69 +427,31 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
           <div className="grid grid-cols-2 gap-1.5">
             <button
               className={`relative w-full bg-[var(--bg-back)] text-sm leading-10 font-extrabold tracking-wide border border-gray-300 flex flex-col items-center justify-center`}
-              onClick={() =>
-                !isSuspended(a2Card, remainingTime) && onBetClick("3", "back")
+            
               }
             >
               {isSuspended(a2Card, remainingTime) && (
                 <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
                   <RiLockFill className="text-white text-2xl" />
                   <h2 className={`text-xs font-semibold text-center ${
-                    profitLossBook["2 Cards Bonus A"] > 0
-                      ? "text-green-600"
-                      : profitLossBook["2 Cards Bonus A"] < 0
-                        ? "text-red-600"
-                        : "text-gray-600"
-                  }`}>
-                    {profitLossBook["2 Cards Bonus A"] > 0 ? "+" : ""}
-                    {profitLossBook["2 Cards Bonus A"].toFixed(0)}
-                  </h2>
                 </div>
               )}
               <h2 className="text-sm font-semibold">2 Cards Bonus</h2>
               <h2 className={`text-xs font-semibold ${
-                profitLossBook["2 Cards Bonus A"] > 0
-                  ? "text-green-600"
-                  : profitLossBook["2 Cards Bonus A"] < 0
-                    ? "text-red-600"
-                    : "text-gray-600"
-              }`}>
-                {profitLossBook["2 Cards Bonus A"] > 0 ? "+" : ""}
-                {profitLossBook["2 Cards Bonus A"].toFixed(0)}
-              </h2>
             </button>
             <button
               className={`relative w-full bg-[var(--bg-back)] text-sm leading-10 font-extrabold tracking-wide border border-gray-300 flex flex-col items-center justify-center`}
-              onClick={() =>
-                !isSuspended(a7Card, remainingTime) && onBetClick("4", "back")
+            
               }
             >
               {isSuspended(a7Card, remainingTime) && (
                 <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
                   <RiLockFill className="text-white text-2xl" />
                   <h2 className={`text-xs font-semibold text-center ${
-                    profitLossBook["7 Cards Bonus A"] > 0
-                      ? "text-green-600"
-                      : profitLossBook["7 Cards Bonus A"] < 0
-                        ? "text-red-600"
-                        : "text-gray-600"
-                  }`}>
-                    {profitLossBook["7 Cards Bonus A"] > 0 ? "+" : ""}
-                    {profitLossBook["7 Cards Bonus A"].toFixed(0)}
-                  </h2>
                 </div>
               )}
               <h2 className="text-sm font-semibold">7 Cards Bonus</h2>
               <h2 className={`text-xs font-semibold ${
-                profitLossBook["7 Cards Bonus A"] > 0
-                  ? "text-green-600"
-                  : profitLossBook["7 Cards Bonus A"] < 0
-                    ? "text-red-600"
-                    : "text-gray-600"
-              }`}>
-                {profitLossBook["7 Cards Bonus A"] > 0 ? "+" : ""}
-                {profitLossBook["7 Cards Bonus A"].toFixed(0)}
-              </h2>
             </button>
           </div>
 
@@ -539,69 +462,31 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
           <div className="grid grid-cols-2 gap-1.5">
             <button
               className={`relative w-full bg-[var(--bg-back)] text-sm leading-10 font-extrabold tracking-wide border border-gray-300 flex flex-col items-center justify-center`}
-              onClick={() =>
-                !isSuspended(b2Card, remainingTime) && onBetClick("5", "back")
+            
               }
             >
               {isSuspended(b2Card, remainingTime) && (
                 <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
                   <RiLockFill className="text-white text-2xl" />
                   <h2 className={`text-xs font-semibold text-center ${
-                    profitLossBook["2 Cards Bonus B"] > 0
-                      ? "text-green-600"
-                      : profitLossBook["2 Cards Bonus B"] < 0
-                        ? "text-red-600"
-                        : "text-gray-600"
-                  }`}>
-                    {profitLossBook["2 Cards Bonus B"] > 0 ? "+" : ""}
-                    {profitLossBook["2 Cards Bonus B"].toFixed(0)}
-                  </h2>
                 </div>
               )}
               <h2 className="text-sm font-semibold">2 Cards Bonus</h2>
               <h2 className={`text-xs font-semibold ${
-                profitLossBook["2 Cards Bonus B"] > 0
-                  ? "text-green-600"
-                  : profitLossBook["2 Cards Bonus B"] < 0
-                    ? "text-red-600"
-                    : "text-gray-600"
-              }`}>
-                {profitLossBook["2 Cards Bonus B"] > 0 ? "+" : ""}
-                {profitLossBook["2 Cards Bonus B"].toFixed(0)}
-              </h2>
             </button>
             <button
               className={`relative w-full bg-[var(--bg-back)] text-sm leading-10 font-extrabold tracking-wide border border-gray-300 flex flex-col items-center justify-center`}
-              onClick={() =>
-                !isSuspended(b7Card, remainingTime) && onBetClick("6", "back")
+            
               }
             >
               {isSuspended(b7Card, remainingTime) && (
                 <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
                   <RiLockFill className="text-white text-2xl" />
                   <h2 className={`text-xs font-semibold text-center ${
-                    profitLossBook["7 Cards Bonus B"] > 0
-                      ? "text-green-600"
-                      : profitLossBook["7 Cards Bonus B"] < 0
-                        ? "text-red-600"
-                        : "text-gray-600"
-                  }`}>
-                    {profitLossBook["7 Cards Bonus B"] > 0 ? "+" : ""}
-                    {profitLossBook["7 Cards Bonus B"].toFixed(0)}
-                  </h2>
                 </div>
               )}
               <h2 className="text-sm font-semibold">7 Cards Bonus</h2>
               <h2 className={`text-xs font-semibold ${
-                profitLossBook["7 Cards Bonus B"] > 0
-                  ? "text-green-600"
-                  : profitLossBook["7 Cards Bonus B"] < 0
-                    ? "text-red-600"
-                    : "text-gray-600"
-              }`}>
-                {profitLossBook["7 Cards Bonus B"] > 0 ? "+" : ""}
-                {profitLossBook["7 Cards Bonus B"].toFixed(0)}
-              </h2>
             </button>
           </div>
         </div>
@@ -638,7 +523,7 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
               return (
                 <h2
                   key={index}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${isA ? "text-red-500" : "text-yellow-500"} cursor-pointer hover:scale-110 transition-transform`}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${isA ? "text-red-500" : "text-yellow-500"} hover:scale-110 transition-transform`}
                   onClick={() => handleResultClick(item)}
                   title="Click to view details"
                 >

@@ -8,19 +8,15 @@ import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 const Poker20Component = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results,
   gameSlug,
   gameName,
-  currentBet,
 }: {
   casinoData: any;
   remainingTime: number;
-  onBetClick: (sid: string, type: string) => void;
   results: any[];
   gameSlug: string;
   gameName: string;
-  currentBet: any;
 }) => {
   const navigate = useNavigate();
   // const resultModal = useIndividualResultModal();
@@ -112,15 +108,11 @@ const Poker20Component = ({
     );
   };
 
-  const getProfitLoss = () => {
-    if (!currentBet?.data || !casinoData?.data?.mid)
-      return { Dragon: 0, Tiger: 0 };
 
     const currentMatchId = casinoData.data.mid;
     let book: Record<string, number> = { Dragon: 0, Tiger: 0 };
 
     // Only bets for this match
-    const bets = currentBet.data.filter(
       (bet: any) => String(bet.matchId) === String(currentMatchId)
     );
 
@@ -157,19 +149,16 @@ const Poker20Component = ({
   };
 
   const getBetProfitLoss = (nation: string, side: "A" | "B") => {
-    if (!currentBet?.data || !casinoData?.data?.mid) return 0;
 
     const currentMatchId = casinoData.data.mid;
     
     // Only bets for this match
-    const bets = currentBet.data.filter(
       (bet: any) => String(bet.matchId) === String(currentMatchId)
     );
 
     let totalProfitLoss = 0;
 
     bets.forEach((bet: any) => {
-      const { sid, betName: currentBetName, name, nation: betNation, oddCategory, stake, betRate } = bet.betData;
       const result = bet.betData?.result;
 
       // Determine which side this bet belongs to based on sid
@@ -184,7 +173,6 @@ const Poker20Component = ({
       }
 
       // Use either betName, name, or nation field
-      const actualBetName = currentBetName || name || betNation;
       
       if (actualBetName && typeof actualBetName === 'string' && betSide === side) {
         const actualBetNameLower = actualBetName.toLowerCase();
@@ -241,9 +229,8 @@ const Poker20Component = ({
     
     return (
       <div
-        className="flex flex-col items-center bg-[var(--bg-back)] leading-6 py-2 w-full justify-center text-sm font-semibold relative cursor-pointer"
-        onClick={() => {
-          if (!suspended && market?.sid) onBetClick(String(market.sid), "back");
+        className="flex flex-col items-center bg-[var(--bg-back)] leading-6 py-2 w-full justify-center text-sm font-semibold relative"
+            
         }}
       >
         {/* Odds display */}
@@ -434,7 +421,7 @@ const Poker20Component = ({
           </h2>
           <h2
             onClick={() => navigate(`/casino-result?game=POKER_20`)}
-            className="text-sm font-normal leading-8 text-white cursor-pointer hover:text-gray-200"
+            className="text-sm font-normal leading-8 text-white hover:text-gray-200"
           >
             View All
           </h2>
@@ -444,7 +431,7 @@ const Poker20Component = ({
             results.slice(0, 10).map((item: any, index: number) => (
               <h2
                 key={index}
-                className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${item?.win == 1 ? "text-red-400" : "text-yellow-400"} cursor-pointer hover:scale-110 transition-transform`}
+                className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${item?.win == 1 ? "text-red-400" : "text-yellow-400"} hover:scale-110 transition-transform`}
                 onClick={() => handleResultClick(item)}
                 title="Click to view details"
               >
