@@ -10,11 +10,9 @@ import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 interface DT6Props {
   casinoData: any;
   remainingTime: number;
-  onBetClick: (sid: string, type: "back" | "lay") => void;
   results?: any[];
   gameSlug: string;
   gameName: string;
-  currentBet: any;
 }
 
 // helpers
@@ -80,22 +78,11 @@ const isSuspended = (casinoData: any, sid: string, remainingTime: number) => {
 const OneDayDragonTigerComponent: React.FC<DT6Props> = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results = [],
   gameSlug,
   gameName,
-  currentBet,
 }) => {
   const navigate = useNavigate();
-  // const resultModal = useIndividualResultModal();
-
-  // Convert gameSlug to actual game slug format if needed
-  const actualGameSlug = React.useMemo(() => {
-    if (gameSlug) {
-      return gameSlug.toLowerCase().replace(/[^a-z0-9]/g, "");
-    }
-    return "dt6"; // Default fallback for One Day Dragon Tiger
-  }, [gameSlug]);
 
   // Debug: Log data
   // console.log("🎰 DT6 component debug:", {
@@ -109,175 +96,6 @@ const OneDayDragonTigerComponent: React.FC<DT6Props> = ({
   //   ft: (casinoData as any)?.data?.ft,
   // });
 
-  /**
-   * Handle clicking on individual result to show details
-   */
-  const handleResultClick = (result: any) => {
-    const resultId = result?.mid || result?.roundId || result?.id || result?.matchId;
-    
-    if (!resultId) {
-      console.error("🎰 OneDayDragonTiger: No result ID found in result", result);
-      return;
-    }
-    
-    if (!actualGameSlug) {
-      console.error("🎰 OneDayDragonTiger: No gameSlug available", { gameSlug, actualGameSlug });
-      return;
-    }
-    
-    // resultModal.openModal(String(resultId), result);
-  };
-
-
-
-
-  // Function to filter user bets based on selected filter
-  const getFilteredBets = (bets: any[], filter: string) => {
-    if (filter === "all") return bets;
-
-    return bets.filter((bet: any) => {
-      const oddCategory = bet.betData?.oddCategory?.toLowerCase();
-      const status = bet.status?.toLowerCase();
-
-      switch (filter) {
-        case "back":
-          return oddCategory === "back";
-        case "lay":
-          return oddCategory === "lay";
-        case "deleted":
-          return status === "deleted" || status === "cancelled";
-        default:
-          return true;
-      }
-    });
-  };
-
-
-  const getProfitLoss = () => {
-    if (!currentBet?.data || !casinoData?.data?.mid)
-      return { Dragon: 0, Tiger: 0 };
-
-    const currentMatchId = casinoData.data.mid;
-    let book: Record<string, number> = { Dragon: 0, Tiger: 0 };
-
-    // Only bets for this match
-    const bets = currentBet.data.filter(
-      (bet: any) => String(bet.matchId) === String(currentMatchId)
-    );
-
-    bets.forEach((bet: any) => {
-      const { betName, oddCategory, stake, betRate } = bet.betData;
-
-      if (betName === "Dragon" || betName === "Tiger") {
-        const isDragon = betName === "Dragon";
-
-        if (oddCategory.toLowerCase() === "back") {
-          const profit = stake * (betRate - 1);
-          const loss = -stake;
-
-          if (isDragon) {
-            book.Dragon += profit;
-            book.Tiger += loss;
-          } else {
-            book.Tiger += profit;
-            book.Dragon += loss;
-          }
-        } else if (oddCategory.toLowerCase() === "lay") {
-          const loss = stake * (betRate - 1);
-          const profit = stake;
-
-          if (isDragon) {
-            book.Dragon -= loss;
-            book.Tiger += profit;
-          } else {
-            book.Tiger -= loss;
-            book.Dragon += profit;
-          }
-        }
-      }
-    });
-
-    console.log(book, "📘 book (combined Dragon & Tiger)");
-    return book;
-  };
-
-  /**
-   * Universal profit/loss calculation function for all betting types
-   * @param betType - The type of bet to calculate profit/loss for
-   * @returns The profit/loss amount (negative for loss-only display)
-   */
-  const getBetProfitLoss = (betType: string): number => {
-    if (!currentBet?.data || !casinoData?.data?.mid) return 0;
-
-    const currentMatchId = casinoData.data.mid;
-    let profitLoss = 0;
-
-    // Only bets for this match
-    const bets = currentBet.data.filter(
-      (bet: any) => String(bet.matchId) === String(currentMatchId)
-    );
-
-    bets.forEach((bet: any) => {
-      const { betName, stake } = bet.betData;
-
-      // Normalize bet name for comparison
-      const normalizedBetName = betName?.toLowerCase() || "";
-      const normalizedBetType = betType.toLowerCase();
-
-      // More precise matching to avoid cross-contamination between Dragon/Tiger
-      let isMatch = false;
-
-      // Exact match first
-      if (normalizedBetName === normalizedBetType) {
-        isMatch = true;
-      }
-      // Handle Pair specifically
-      else if (betType === "Pair" && normalizedBetName === "pair") {
-        isMatch = true;
-      }
-      // Handle Even/Odd with exact Dragon/Tiger prefix
-      else if (betType.includes("Even") && normalizedBetName.includes("even")) {
-        const dragonTigerPrefix = betType.split(" ")[0].toLowerCase(); // "dragon" or "tiger"
-        isMatch = normalizedBetName.startsWith(dragonTigerPrefix);
-      }
-      else if (betType.includes("Odd") && normalizedBetName.includes("odd")) {
-        const dragonTigerPrefix = betType.split(" ")[0].toLowerCase(); // "dragon" or "tiger"
-        isMatch = normalizedBetName.startsWith(dragonTigerPrefix);
-      }
-      // Handle Red/Black with exact Dragon/Tiger prefix
-      else if (betType.includes("Red") && normalizedBetName.includes("red")) {
-        const dragonTigerPrefix = betType.split(" ")[0].toLowerCase(); // "dragon" or "tiger"
-        isMatch = normalizedBetName.startsWith(dragonTigerPrefix);
-      }
-      else if (betType.includes("Black") && normalizedBetName.includes("black")) {
-        const dragonTigerPrefix = betType.split(" ")[0].toLowerCase(); // "dragon" or "tiger"
-        isMatch = normalizedBetName.startsWith(dragonTigerPrefix);
-      }
-      // Handle Suits with exact Dragon/Tiger prefix
-      else if (betType.includes("Heart") && normalizedBetName.includes("heart")) {
-        const dragonTigerPrefix = betType.split(" ")[0].toLowerCase(); // "dragon" or "tiger"
-        isMatch = normalizedBetName.startsWith(dragonTigerPrefix);
-      }
-      else if (betType.includes("Diamond") && normalizedBetName.includes("diamond")) {
-        const dragonTigerPrefix = betType.split(" ")[0].toLowerCase(); // "dragon" or "tiger"
-        isMatch = normalizedBetName.startsWith(dragonTigerPrefix);
-      }
-      else if (betType.includes("Club") && normalizedBetName.includes("club")) {
-        const dragonTigerPrefix = betType.split(" ")[0].toLowerCase(); // "dragon" or "tiger"
-        isMatch = normalizedBetName.startsWith(dragonTigerPrefix);
-      }
-      else if (betType.includes("Spade") && normalizedBetName.includes("spade")) {
-        const dragonTigerPrefix = betType.split(" ")[0].toLowerCase(); // "dragon" or "tiger"
-        isMatch = normalizedBetName.startsWith(dragonTigerPrefix);
-      }
-
-      if (isMatch) {
-        profitLoss += -stake; // Accumulate loss-only display for multiple bets
-      }
-    });
-
-    return profitLoss;
-  };
 
   return (
     <div className="w-full flex flex-col gap-1.5">
@@ -328,13 +146,7 @@ const OneDayDragonTigerComponent: React.FC<DT6Props> = ({
                         </td>
 
                         {/* Back Button */}
-                        <td
-                          className="border border-gray-300 px-1 py-1.5 text-center text-sm cursor-pointer  bg-[var(--bg-back)] relative"
-                          onClick={() =>
-                            !isSuspended(casinoData, "1", remainingTime) &&
-                            onBetClick("1", "back")
-                          }
-                        >
+                        <td className="border border-gray-300 px-1 py-1.5 text-center text-sm bg-[var(--bg-back)] relative">
                           {isSuspended(casinoData, "1", remainingTime) && (
                             <div className="absolute inset-0 bg-black/60 flex w-full h-full justify-center items-center font-bold uppercase z-20">
                               <span className="text-white">
@@ -352,13 +164,7 @@ const OneDayDragonTigerComponent: React.FC<DT6Props> = ({
                         </td>
 
                         {/* Lay Button */}
-                        <td
-                          className="border border-gray-300 px-1 py-1.5 text-center text-sm cursor-pointer  bg-[var(--bg-lay)] relative"
-                          onClick={() =>
-                            !isSuspended(casinoData, "1", remainingTime) &&
-                            onBetClick("1", "lay")
-                          }
-                        >
+                        <td className="border border-gray-300 px-1 py-1.5 text-center text-sm bg-[var(--bg-lay)] relative">
                           {isSuspended(casinoData, "1", remainingTime) && (
                             <div className="absolute inset-0 bg-black/60 flex w-full h-full justify-center items-center font-bold uppercase z-20">
                               <span className="text-white">

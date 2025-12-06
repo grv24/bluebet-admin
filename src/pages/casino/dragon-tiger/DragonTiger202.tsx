@@ -14,74 +14,21 @@ import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 const DragonTiger202Component = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results,
   gameSlug,
   gameName,
-  currentBet,
 }: {
   casinoData: any;
   remainingTime: number;
-  onBetClick: (sid: string, type: string) => void;
   results: any[];
   gameSlug: string;
   gameName: string;
-  currentBet: any;
 }) => {
   const navigate = useNavigate();
-  // const resultModal = useIndividualResultModal();
-
-  // Convert gameSlug to actual game slug format if needed
-  const actualGameSlug = React.useMemo(() => {
-    if (gameSlug) {
-      return gameSlug.toLowerCase().replace(/[^a-z0-9]/g, "");
-    }
-    return "dt202"; // Default fallback
-  }, [gameSlug]);
-
-  // Function to filter user bets based on selected filter
-  const getFilteredBets = (bets: any[], filter: string) => {
-    if (filter === "all") return bets;
-
-    return bets.filter((bet: any) => {
-      const oddCategory = bet.betData?.oddCategory?.toLowerCase();
-      const status = bet.status?.toLowerCase();
-
-      switch (filter) {
-        case "back":
-          return oddCategory === "back";
-        case "lay":
-          return oddCategory === "lay";
-        case "deleted":
-          return status === "deleted" || status === "cancelled";
-        default:
-          return true;
-      }
-    });
-  };
 
   // Debug: Log data
-  console.log("🎰 DT20 casino data:", casinoData);
-  console.log("🎰 DT20 results data:", results);
-
-  /**
-   * Handle clicking on individual result to show details
-   */
-  const handleResultClick = (result: any) => {
-    const resultId = result?.mid || result?.roundId || result?.id || result?.matchId;
-    
-    if (!resultId) {
-      console.error("🎰 DragonTiger202: No result ID found in result", result);
-      return;
-    }
-    
-    if (!actualGameSlug) {
-      console.error("🎰 DragonTiger202: No gameSlug available", { gameSlug, actualGameSlug });
-      return;
-    }
-    
-    // resultModal.openModal(String(resultId), result);
-  };
+  console.log("🎰 DT202 casino data:", casinoData);
+  console.log("🎰 DT202 results data:", results);
 
   // Debug logging for DT20 results
   React.useEffect(() => {
@@ -145,66 +92,6 @@ const DragonTiger202Component = ({
     return `${type} Card ${apiCard}`;
   };
 
-  /**
-   * Universal profit/loss calculation function for all betting types
-   * @param betType - The type of bet to calculate profit/loss for
-   * @returns The profit/loss amount (negative for loss-only display)
-   */
-  const getBetProfitLoss = (betType: string): number => {
-    if (!currentBet?.data || !casinoData?.data?.mid) return 0;
-
-    const currentMatchId = casinoData.data.mid;
-    let profitLoss = 0;
-
-    // Only bets for this match
-    const bets = currentBet.data.filter(
-      (bet: any) => String(bet.matchId) === String(currentMatchId)
-    );
-
-    bets.forEach((bet: any) => {
-      const { betName, stake } = bet.betData;
-
-      // Normalize bet name for comparison
-      const normalizedBetName = betName?.toLowerCase() || "";
-      const normalizedBetType = betType.toLowerCase();
-
-      // More precise matching to avoid cross-contamination between Dragon/Tiger
-      let isMatch = false;
-
-      // Exact match first
-      if (normalizedBetName === normalizedBetType) {
-        isMatch = true;
-      }
-      // Handle Pair specifically
-      else if (betType === "Pair" && normalizedBetName === "pair") {
-        isMatch = true;
-      }
-      // Handle Even/Odd with exact Dragon/Tiger prefix
-      else if (betType.includes("Even") && normalizedBetName.includes("even")) {
-        const dragonTigerPrefix = betType.split(" ")[0].toLowerCase(); // "dragon" or "tiger"
-        isMatch = normalizedBetName.startsWith(dragonTigerPrefix);
-      }
-      else if (betType.includes("Odd") && normalizedBetName.includes("odd")) {
-        const dragonTigerPrefix = betType.split(" ")[0].toLowerCase(); // "dragon" or "tiger"
-        isMatch = normalizedBetName.startsWith(dragonTigerPrefix);
-      }
-      // Handle Red/Black with exact Dragon/Tiger prefix
-      else if (betType.includes("Red") && normalizedBetName.includes("red")) {
-        const dragonTigerPrefix = betType.split(" ")[0].toLowerCase(); // "dragon" or "tiger"
-        isMatch = normalizedBetName.startsWith(dragonTigerPrefix);
-      }
-      else if (betType.includes("Black") && normalizedBetName.includes("black")) {
-        const dragonTigerPrefix = betType.split(" ")[0].toLowerCase(); // "dragon" or "tiger"
-        isMatch = normalizedBetName.startsWith(dragonTigerPrefix);
-      }
-
-      if (isMatch) {
-        profitLoss += -stake; // Accumulate loss-only display for multiple bets
-      }
-    });
-
-    return profitLoss;
-  };
 
   return (
     <div className="w-full flex flex-col gap-1 mt-1">
@@ -225,16 +112,6 @@ const DragonTiger202Component = ({
                   <button
                     className="relative h-10 sm:h-12 bg-gradient-to-r from-[var(--bg-primary)] to-[var(--bg-secondary)] text-base font-semibold text-white w-full"
                     disabled={locked}
-                    onClick={() => {
-                      console.log("🎰 DT20 Dragon bet click:", {
-                        sid: row?.sid,
-                        odds: row,
-                        locked,
-                      });
-                      if (!locked && row?.sid) {
-                        onBetClick?.(String(row.sid), "back");
-                      }
-                    }}
                   >
                     {locked && (
                       <span className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -243,18 +120,6 @@ const DragonTiger202Component = ({
                     )}
                     Dragon
                   </button>
-                  <h2 
-                    className={`text-xs font-semibold leading-5 text-center ${
-                      getBetProfitLoss("Dragon") > 0
-                        ? "text-green-600"
-                        : getBetProfitLoss("Dragon") < 0
-                          ? "text-red-600"
-                          : "text-gray-600"
-                    }`}
-                  >
-                    {getBetProfitLoss("Dragon") > 0 ? "+" : ""}
-                    {getBetProfitLoss("Dragon").toFixed(0)}
-                  </h2>
                 </>
               );
             })()}
@@ -275,16 +140,6 @@ const DragonTiger202Component = ({
                   <button
                     className="relative h-10 sm:h-12 bg-gradient-to-r from-[var(--bg-primary)] to-[var(--bg-secondary)] text-base font-semibold text-white w-full"
                     disabled={locked}
-                    onClick={() => {
-                      console.log("🎰 DT20 Tie bet click:", {
-                        sid: row?.sid,
-                        odds: row,
-                        locked,
-                      });
-                      if (!locked && row?.sid) {
-                        onBetClick?.(String(row.sid), "back");
-                      }
-                    }}
                   >
                     {locked && (
                       <span className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -293,18 +148,6 @@ const DragonTiger202Component = ({
                     )}
                     Tie
                   </button>
-                  <h2 
-                    className={`text-xs font-semibold leading-5 text-center ${
-                      getBetProfitLoss("Tie") > 0
-                        ? "text-green-600"
-                        : getBetProfitLoss("Tie") < 0
-                          ? "text-red-600"
-                          : "text-gray-600"
-                    }`}
-                  >
-                    {getBetProfitLoss("Tie") > 0 ? "+" : ""}
-                    {getBetProfitLoss("Tie").toFixed(0)}
-                  </h2>
                 </>
               );
             })()}
@@ -325,16 +168,6 @@ const DragonTiger202Component = ({
                   <button
                     className="relative h-10 sm:h-12 bg-gradient-to-r from-[var(--bg-primary)] to-[var(--bg-secondary)] text-base font-semibold text-white w-full"
                     disabled={locked}
-                    onClick={() => {
-                      console.log("🎰 DT20 Tiger bet click:", {
-                        sid: row?.sid,
-                        odds: row,
-                        locked,
-                      });
-                      if (!locked && row?.sid) {
-                        onBetClick?.(String(row.sid), "back");
-                      }
-                    }}
                   >
                     {locked && (
                       <span className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -343,18 +176,6 @@ const DragonTiger202Component = ({
                     )}
                     Tiger
                   </button>
-                  <h2 
-                    className={`text-xs font-semibold leading-5 text-center ${
-                      getBetProfitLoss("Tiger") > 0
-                        ? "text-green-600"
-                        : getBetProfitLoss("Tiger") < 0
-                          ? "text-red-600"
-                          : "text-gray-600"
-                    }`}
-                  >
-                    {getBetProfitLoss("Tiger") > 0 ? "+" : ""}
-                    {getBetProfitLoss("Tiger").toFixed(0)}
-                  </h2>
                 </>
               );
             })()}
@@ -377,16 +198,6 @@ const DragonTiger202Component = ({
                   <button
                     className="relative h-10 sm:h-12 bg-gradient-to-r from-[var(--bg-primary)] to-[var(--bg-secondary)] text-base font-semibold text-white w-full "
                     disabled={locked}
-                    onClick={() => {
-                      console.log("🎰 DT20 Pair bet click:", {
-                        sid: row?.sid,
-                        odds: row,
-                        locked,
-                      });
-                      if (!locked && row?.sid) {
-                        onBetClick?.(String(row.sid), "back");
-                      }
-                    }}
                   >
                     {locked && (
                       <span className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -395,18 +206,6 @@ const DragonTiger202Component = ({
                     )}
                     Pair
                   </button>
-                  <h2 
-                    className={`text-xs font-semibold leading-5 text-center ${
-                      getBetProfitLoss("Pair") > 0
-                        ? "text-green-600"
-                        : getBetProfitLoss("Pair") < 0
-                          ? "text-red-600"
-                          : "text-gray-600"
-                    }`}
-                  >
-                    {getBetProfitLoss("Pair") > 0 ? "+" : ""}
-                    {getBetProfitLoss("Pair").toFixed(0)}
-                  </h2>
                 </>
               );
             })()}
@@ -438,17 +237,6 @@ const DragonTiger202Component = ({
                   <button
                     className="relative bg-gradient-to-r leading-10 from-[var(--bg-primary)] to-[var(--bg-secondary)] text-white w-full "
                     disabled={locked}
-                    onClick={() => {
-                      console.log("🎰 DT20 Dragon secondary bet click:", {
-                        name,
-                        sid: row?.sid,
-                        odds: row,
-                        locked,
-                      });
-                      if (!locked && row?.sid) {
-                        onBetClick?.(String(row.sid), "back");
-                      }
-                    }}
                   >
                     {locked && (
                       <span className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -485,18 +273,6 @@ const DragonTiger202Component = ({
                       label
                     )}
                   </button>
-                  <h2 
-                    className={`text-xs font-semibold leading-4 mt-1 text-center ${
-                      getBetProfitLoss(name) > 0
-                        ? "text-green-600"
-                        : getBetProfitLoss(name) < 0
-                          ? "text-red-600"
-                          : "text-gray-600"
-                    }`}
-                  >
-                    {getBetProfitLoss(name) > 0 ? "+" : ""}
-                    {getBetProfitLoss(name).toFixed(0)}
-                  </h2>
                 </div>
               );
             })}
@@ -520,17 +296,6 @@ const DragonTiger202Component = ({
                   <button
                     className="relative bg-gradient-to-r leading-10 from-[var(--bg-primary)] to-[var(--bg-secondary)] text-white w-full"
                     disabled={locked}
-                    onClick={() => {
-                      console.log("🎰 DT20 Tiger secondary bet click:", {
-                        name,
-                        sid: row?.sid,
-                        odds: row,
-                        locked,
-                      });
-                      if (!locked && row?.sid) {
-                        onBetClick?.(String(row.sid), "back");
-                      }
-                    }}
                   >
                     {locked && (
                       <span className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -568,18 +333,6 @@ const DragonTiger202Component = ({
                       label
                     )}
                   </button>
-                  <h2 
-                    className={`text-xs font-semibold leading-4 mt-1 text-center ${
-                      getBetProfitLoss(name) > 0
-                        ? "text-green-600"
-                        : getBetProfitLoss(name) < 0
-                          ? "text-red-600"
-                          : "text-gray-600"
-                    }`}
-                  >
-                    {getBetProfitLoss(name) > 0 ? "+" : ""}
-                    {getBetProfitLoss(name).toFixed(0)}
-                  </h2>
                 </div>
               );
             })}
@@ -614,17 +367,6 @@ const DragonTiger202Component = ({
                       <button
                         className="relative w-full h-full flex items-center justify-center text-[var(--bg-secondary)] font-semibold"
                         disabled={locked}
-                        onClick={() => {
-                          console.log("🎰 DT20 Dragon card bet click:", {
-                            key,
-                            sid: row?.sid,
-                            odds: row,
-                            locked,
-                          });
-                          if (!locked && row?.sid) {
-                            onBetClick?.(String(row.sid), "back");
-                          }
-                        }}
                       >
                         {locked && (
                           <span className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -633,18 +375,6 @@ const DragonTiger202Component = ({
                         )}
                         <img className="w-8" src={getNumberCard(key)} alt="" />
                       </button>
-                      <h2 
-                        className={`text-xs font-semibold leading-3 mt-1 text-center ${
-                          getBetProfitLoss(betName) > 0
-                            ? "text-green-600"
-                            : getBetProfitLoss(betName) < 0
-                              ? "text-red-600"
-                              : "text-gray-600"
-                        }`}
-                      >
-                        {getBetProfitLoss(betName) > 0 ? "+" : ""}
-                        {getBetProfitLoss(betName).toFixed(0)}
-                      </h2>
                     </div>
                   );
                 }
@@ -664,17 +394,6 @@ const DragonTiger202Component = ({
                       <button
                         className="relative w-full h-full flex items-center justify-center text-[var(--bg-secondary)] font-semibold "
                         disabled={locked}
-                        onClick={() => {
-                          console.log("🎰 DT20 Dragon JQK bet click:", {
-                            key,
-                            sid: row?.sid,
-                            odds: row,
-                            locked,
-                          });
-                          if (!locked && row?.sid) {
-                            onBetClick?.(String(row.sid), "back");
-                          }
-                        }}
                       >
                         {locked && (
                           <span className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -683,18 +402,6 @@ const DragonTiger202Component = ({
                         )}
                         <img className="w-8" src={getNumberCard(key)} alt="" />
                       </button>
-                      <h2 
-                        className={`text-xs font-semibold leading-3 mt-1 text-center ${
-                          getBetProfitLoss(betName) > 0
-                            ? "text-green-600"
-                            : getBetProfitLoss(betName) < 0
-                              ? "text-red-600"
-                              : "text-gray-600"
-                        }`}
-                      >
-                        {getBetProfitLoss(betName) > 0 ? "+" : ""}
-                        {getBetProfitLoss(betName).toFixed(0)}
-                      </h2>
                     </div>
                   );
                 })}
@@ -728,17 +435,6 @@ const DragonTiger202Component = ({
                       <button
                         className="relative w-full h-full flex items-center justify-center text-[var(--bg-secondary)] font-semibold "
                         disabled={locked}
-                        onClick={() => {
-                          console.log("🎰 DT20 Tiger card bet click:", {
-                            key,
-                            sid: row?.sid,
-                            odds: row,
-                            locked,
-                          });
-                          if (!locked && row?.sid) {
-                            onBetClick?.(String(row.sid), "back");
-                          }
-                        }}
                       >
                         {locked && (
                           <span className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -747,18 +443,6 @@ const DragonTiger202Component = ({
                         )}
                         <img className="w-8" src={getNumberCard(key)} alt="" />
                       </button>
-                      <h2 
-                        className={`text-xs font-semibold leading-3 mt-1 text-center ${
-                          getBetProfitLoss(betName) > 0
-                            ? "text-green-600"
-                            : getBetProfitLoss(betName) < 0
-                              ? "text-red-600"
-                              : "text-gray-600"
-                        }`}
-                      >
-                        {getBetProfitLoss(betName) > 0 ? "+" : ""}
-                        {getBetProfitLoss(betName).toFixed(0)}
-                      </h2>
                     </div>
                   );
                 }
@@ -778,17 +462,6 @@ const DragonTiger202Component = ({
                       <button
                         className="relative w-full h-full flex items-center justify-center text-[var(--bg-secondary)] font-semibold"
                         disabled={locked}
-                        onClick={() => {
-                          console.log("🎰 DT20 Tiger JQK bet click:", {
-                            key,
-                            sid: row?.sid,
-                            odds: row,
-                            locked,
-                          });
-                          if (!locked && row?.sid) {
-                            onBetClick?.(String(row.sid), "back");
-                          }
-                        }}
                       >
                         {locked && (
                           <span className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -797,18 +470,6 @@ const DragonTiger202Component = ({
                         )}
                         <img className="w-8" src={getNumberCard(key)} alt="" />
                       </button>
-                      <h2 
-                        className={`text-xs font-semibold leading-3 mt-1 text-center ${
-                          getBetProfitLoss(betName) > 0
-                            ? "text-green-600"
-                            : getBetProfitLoss(betName) < 0
-                              ? "text-red-600"
-                              : "text-gray-600"
-                        }`}
-                      >
-                        {getBetProfitLoss(betName) > 0 ? "+" : ""}
-                        {getBetProfitLoss(betName).toFixed(0)}
-                      </h2>
                     </div>
                   );
                 })}
@@ -859,9 +520,7 @@ const DragonTiger202Component = ({
               return (
                 <h2
                   key={index}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${color} cursor-pointer hover:scale-110 transition-transform`}
-                  onClick={() => handleResultClick(item)}
-                  title="Click to view details"
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${color}`}
                 >
                   {displayText}
                 </h2>

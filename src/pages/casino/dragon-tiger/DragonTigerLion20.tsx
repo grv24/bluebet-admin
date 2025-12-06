@@ -11,78 +11,18 @@ type TabType = "Dragon" | "Tiger" | "Lion";
 const DragonTigerLion20Component: React.FC<{
   casinoData: any;
   remainingTime: number;
-  onBetClick: (sid: string, type: string) => void;
   results: any[];
   gameName: string;
   gameSlug: string;
-  currentBet: any;
 }> = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results,
   gameName,
   gameSlug,
-  currentBet,
 }) => {
   const navigate = useNavigate();
-  // const resultModal = useIndividualResultModal();
   const [selectedTab, setSelectedTab] = useState<TabType>("Dragon");
-
-  // Convert gameSlug to actual game slug format if needed
-  const actualGameSlug = React.useMemo(() => {
-    if (gameSlug) {
-      return gameSlug.toLowerCase().replace(/[^a-z0-9]/g, "");
-    }
-    return "dtl20"; // Default fallback
-  }, [gameSlug]);
-
-  // Function to filter user bets based on selected filter
-  const getFilteredBets = (bets: any[], filter: string) => {
-    if (filter === "all") return bets;
-
-    return bets.filter((bet: any) => {
-      const oddCategory = bet.betData?.oddCategory?.toLowerCase();
-      const status = bet.status?.toLowerCase();
-
-      switch (filter) {
-        case "back":
-          return oddCategory === "back";
-        case "lay":
-          return oddCategory === "lay";
-        case "deleted":
-          return status === "deleted" || status === "cancelled";
-        default:
-          return true;
-      }
-    });
-  };
-
-  /**
-   * Handle clicking on individual result to show details
-   */
-  const handleResultClick = (result: any) => {
-    const resultId =
-      result?.mid || result?.roundId || result?.id || result?.matchId;
-
-    if (!resultId) {
-      console.error(
-        "🎰 DragonTigerLion20: No result ID found in result",
-        result
-      );
-      return;
-    }
-
-    if (!actualGameSlug) {
-      console.error("🎰 DragonTigerLion20: No gameSlug available", {
-        gameSlug,
-        actualGameSlug,
-      });
-      return;
-    }
-
-    // resultModal.openModal(String(resultId), result);
-  };
 
   // Handle both new API format (casinoData?.data?.sub) and legacy format
   const t2: any[] =
@@ -257,14 +197,7 @@ const DragonTigerLion20Component: React.FC<{
             <div className="px-2 py-2 leading-8">{row.label}</div>
           )}
         </td>
-        <td
-          className="relative border px-2 py-2 bg-[var(--bg-back)] min-h-6 border-gray-100 cursor-pointer"
-          onClick={() =>
-            !isLocked &&
-            odds?.sid &&
-            onBetClick(String(odds.sid), "back")
-          }
-        >
+        <td className="relative border px-2 py-2 bg-[var(--bg-back)] min-h-6 border-gray-100">
           {isLocked && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
               <RiLockFill className="text-white text-xl" />
@@ -356,14 +289,7 @@ const DragonTigerLion20Component: React.FC<{
                         <div className="px-2 py-2 leading-8">{row.label}</div>
                       )}
                     </td>
-                    <td
-                      className="relative border px-4 py-2 bg-[var(--bg-back)] min-h-6 border-gray-100 cursor-pointer"
-                      onClick={() =>
-                        !dragonLocked &&
-                        dragonOdds?.sid &&
-                        onBetClick(String(dragonOdds.sid), "back")
-                      }
-                    >
+                    <td className="relative border px-4 py-2 bg-[var(--bg-back)] min-h-6 border-gray-100">
                       {dragonLocked && (
                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
                           <RiLockFill className="text-white text-xl" />
@@ -373,14 +299,7 @@ const DragonTigerLion20Component: React.FC<{
                         {dragonOdds?.b || 0}
                       </h2>
                     </td>
-                    <td
-                      className="relative border px-4 py-2 bg-[var(--bg-back)] border-gray-100 cursor-pointer"
-                      onClick={() =>
-                        !tigerLocked &&
-                        tigerOdds?.sid &&
-                        onBetClick(String(tigerOdds.sid), "back")
-                      }
-                    >
+                    <td className="relative border px-4 py-2 bg-[var(--bg-back)] border-gray-100">
                       {tigerLocked && (
                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
                           <RiLockFill className="text-white text-xl" />
@@ -390,14 +309,7 @@ const DragonTigerLion20Component: React.FC<{
                         {tigerOdds?.b || 0}
                       </h2>
                     </td>
-                    <td
-                      className="relative border px-4 py-2 bg-[var(--bg-back)] border-gray-100 cursor-pointer"
-                      onClick={() =>
-                        !lionLocked &&
-                        lionOdds?.sid &&
-                        onBetClick(String(lionOdds.sid), "back")
-                      }
-                    >
+                    <td className="relative border px-4 py-2 bg-[var(--bg-back)] border-gray-100">
                       {lionLocked && (
                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
                           <RiLockFill className="text-white text-xl" />
@@ -450,14 +362,7 @@ const DragonTigerLion20Component: React.FC<{
                         alt={row.label}
                       />
                     </td>
-                    <td
-                      className="relative border px-4 py-2 bg-[var(--bg-back)] min-h-6 border-gray-100 cursor-pointer"
-                      onClick={() =>
-                        !dragonLocked &&
-                        dragonOdds?.sid &&
-                        onBetClick(String(dragonOdds.sid), "back")
-                      }
-                    >
+                    <td className="relative border px-4 py-2 bg-[var(--bg-back)] min-h-6 border-gray-100">
                       {dragonLocked && (
                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
                           <RiLockFill className="text-white text-xl" />
@@ -467,14 +372,7 @@ const DragonTigerLion20Component: React.FC<{
                         {dragonOdds?.b || 0}
                       </h2>
                     </td>
-                    <td
-                      className="relative border px-4 py-2 bg-[var(--bg-back)] border-gray-100 cursor-pointer"
-                      onClick={() =>
-                        !tigerLocked &&
-                        tigerOdds?.sid &&
-                        onBetClick(String(tigerOdds.sid), "back")
-                      }
-                    >
+                    <td className="relative border px-4 py-2 bg-[var(--bg-back)] border-gray-100">
                       {tigerLocked && (
                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
                           <RiLockFill className="text-white text-xl" />
@@ -484,14 +382,7 @@ const DragonTigerLion20Component: React.FC<{
                         {tigerOdds?.b || 0}
                       </h2>
                     </td>
-                    <td
-                      className="relative border px-4 py-2 bg-[var(--bg-back)] border-gray-100 cursor-pointer"
-                      onClick={() =>
-                        !lionLocked &&
-                        lionOdds?.sid &&
-                        onBetClick(String(lionOdds.sid), "back")
-                      }
-                    >
+                    <td className="relative border px-4 py-2 bg-[var(--bg-back)] border-gray-100">
                       {lionLocked && (
                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
                           <RiLockFill className="text-white text-xl" />
@@ -562,9 +453,7 @@ const DragonTigerLion20Component: React.FC<{
           {results?.slice(0, 10).map((item: any, index: number) => (
             <h2
               key={index}
-              className={`h-7 w-7  bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${item.win == "1" ? "text-red-500" : item.win == "21" ? "text-yellow-500" : "text-green-500"} cursor-pointer hover:scale-110 transition-transform`}
-              onClick={() => handleResultClick(item)}
-              title="Click to view details"
+              className={`h-7 w-7  bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${item.win == "1" ? "text-red-500" : item.win == "21" ? "text-yellow-500" : "text-green-500"}`}
             >
               {getWinLabel(String(item.win || ""))}
             </h2>
