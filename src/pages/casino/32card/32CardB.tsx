@@ -511,36 +511,12 @@ const ThirtyTwoCardBComponent: React.FC<{
                         <h2 className="text-white">
                           <RiLockFill className="text-xl" />
                         </h2>
-                        <h2 
-                          className={`text-xs font-semibold leading-5 ${
-                            evenProfitLoss > 0
-                              ? "text-green-600"
-                              : evenProfitLoss < 0
-                                ? "text-red-600"
-                                : "text-gray-600"
-                          }`}
-                        >
-                          {evenProfitLoss > 0 ? "+" : ""}
-                          {evenProfitLoss.toFixed(0)}
-                        </h2>
                       </div>
                     )}
                     <div className="flex flex-col">
                       <span className="text-sm font-semibold">
                         {even?.b || 0}
                       </span>
-                      <h2 
-                        className={`text-xs font-semibold leading-5 ${
-                          evenProfitLoss > 0
-                            ? "text-green-600"
-                            : evenProfitLoss < 0
-                              ? "text-red-600"
-                              : "text-gray-600"
-                        }`}
-                      >
-                        {evenProfitLoss > 0 ? "+" : ""}
-                        {evenProfitLoss.toFixed(0)}
-                      </h2>
                     </div>
                   </td>
                   <td
@@ -551,36 +527,12 @@ const ThirtyTwoCardBComponent: React.FC<{
                         <h2 className="text-white">
                           <RiLockFill className="text-xl" />
                         </h2>
-                        <h2 
-                          className={`text-xs font-semibold leading-5 ${
-                            oddProfitLoss > 0
-                              ? "text-green-600"
-                              : oddProfitLoss < 0
-                                ? "text-red-600"
-                                : "text-gray-600"
-                          }`}
-                        >
-                          {oddProfitLoss > 0 ? "+" : ""}
-                          {oddProfitLoss.toFixed(0)}
-                        </h2>
                       </div>
                     )}
                     <div className="flex flex-col">
                       <span className="text-sm font-semibold">
                         {odd?.b || 0}
                       </span>
-                      <h2 
-                        className={`text-xs font-semibold leading-5 ${
-                          oddProfitLoss > 0
-                            ? "text-green-600"
-                            : oddProfitLoss < 0
-                              ? "text-red-600"
-                              : "text-gray-600"
-                        }`}
-                      >
-                        {oddProfitLoss > 0 ? "+" : ""}
-                        {oddProfitLoss.toFixed(0)}
-                      </h2>
                     </div>
                   </td>
                 </tr>
