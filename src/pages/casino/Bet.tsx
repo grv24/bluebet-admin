@@ -44,14 +44,14 @@ const Bet: React.FC<BetProps> = ({ roundId }) => {
         <h2 className="text-xs tracking-tight leading-6 uppercase text-white font-semibold">
           MY BETS
         </h2>
-        <button 
+        <button
           onClick={() => setIsModalOpen(true)}
           className="bg-[#4a5c6d] hover:bg-[#3a4c5d] text-white px-3 py-1 text-xs uppercase font-medium transition-colors"
         >
           VIEW MORE
         </button>
       </div>
-      
+
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
@@ -79,53 +79,67 @@ const Bet: React.FC<BetProps> = ({ roundId }) => {
           <tbody className="bg-white">
             {isLoading ? (
               <tr>
-                <td colSpan={6} className="text-center text-xs leading-6 py-4 text-gray-500 border-b">
+                <td
+                  colSpan={6}
+                  className="text-center text-xs leading-6 py-4 text-gray-500 border-b"
+                >
                   Loading bets...
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={6} className="text-center text-xs leading-6 py-4 text-red-500 border-b">
+                <td
+                  colSpan={6}
+                  className="text-center text-xs leading-6 py-4 text-red-500 border-b"
+                >
                   Error loading bets
                 </td>
               </tr>
             ) : bets.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center text-xs leading-6 py-3 bg-[#f5f5f5] text-gray-600 ">
+                <td
+                  colSpan={6}
+                  className="text-center text-xs leading-6 py-3 bg-[#f5f5f5] text-gray-600 "
+                >
                   No records found
                 </td>
               </tr>
             ) : (
               bets.map((bet, index) => {
                 // Determine bet type from betData.betType or oddCategory
-                const betType = bet.betData?.betType?.toLowerCase() || bet.oddCategory?.toLowerCase() || 'back';
-                const isBackBet = betType === 'back';
-                const bgColor = isBackBet ? 'border-l-4 border-[var(--bg-back)] bg-[var(--bg-back)]/60' : 'border-l-4 border-[var(--bg-lay)] bg-[var(--bg-lay)]/60';
-                
+                const betType =
+                  bet.betData?.betType?.toLowerCase() ||
+                  bet.oddCategory?.toLowerCase() ||
+                  "back";
+                const isBackBet = betType === "back";
+                const bgColor = isBackBet
+                  ? " bg-[var(--bg-back)]/60"
+                  : "bg-[var(--bg-lay)]/60";
+
                 return (
                   <tr
                     key={bet.betId || index}
                     className={`border-b border-gray-200 hover:opacity-90 transition-all ${bgColor}`}
                   >
-                  <td className="text-xs leading-6 py px-1 text-left">
-                    {bet.userName}
-                  </td>
-                  <td className="text-xs leading-6 py px text-left">
-                    {bet.name}
-                  </td>
-                  <td className="text-xs leading-6 py px text-center font-medium">
-                    {Number(bet.betRate).toFixed(2)}
-                  </td>
-                  <td className="text-xs leading-6 py px text-center font-medium">
-                    {Number(bet.betAmount).toFixed(2)}
-                  </td>
-                  <td className="text-xs leading-6 py px text-left text-gray-700">
-                    {formatDate(bet.createdAt)}
-                  </td>
-                  <td className="text-xs leading-6 py p text-left">
-                    {bet.gameSlug.toLowerCase()}
-                  </td>
-                </tr>
+                    <td className="text-xs leading-6 py px-1 text-left">
+                      {bet.userName}
+                    </td>
+                    <td className="text-xs leading-6 py px text-left">
+                      {bet.name}
+                    </td>
+                    <td className="text-xs leading-6 py px text-center font-medium">
+                      {Number(bet.betRate).toFixed(2)}
+                    </td>
+                    <td className="text-xs leading-6 py px text-center font-medium">
+                      {Number(bet.betAmount).toFixed(2)}
+                    </td>
+                    <td className="text-xs leading-6 py px text-left text-gray-700">
+                      {formatDate(bet.createdAt)}
+                    </td>
+                    <td className="text-xs leading-6 py p text-left">
+                      {bet.gameSlug.toLowerCase()}
+                    </td>
+                  </tr>
                 );
               })
             )}
@@ -138,10 +152,8 @@ const Bet: React.FC<BetProps> = ({ roundId }) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 animate-fadein">
           <div className="bg-white rounded-lg shadow-2xl w-full max-w-[90vw] max-h-[90vh] flex flex-col">
             {/* Modal Header */}
-            <div className="bg-[#3b5160] px-6 py-3 rounded-t-lg flex items-center justify-between relative">
-              <h2 className="text-lg font-semibold text-yellow-400 tracking-wide">
-                View More
-              </h2>
+            <div className=" px-6 py-3 rounded-t-lg flex items-center justify-between relative">
+              <h2 className="text-lg font-semibold tracking-wide">View More</h2>
               <button
                 onClick={() => setIsModalOpen(false)}
                 className="text-white hover:text-blue-400 text-2xl font-bold focus:outline-none bg-blue-500 rounded-full w-8 h-8 flex items-center justify-center"
@@ -186,25 +198,37 @@ const Bet: React.FC<BetProps> = ({ roundId }) => {
                   <tbody className="bg-white">
                     {isLoading ? (
                       <tr>
-                        <td colSpan={8} className="text-center text-xs py-4 border border-gray-300">
+                        <td
+                          colSpan={8}
+                          className="text-center text-xs py-4 border border-gray-300"
+                        >
                           Loading bets...
                         </td>
                       </tr>
                     ) : error ? (
                       <tr>
-                        <td colSpan={8} className="text-center text-xs py-4 text-red-500 border border-gray-300">
+                        <td
+                          colSpan={8}
+                          className="text-center text-xs py-4 text-red-500 border border-gray-300"
+                        >
                           Error loading bets
                         </td>
                       </tr>
                     ) : bets.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="text-center text-xs py-4 border border-gray-300">
+                        <td
+                          colSpan={8}
+                          className="text-center text-xs py-4 border border-gray-300"
+                        >
                           No records found
                         </td>
                       </tr>
                     ) : (
                       bets.map((bet, index) => (
-                        <tr key={bet.betId || index} className="hover:bg-gray-50">
+                        <tr
+                          key={bet.betId || index}
+                          className="hover:bg-gray-50"
+                        >
                           <td className="text-xs py-2 px-3 border border-gray-300">
                             {index + 1}
                           </td>
@@ -224,10 +248,10 @@ const Bet: React.FC<BetProps> = ({ roundId }) => {
                             {formatDate(bet.createdAt)}
                           </td>
                           <td className="text-xs py-2 px-3 border border-gray-300">
-                            {bet.betData?.userIp || '—'}
+                            {bet.betData?.userIp || "—"}
                           </td>
                           <td className="text-xs py-2 px-3 border border-gray-300">
-                            {bet.betData?.userAgent || '—'}
+                            {bet.betData?.userAgent || "—"}
                           </td>
                         </tr>
                       ))
