@@ -884,7 +884,7 @@ const Casino: React.FC = () => {
           </div>
           {/* game tv */}
           <div className="min-h-80 lg:h-[36vh] bg-black relative md:h-[20vh] h-[31vh] flex justify-center items-start ">
-            <div className=" w-full h-full flex justify-start items-start md:static absolute top-0 left-0 z-50">
+            <div className=" w-full h-full flex justify-start items-start md:static absolute top-0 left-0 z-10">
               {/* ===========Left Side=========== */}
               <div className="md:w-3/12">
                 {/* {gameCode && (
