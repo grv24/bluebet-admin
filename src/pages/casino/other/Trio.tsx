@@ -32,26 +32,6 @@ const TrioComponent: React.FC<TrioProps> = ({
     return "trio"; // Default fallback
   }, [gameSlug]);
 
-  // Function to filter user bets based on selected filter
-    if (filter === "all") return bets;
-
-    return bets.filter((bet: any) => {
-      const oddCategory = bet.betData?.oddCategory?.toLowerCase();
-      const status = bet.status?.toLowerCase();
-
-      switch (filter) {
-        case "back":
-          return oddCategory === "back";
-        case "lay":
-          return oddCategory === "lay";
-        case "deleted":
-          return status === "deleted" || status === "cancelled";
-        default:
-          return true;
-      }
-    });
-  };
-
   // Get odds data from sub array
   // Handle both API format (data.sub) and socket format (data.current.sub)
   const getOddsData = () => {
@@ -251,8 +231,7 @@ const TrioComponent: React.FC<TrioProps> = ({
           )}
         </div>
       </div>
-
-      {/* Individual Result Details Modal */}</div>
+    </div>
   );
 };
 

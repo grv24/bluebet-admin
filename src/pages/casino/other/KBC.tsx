@@ -1,14 +1,9 @@
-import React, { useState } from "react";
+import React from "react";
 import { RiLockFill } from "react-icons/ri";
-import { getCasinoIndividualResult } from "@/helper/casino";
-import { useCookies } from "react-cookie";
-import { useQuery } from "@tanstack/react-query";
-import CasinoModal from "@/components/common/CasinoModal";
 import {
   shapeColors,
   getRedShapes,
   getBlackShapes,
-  getCardByCode,
 } from "../../../utils/card";
 import { useNavigate } from "react-router-dom";
 import { memoizeCasinoComponent } from "@/utils/casinoMemo";
@@ -28,7 +23,6 @@ const KBCComponent: React.FC<KBCProps> = ({
   gameCode,
 }) => {
   const navigate = useNavigate();
-  const [cookies] = useCookies(["clientToken"]);
 
   // Get game slug from gameCode
   const gameSlug = gameCode?.toLowerCase() || "kbc";
@@ -120,33 +114,6 @@ const KBCComponent: React.FC<KBCProps> = ({
   const clubOdds = getSubOdds(suitsOdds, "Club");
   const diamondOdds = getSubOdds(suitsOdds, "Diamond");
 
-  // Handle clicking on individual result to show details
-
-
-  // Close the result details modal
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedResult(null);
-  };
-
-  // React Query for individual result details
-  const {
-    data: resultDetails,
-    isLoading: isLoadingResult,
-    error: resultError,
-  } = useQuery<any>({
-    queryKey: ["casinoIndividualResult", selectedResult?.mid, gameSlug],
-    queryFn: () =>
-      getCasinoIndividualResult(selectedResult?.mid, cookies, gameSlug),
-    enabled: !!selectedResult?.mid && isModalOpen,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 10, // 10 minutes
-    retry: 2,
-  });
-
-  // Parse result data
-  const resultData = resultDetails?.data?.matchData;
-  const winnerSid = resultData?.win || selectedResult?.win;
 
   // Helper functions for card parsing and calculations
   const getCardRank = (cardCode: string): string => {
@@ -298,9 +265,6 @@ const KBCComponent: React.FC<KBCProps> = ({
   // Get red and black shapes
   const redShapes = getRedShapes();
   const blackShapes = getBlackShapes();
-
-  // Handle bet click with nested odds
-
 
   return (
     <div className="flex flex-col gap-1 py-1">
@@ -703,121 +667,6 @@ const KBCComponent: React.FC<KBCProps> = ({
           )}
         </div>
       </div>
-
-      {/* Result Details Modal */}
-      <CasinoModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        title="KBC Result"
-        size="xl"
-        resultDetails={true}
-      >
-        <div className="flex flex-col px-2">
-          {/* Header Information */}
-          <div className="flex justify-between items-start md:items-center gap-2">
-            <h2 className="text-xs md:text-sm font-semibold leading-8 text-black">
-              Round Id:{" "}
-              <span className="text-black font-normal pl-1">
-                {resultDetails?.data?.matchData?.mid ||
-                  selectedResult?.mid ||
-                  "N/A"}
-              </span>
-            </h2>
-            <h2 className="text-xs md:text-sm font-semibold leading-8 text-black capitalize">
-              Match Time:{" "}
-              <span className="text-black font-normal pl-1">
-                {resultData?.matchTime
-                  ? new Date(resultData.matchTime).toLocaleString()
-                  : resultData?.mtime || resultData?.dateAndTime || "N/A"}
-              </span>
-            </h2>
-          </div>
-
-          {/* Content Display - Only show when not loading and no error */}
-          {!isLoadingResult &&
-            !resultError &&
-            (resultData || selectedResult) && (
-              <>
-                {(() => {
-                  const breakdown = getKBCResultBreakdown();
-                  if (!breakdown) return null;
-
-                  return (
-                    <>
-                      {/* Cards Display - All 5 cards horizontally */}
-                      {breakdown.cards.length > 0 && (
-                        <div className="flex justify-center items-center gap-2 my-4 flex-wrap">
-                          {breakdown.cards.map((card: string, index: number) => (
-                            <div key={index} className="card-image">
-                              <img
-                                src={getCardByCode(card, gameCode as any)}
-                                alt={card}
-                                className="w-full h-full"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Result Breakdown */}
-                      <div className="bg-gray-100 border border-gray-300 rounded p-3 my-4">
-                        <div className="flex flex-col items-center justify-center gap-2 text-sm text-black">
-                          {/* Q1: Red-Black */}
-                          <div>
-                            <span className="font-semibold">[Q1] Red-Black:</span>{" "}
-                            <span className="font-normal">{breakdown.q1Result}</span>
-                          </div>
-
-                          {/* Q2: Odd-Even */}
-                          <div>
-                            <span className="font-semibold">[Q2] Odd-Even:</span>{" "}
-                            <span className="font-normal">{breakdown.q2Result}</span>
-                          </div>
-
-                          {/* Q3: 7 Up-7 Down */}
-                          <div>
-                            <span className="font-semibold">[Q3] 7 Up-7 Down:</span>{" "}
-                            <span className="font-normal">{breakdown.q3Result}</span>
-                          </div>
-
-                          {/* Q4: 3 Card Judgement */}
-                          <div>
-                            <span className="font-semibold">
-                              [Q4] 3 Card Judgement:
-                            </span>{" "}
-                            <span className="font-normal">{breakdown.q4Result}</span>
-                          </div>
-
-                          {/* Q5: Suits */}
-                          <div>
-                            <span className="font-semibold">[Q5] Suits:</span>{" "}
-                            <span className="font-normal">{breakdown.q5Result}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  );
-                })()}
-              </>
-            )}
-
-          {/* Loading State */}
-          {isLoadingResult && (
-            <div className="flex justify-center items-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--bg-primary)]"></div>
-            </div>
-          )}
-
-          {/* Error State */}
-          {resultError && (
-            <div className="flex justify-center items-center py-8">
-              <p className="text-red-500 text-sm">
-                Error loading result details. Please try again.
-              </p>
-            </div>
-          )}
-        </div>
-      </CasinoModal>
     </div>
   );
 };

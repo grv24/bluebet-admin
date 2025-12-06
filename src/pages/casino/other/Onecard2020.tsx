@@ -126,33 +126,6 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
     }
   };
 
-  // Handle clicking on individual result to show details
-
-
-  // Function to filter user bets based on selected filter
-    if (filter === "all") return bets;
-
-    return bets.filter((bet: any) => {
-      const oddCategory = bet.betData?.oddCategory?.toLowerCase();
-      const status = bet.status?.toLowerCase();
-
-      switch (filter) {
-        case "back":
-          return oddCategory === "back";
-        case "lay":
-          return oddCategory === "lay";
-        case "pending":
-          return status === "pending" || status === "matched";
-        case "won":
-          return status === "won" || status === "settled";
-        case "lost":
-          return status === "lost" || status === "settled";
-        default:
-          return true;
-      }
-    });
-  };
-
   return (
     <div className="">
       <div className="flex bg-[var(--bg-table-row)] justify-center gap-1 items-stretch overflow-x-auto min-h-30">
@@ -166,15 +139,6 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
               <button
                 className="relative h-10 sm:h-12 bg-gradient-to-r from-[var(--bg-primary)] to-[var(--bg-secondary)] text-base font-semibold text-white w-full"
                 disabled={isLocked(playerRow)}
-                onClick={() => {
-                  console.log("🎰 Onecard2020 Player bet click:", {
-                    sid: playerRow?.sid,
-                    odds: playerRow,
-                    locked: isLocked(playerRow),
-                  });
-                  if (!isLocked(playerRow) && playerRow?.sid) {
-                                    }
-                }}
               >
                 {isLocked(playerRow) && (
                   <span className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -183,16 +147,7 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
                 )}
                 Player
               </button>
-              <div className="absolute -bottom-6 left-0 right-0 text-center">
-                <span
-                  className={`text-xs font-semibold ${
-                      ? "text-green-600"
-                        ? "text-red-600"
-                        : "text-gray-600"
-                  }`}
-                >
-                </span>
-              </div>
+              
             </div>
           </div>
         </div>
@@ -206,15 +161,6 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
               <button
                 className="relative h-10 sm:h-12 bg-gradient-to-r from-[var(--bg-primary)] to-[var(--bg-secondary)] text-base font-semibold text-white w-full"
                 disabled={isLocked(tieRow)}
-                onClick={() => {
-                  console.log("🎰 Onecard2020 Tie bet click:", {
-                    sid: tieRow?.sid,
-                    odds: tieRow,
-                    locked: isLocked(tieRow),
-                  });
-                  if (!isLocked(tieRow) && tieRow?.sid) {
-                                    }
-                }}
               >
                 {isLocked(tieRow) && (
                   <span className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -223,16 +169,7 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
                 )}
                 Tie
               </button>
-              <div className="absolute -bottom-6 left-0 right-0 text-center">
-                <span
-                  className={`text-xs font-semibold ${
-                      ? "text-green-600"
-                        ? "text-red-600"
-                        : "text-gray-600"
-                  }`}
-                >
-                </span>
-              </div>
+              
             </div>
           </div>
         </div>
@@ -246,15 +183,6 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
               <button
                 className="relative h-10 sm:h-12 bg-gradient-to-r from-[var(--bg-primary)] to-[var(--bg-secondary)] text-base font-semibold text-white w-full"
                 disabled={isLocked(dealerRow)}
-                onClick={() => {
-                  console.log("🎰 Onecard2020 Dealer bet click:", {
-                    sid: dealerRow?.sid,
-                    odds: dealerRow,
-                    locked: isLocked(dealerRow),
-                  });
-                  if (!isLocked(dealerRow) && dealerRow?.sid) {
-                                    }
-                }}
               >
                 {isLocked(dealerRow) && (
                   <span className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -263,16 +191,7 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
                 )}
                 Dealer
               </button>
-              <div className="absolute -bottom-6 left-0 right-0 text-center">
-                <span
-                  className={`text-xs font-semibold ${
-                      ? "text-green-600"
-                        ? "text-red-600"
-                        : "text-gray-600"
-                  }`}
-                >
-                </span>
-              </div>
+              
             </div>
           </div>
         </div>
@@ -288,15 +207,6 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
               <button
                 className="relative h-10 sm:h-12 bg-gradient-to-r from-[var(--bg-primary)] to-[var(--bg-secondary)] text-base font-semibold text-white w-full"
                 disabled={isLocked(pairRow)}
-                onClick={() => {
-                  console.log("🎰 Onecard2020 Pair bet click:", {
-                    sid: pairRow?.sid,
-                    odds: pairRow,
-                    locked: isLocked(pairRow),
-                  });
-                  if (!isLocked(pairRow) && pairRow?.sid) {
-                                    }
-                }}
               >
                 {isLocked(pairRow) && (
                   <span className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -305,16 +215,7 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
                 )}
                 Pair
               </button>
-              <div className="absolute -bottom-6 left-0 right-0 text-center">
-                <span
-                  className={`text-xs font-semibold ${
-                      ? "text-green-600"
-                        ? "text-red-600"
-                        : "text-gray-600"
-                  }`}
-                >
-                </span>
-              </div>
+              
             </div>
           </div>
         </div>
@@ -352,8 +253,7 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
           )}
         </div>
       </div>
-
-      {/* Individual Result Details Modal */}</div>
+    </div>
   );
 };
 

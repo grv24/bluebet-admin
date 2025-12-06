@@ -71,9 +71,6 @@ const Onecard1dayComponent: React.FC<Onecard1dayProps> = ({
     return num.toFixed(2);
   };
 
-  // Profit/Loss calculation function
-
-
   // Get odds data for Player and Dealer
   const playerRow = getOddsData(1); // Player
   const dealerRow = getOddsData(2); // Dealer
@@ -96,14 +93,6 @@ const Onecard1dayComponent: React.FC<Onecard1dayProps> = ({
     }
   };
 
-
-  // Handle clicking on individual result to show details
-
-
-  // Close the result details modal
-  const closeModal = () => {
-  };
-
   return (
     <div className="flex flex-col gap-1.5">
       <div className="grid md:grid-cols-2 grid-cols-1 gap-1.5">
@@ -116,20 +105,10 @@ const Onecard1dayComponent: React.FC<Onecard1dayProps> = ({
               <td className="border px-2 py-2 border-gray-300 text-sm font-semibold">
                 <div className="flex flex-col">
                   <span>Player</span>
-                  <h2
-                    className={`text-xs font-semibold ${
-                        ? "text-green-600"
-                          ? "text-red-600"
-                          : "text-gray-600"
-                    }`}
-                  >
-                  </h2>
                 </div>
               </td>
               <td
                 className="border px-2 py-2 border-gray-300 text-center bg-[var(--bg-back)] relative"
-                onClick={() =>
-                }
               >
                 {isSuspended(playerRow) && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -142,8 +121,6 @@ const Onecard1dayComponent: React.FC<Onecard1dayProps> = ({
               </td>
               <td
                 className="border px-2 py-2 border-gray-300 text-center bg-[var(--bg-lay)] relative"
-                onClick={() =>
-                }
               >
                 {isSuspended(playerRow) && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -167,20 +144,10 @@ const Onecard1dayComponent: React.FC<Onecard1dayProps> = ({
               <td className="border px-2 py-2 border-gray-300 text-sm font-semibold">
                 <div className="flex flex-col">
                   <span>Dealer</span>
-                  <h2
-                    className={`text-xs font-semibold ${
-                        ? "text-green-600"
-                          ? "text-red-600"
-                          : "text-gray-600"
-                    }`}
-                  >
-                  </h2>
                 </div>
               </td>
               <td
                 className="border px-2 py-2 border-gray-300 text-center bg-[var(--bg-back)] relative"
-                onClick={() =>
-                }
               >
                 {isSuspended(dealerRow) && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -193,8 +160,6 @@ const Onecard1dayComponent: React.FC<Onecard1dayProps> = ({
               </td>
               <td
                 className="border px-2 py-2 border-gray-300 text-center bg-[var(--bg-lay)] relative"
-                onClick={() =>
-                }
               >
                 {isSuspended(dealerRow) && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -313,8 +278,7 @@ const Onecard1dayComponent: React.FC<Onecard1dayProps> = ({
           )}
         </div>
       </div>
-
-      {/* Result Details Modal */}</div>
+    </div>
   );
 };
 
