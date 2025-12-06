@@ -1,9 +1,9 @@
-import { cardImage, getCardByCode } from "@/utils/card";
+import { cardImage, getCardByCode } from "../../../utils/card";
 import React, { useState, useMemo } from "react";
 import { RiLockFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-import IndividualResultModal from "@/components/casino/IndividualResultModal";
-import { memoizeCasinoComponent } from "@/utils/casinoMemo";
+// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 interface Baccarat2Props {
   casinoData?: any;
@@ -669,13 +669,13 @@ const Baccarat2Component: React.FC<Baccarat2Props> = ({
       </div>
 
       {/* Individual Result Details Modal */}
-      <IndividualResultModal
+      {/* <IndividualResultModal
         isOpen={isModalOpen}
         onClose={closeModal}
         resultId={selectedResult?.mid}
         gameType={normalizedGameType}
         title={`${gameName || "Baccarat 2"} Result Details`}
-      />
+      /> */}
     </div>
   );
 };

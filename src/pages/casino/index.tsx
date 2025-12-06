@@ -57,7 +57,7 @@ import {
   AndarBahar150,
 } from "./andar-bahar";
 // import { ThirtyTwoCardA, ThirtyTwoCardB } from "./32card";
-// import { Baccarat2, Baccarat, Baccarat29 } from "./baccarat";
+import { Baccarat2, Baccarat, Baccarat29 } from "./baccarat";
 // import {
 //   Bollywoodtable,
 //   Amarakbaranthony,
@@ -219,9 +219,9 @@ const GAME_COMPONENTS: Partial<Record<GameCode, React.ComponentType<any>>> = {
   // CARD_32: ThirtyTwoCardA,
   // CARD32EU: ThirtyTwoCardB,
   //baccarat variants
-  // BACCARAT2: Baccarat2,
-  // BACCARAT: Baccarat,
-  // TEENS_IN: Baccarat29,
+  BACCARAT2: Baccarat2,
+  BACCARAT: Baccarat,
+  TEENS_IN: Baccarat29,
   //bollywood variants
   // BOLLYWOOD_TABLE: Bollywoodtable,
   // AAA: Amarakbaranthony,

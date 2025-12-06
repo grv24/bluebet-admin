@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { RiLockFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-import IndividualResultModal from "@/components/casino/IndividualResultModal";
-import { memoizeCasinoComponent } from "@/utils/casinoMemo";
+// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 interface Baccarat29Props {
   casinoData: any;
@@ -360,14 +360,14 @@ const Baccarat29Component: React.FC<Baccarat29Props> = ({
         </div>
       </div>
       {/* Individual Result Details Modal */}
-      <IndividualResultModal
+      {/* <IndividualResultModal
         isOpen={isModalOpen}
         onClose={closeModal}
         resultId={selectedResult?.mid}
         gameType={normalizedGameType}
         title={`${gameName || "Baccarat 29"} Result Details`}
         enableBetFiltering={true}
-      />
+      /> */}
     </div>
   );
 };
