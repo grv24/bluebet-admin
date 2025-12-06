@@ -8,7 +8,7 @@ import React, {
 import Bet from "./Bet";
 import Rules from "./Rules";
 import Timer from "./Timer";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams, useNavigate } from "react-router-dom";
 import {
   CasinoGame,
   getCasinoGameOdds,
@@ -16,6 +16,7 @@ import {
 } from "@/helper/casino";
 import { useSocketContext } from "@/context/SocketContext";
 import { useCookies } from "react-cookie";
+import useCasinoGames from "@/hooks/useCasinoGames";
 
 import {
   Teen20,
@@ -256,7 +257,16 @@ const GAME_COMPONENTS: Partial<Record<GameCode, React.ComponentType<any>>> = {
 
 const Casino: React.FC = () => {
   const location = useLocation();
-  const game = (location.state as { game: CasinoGame } | undefined)?.game;
+  const { gameCode } = useParams<{ gameCode: string }>();
+  const navigate = useNavigate();
+  
+  // Get game from location state (if navigated from LiveMarket)
+  const stateGame = (location.state as { game: CasinoGame } | undefined)?.game;
+  
+  // State to hold game data (either from location.state or fetched from API)
+  const [game, setGame] = useState<CasinoGame | null>(stateGame || null);
+  const [isLoadingGame, setIsLoadingGame] = useState(!stateGame);
+  
   const [cookies] = useCookies(["Admin", "TechAdmin", "token"]);
   const [odds, setOdds] = useState<any>(null);
   const [topResults, setTopResults] = useState<any>(null);
@@ -282,6 +292,37 @@ const Casino: React.FC = () => {
   // Track if we've received socket data - after first socket update, ignore API calls
   const hasReceivedSocketData = useRef(false);
   const initialDataFetchedGame = useRef<string | null>(null);
+
+  // Fetch all casino games to find the current game if state is missing
+  const { data: allGamesData } = useCasinoGames();
+
+  // Effect to fetch game data if not in location.state
+  useEffect(() => {
+    if (!stateGame && gameCode && allGamesData?.data) {
+      console.log("🎰 [GAME FETCH] No game in location.state, fetching from API...", {
+        gameCode,
+        hasAllGames: !!allGamesData?.data,
+        totalGames: allGamesData?.data?.length,
+      });
+
+      // Find the game by game code
+      const foundGame = allGamesData.data.find(
+        (g: CasinoGame) => g.casinoGameCode === gameCode
+      );
+
+      if (foundGame) {
+        console.log("🎰 [GAME FETCH] ✅ Game found:", foundGame.casinoGameName);
+        setGame(foundGame);
+        setIsLoadingGame(false);
+      } else {
+        console.error("🎰 [GAME FETCH] ❌ Game not found for code:", gameCode);
+        setIsLoadingGame(false);
+      }
+    } else if (stateGame) {
+      console.log("🎰 [GAME FETCH] Game already in location.state:", stateGame.casinoGameName);
+      setIsLoadingGame(false);
+    }
+  }, [gameCode, allGamesData, stateGame]);
 
   // Component initialization log (only once)
   useEffect(() => {
@@ -753,19 +794,46 @@ const Casino: React.FC = () => {
   // Then check if it's a supported game type
   const GameComponent = GAME_COMPONENTS[game?.casinoGameCode as GameCode];
 
-  // Check if game data exists - handle after all hooks
-  if (!game) {
-    console.error("🎰 [ERROR] No game data found in location.state");
+  // Show loading state while fetching game data
+  if (isLoadingGame) {
     return (
       <div className="p-4 bg-[#fafafa] min-h-screen">
         <div className="flex flex-col justify-center items-center h-screen space-y-4">
-          <div className="text-2xl text-red-500">❌ No Game Selected</div>
+          <div className="text-2xl text-blue-500">
+            <i className="fa-solid fa-spinner fa-spin mr-2"></i>
+            Loading Game...
+          </div>
           <p className="text-sm text-gray-600">
+            Fetching game data for: {gameCode}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if game data exists - handle after all hooks
+  if (!game) {
+    console.error("🎰 [ERROR] No game data found", {
+      gameCode,
+      hasLocationState: !!location.state,
+      locationState: location.state,
+    });
+    return (
+      <div className="p-4 bg-[#fafafa] min-h-screen">
+        <div className="flex flex-col justify-center items-center h-screen space-y-4">
+          <div className="text-2xl text-red-500">❌ Game Not Found</div>
+          <p className="text-sm text-gray-600">
+            The game "{gameCode}" could not be loaded.
+          </p>
+          <p className="text-xs text-gray-400 mb-4">
             Please select a game from the Live Market menu.
           </p>
-          <p className="text-xs text-gray-400">
-            Location state: {JSON.stringify(location.state)}
-          </p>
+          <button
+            onClick={() => navigate("/")}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Go to Home
+          </button>
         </div>
       </div>
     );
