@@ -303,11 +303,13 @@ const Statement = () => {
             onChange={(e) => setToDate(e.target.value)}
           />
         </div>
-        <div className="flex items-end w-full md:w-auto">
-          <button className="px-6 leading-9 w-full md:w-auto cursor-pointer rounded font-medium text-white text-sm bg-[var(--bg-primary)] hover:opacity-90 transition">
-            Load
-          </button>
-        </div>
+      </div>
+
+      {/* Load Button */}
+      <div className="flex mb-2">
+        <button className="px-6 leading-9 cursor-pointer rounded font-medium text-white text-sm bg-[var(--bg-primary)] hover:opacity-90 transition">
+          Load
+        </button>
       </div>
 
       {/* Export Buttons */}
