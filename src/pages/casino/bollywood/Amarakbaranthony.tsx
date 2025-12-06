@@ -63,115 +63,6 @@ const AmarakbaranthonyComponent = ({
     return `Card ${key}`;
   };
 
-  /**
-   * Calculate profit/loss for main player bets (Amar, Akbar, Anthony) using book calculation
-   */
-  const getPlayerBetProfitLoss = (playerName: string): number => {
-    if (!currentBet?.data || !casinoData?.data?.mid) return 0;
-
-    const currentMatchId = casinoData.data.mid;
-    let book: Record<string, number> = {
-      "Amar": 0,
-      "Akbar": 0,
-      "Anthony": 0
-    };
-
-    const bets = currentBet.data.filter(
-      (bet: any) => String(bet.matchId) === String(currentMatchId)
-    );
-
-    bets.forEach((bet: any) => {
-      const { betName, stake, betRate, oddCategory } = bet.betData;
-
-      if (betName === "Amar" || betName === "Akbar" || betName === "Anthony") {
-        const currentPlayer = betName;
-
-        if (oddCategory.toLowerCase() === "back") {
-          const profit = stake * (betRate - 1);
-          const loss = -stake;
-
-          book[currentPlayer] += profit;
-          Object.keys(book).forEach(key => {
-            if (key !== currentPlayer) {
-              book[key] += loss;
-            }
-          });
-        } else if (oddCategory.toLowerCase() === "lay") {
-          const loss = stake * (betRate - 1);
-          const profit = stake;
-
-          book[currentPlayer] -= loss;
-          Object.keys(book).forEach(key => {
-            if (key !== currentPlayer) {
-              book[key] += profit;
-            }
-          });
-        }
-      }
-    });
-
-    return book[playerName] || 0;
-  };
-
-  /**
-   * Calculate profit/loss for specific betting types (Even, Odd, Red, Black, Under/Over, Cards) - loss-only display
-   */
-  const getBetProfitLoss = (betType: string): number => {
-    if (!currentBet?.data || !casinoData?.data?.mid) return 0;
-
-    const currentMatchId = casinoData.data.mid;
-    let profitLoss = 0;
-
-    const bets = currentBet.data.filter(
-      (bet: any) => String(bet.matchId) === String(currentMatchId)
-    );
-
-    bets.forEach((bet: any) => {
-      const { betName, stake } = bet.betData;
-
-      const normalizedBetName = betName?.toLowerCase() || "";
-      const normalizedBetType = betType.toLowerCase();
-
-      let isMatch = false;
-
-      // Exact match first
-      if (normalizedBetName === normalizedBetType) {
-        isMatch = true;
-      }
-      // Handle Even/Odd
-      else if (betType === "Even" && normalizedBetName === "even") {
-        isMatch = true;
-      }
-      else if (betType === "Odd" && normalizedBetName === "odd") {
-        isMatch = true;
-      }
-      // Handle Red/Black
-      else if (betType === "Red" && normalizedBetName === "red") {
-        isMatch = true;
-      }
-      else if (betType === "Black" && normalizedBetName === "black") {
-        isMatch = true;
-      }
-      // Handle Under/Over
-      else if (betType === "Under 7" && normalizedBetName.includes("under")) {
-        isMatch = true;
-      }
-      else if (betType === "Over 7" && normalizedBetName.includes("over")) {
-        isMatch = true;
-      }
-      // Handle Cards
-      else if (betType.startsWith("Card") && normalizedBetName.startsWith("card")) {
-        const cardNumber = betType.split(" ")[1];
-        isMatch = normalizedBetName.includes(cardNumber.toLowerCase());
-      }
-
-      if (isMatch) {
-        profitLoss = -stake; // Loss-only display
-      }
-    });
-
-    return profitLoss;
-  };
   return (
     <div className="flex flex-col gap-1 bg-[var(--bg-table-row)] mt-1.5">
       {/* first row */}
@@ -179,7 +70,6 @@ const AmarakbaranthonyComponent = ({
         {["Amar", "Akbar", "Anthony"].map((name, idx) => {
           const row = getByNat(name) || {};
           const locked = isLocked(row);
-          const profitLoss = getPlayerBetProfitLoss(name);
           return (
             <div
               key={idx}
@@ -187,18 +77,6 @@ const AmarakbaranthonyComponent = ({
             >
               <h2 className="text-base font-semibold text-[var(--bg-secondary)] w-full lg:text-center text-left">
               <span className="inline-block md:hidden ps-2">{name==="Amar"?"A.":name==="Akbar"?"B.":"C."}</span>  {name}
-              </h2>
-              <h2 
-                className={`text-xs md:me-0 me-2 font-medium ${
-                  profitLoss > 0
-                    ? "text-green-600"
-                    : profitLoss < 0
-                      ? "text-red-600"
-                      : "text-gray-600"
-                }`}
-              >
-                {profitLoss > 0 ? "+" : ""}
-                {profitLoss.toFixed(0)}
               </h2>
               <div className="flex lg:gap-1 gap-0 items-center w-full">
                 <div
@@ -251,7 +129,6 @@ const AmarakbaranthonyComponent = ({
             {pair.map((label, idx) => {
               const row = getByNat(label) || {};
               const locked = isLocked(row);
-              const profitLoss = getBetProfitLoss(label);
               return (
                 <div
                   key={idx}
@@ -282,18 +159,6 @@ const AmarakbaranthonyComponent = ({
                     )}
                     
                   </button>
-                  <h2 
-                    className={`text-xs mt-1 font-medium ${
-                      profitLoss > 0
-                        ? "text-green-600"
-                        : profitLoss < 0
-                          ? "text-red-600"
-                          : "text-gray-600"
-                    }`}
-                  >
-                    {profitLoss > 0 ? "+" : ""}
-                    {profitLoss.toFixed(0)}
-                  </h2>
                 </div>
               );
             })}
@@ -323,7 +188,6 @@ const AmarakbaranthonyComponent = ({
           ].map((key, idx) => {
             const row = getByNat(toCardNat(key)) || {};
             const locked = isLocked(row);
-            const profitLoss = getBetProfitLoss(toCardNat(key));
             return (
               <div
                 key={idx}
@@ -341,18 +205,6 @@ const AmarakbaranthonyComponent = ({
                   )}
                   <img src={getNumberCard(key)} alt="" className="w-8" />
                 </button>
-                <h2 
-                  className={`text-xs mt-1 font-medium ${
-                    profitLoss > 0
-                      ? "text-green-600"
-                      : profitLoss < 0
-                        ? "text-red-600"
-                        : "text-gray-600"
-                  }`}
-                >
-                  {profitLoss > 0 ? "+" : ""}
-                  {profitLoss.toFixed(0)}
-                </h2>
               </div>
             );
           })}
@@ -364,7 +216,6 @@ const AmarakbaranthonyComponent = ({
               (key, idx) => {
                 const row = getByNat(toCardNat(key)) || {};
                 const locked = isLocked(row);
-                const profitLoss = getBetProfitLoss(toCardNat(key));
                 return (
                   <div
                     key={idx}
@@ -382,18 +233,6 @@ const AmarakbaranthonyComponent = ({
                     )}
                     <img src={getNumberCard(key)} alt="" className="w-8" />
                     </button>
-                    <h2 
-                      className={`text-xs mt-1 font-medium ${
-                        profitLoss > 0
-                          ? "text-green-600"
-                          : profitLoss < 0
-                            ? "text-red-600"
-                            : "text-gray-600"
-                      }`}
-                    >
-                      {profitLoss > 0 ? "+" : ""}
-                      {profitLoss.toFixed(0)}
-                    </h2>
                   </div>
                 );
               }
@@ -404,7 +243,6 @@ const AmarakbaranthonyComponent = ({
               {["J", "Q", "K"].map((key, idx) => {
                 const row = getByNat(toCardNat(key)) || {};
                 const locked = isLocked(row);
-                const profitLoss = getBetProfitLoss(toCardNat(key));
                 return (
                   <div
                     key={idx}
@@ -422,18 +260,6 @@ const AmarakbaranthonyComponent = ({
                       )}
                       <img src={getNumberCard(key)} alt="" className="w-8" />
                     </button>
-                    <h2 
-                      className={`text-xs mt-1 font-medium ${
-                        profitLoss > 0
-                          ? "text-green-600"
-                          : profitLoss < 0
-                            ? "text-red-600"
-                            : "text-gray-600"
-                      }`}
-                    >
-                      {profitLoss > 0 ? "+" : ""}
-                      {profitLoss.toFixed(0)}
-                    </h2>
                   </div>
                 );
               })}
