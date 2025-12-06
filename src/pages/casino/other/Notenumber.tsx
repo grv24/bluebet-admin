@@ -10,11 +10,9 @@ import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 interface NotenumberProps {
   casinoData: any;
   remainingTime: number;
-  onBetClick?: (sid: string, type: "back" | "lay", options?: any) => void;
   results?: any[];
   gameCode?: string;
   gameName?: string;
-  currentBet?: any;
 }
 
 /**
@@ -38,10 +36,8 @@ const isStatusLocked = (status: string): boolean => {
 const NotenumberComponent: React.FC<NotenumberProps> = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results = [],
   gameCode,
-  currentBet,
 }) => {
   const navigate = useNavigate();
   // const resultModal = useIndividualResultModal();
@@ -56,26 +52,6 @@ const NotenumberComponent: React.FC<NotenumberProps> = ({
     return "note_num"; // Default fallback
   }, [gameCode]);
 
-  // Function to filter user bets based on selected filter
-  const getFilteredBets = (bets: any[], filter: string) => {
-    if (filter === "all") return bets;
-
-    return bets.filter((bet: any) => {
-      const oddCategory = bet.betData?.oddCategory?.toLowerCase();
-      const status = bet.status?.toLowerCase();
-
-      switch (filter) {
-        case "back":
-          return oddCategory === "back";
-        case "lay":
-          return oddCategory === "lay";
-        case "deleted":
-          return status === "deleted" || status === "cancelled";
-        default:
-          return true;
-      }
-    });
-  };
 
   // Get odds data from sub array (API format) or current.sub (socket format)
   const oddsData = useMemo(() => {
@@ -216,53 +192,10 @@ const NotenumberComponent: React.FC<NotenumberProps> = ({
     return num.toFixed(2);
   };
 
-  // Handle bet click - use onBetClick prop from index.tsx
-  const handleBetClick = (
-    oddsItem: any,
-    betType: "back" | "lay",
-    nestedOdd?: any
-  ) => {
-    if (!onBetClick || !oddsItem) {
-      console.warn("🎰 Notenumber: onBetClick not available");
-      return;
-    }
 
-    // For nested odds (Card 6), pass options with nested odd info
-    if (nestedOdd) {
-        onBetClick(
-          String(oddsItem.sid),
-          betType,
-        {
-          rate: betType === "back" ? nestedOdd.b : nestedOdd.l,
-          displayName: nestedOdd.nat || oddsItem.nat,
-          parentNat: oddsItem.nat,
-          cardNat: nestedOdd.nat,
-          nestedSid: nestedOdd.ssid || nestedOdd.sid,
-          nat: nestedOdd.nat,
-        }
-      );
-    } else {
-      // For regular odds, just pass the sid and type
-      onBetClick(String(oddsItem.sid), betType);
-    }
-  };
 
   // Handle clicking on individual result to show details
-  const handleResultClick = (result: any) => {
-    const resultId = result?.mid || result?.roundId || result?.id || result?.matchId;
-    
-    if (!resultId) {
-      console.error("🎰 Notenumber: No result ID found in result", result);
-      return;
-    }
-    
-    if (!actualGameSlug) {
-      console.error("🎰 Notenumber: No gameSlug available", { gameCode, actualGameSlug });
-      return;
-    }
-    
-    // resultModal.openModal(String(resultId), result);
-  };
+
 
   // Map win value to display info
   const getResultDisplay = (win: string) => {
@@ -299,14 +232,9 @@ const NotenumberComponent: React.FC<NotenumberProps> = ({
             <h2
               className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-back)] relative ${
                 !oddCard6Locked && oddCard6?.b
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
-              onClick={() =>
-                !oddCard6Locked &&
-                oddCard6?.b &&
-                handleBetClick(oddCard6, "back")
-              }
             >
               {oddCard6Locked && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -319,14 +247,9 @@ const NotenumberComponent: React.FC<NotenumberProps> = ({
             <h2
               className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-lay)] relative ${
                 !oddCard6Locked && oddCard6?.l
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
-              onClick={() =>
-                !oddCard6Locked &&
-                oddCard6?.l &&
-                handleBetClick(oddCard6, "lay")
-              }
             >
               {oddCard6Locked && (
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -355,12 +278,10 @@ const NotenumberComponent: React.FC<NotenumberProps> = ({
             <h2
               className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-back)] relative ${
                 !redCardLocked && redCard?.b
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
-              onClick={() =>
-                !redCardLocked && redCard?.b && handleBetClick(redCard, "back")
-              }
+              
             >
               {redCardLocked && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -373,12 +294,10 @@ const NotenumberComponent: React.FC<NotenumberProps> = ({
             <h2
               className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-lay)] relative ${
                 !redCardLocked && redCard?.l
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
-              onClick={() =>
-                !redCardLocked && redCard?.l && handleBetClick(redCard, "lay")
-              }
+              
             >
               {redCardLocked && (
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -398,14 +317,9 @@ const NotenumberComponent: React.FC<NotenumberProps> = ({
             <h2
               className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-back)] relative ${
                 !lowCard6Locked && lowCard6?.b
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
-              onClick={() =>
-                !lowCard6Locked &&
-                lowCard6?.b &&
-                handleBetClick(lowCard6, "back")
-              }
             >
               {lowCard6Locked && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -418,14 +332,9 @@ const NotenumberComponent: React.FC<NotenumberProps> = ({
             <h2
               className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-lay)] relative ${
                 !lowCard6Locked && lowCard6?.l
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
-              onClick={() =>
-                !lowCard6Locked &&
-                lowCard6?.l &&
-                handleBetClick(lowCard6, "lay")
-              }
             >
               {lowCard6Locked && (
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -445,14 +354,9 @@ const NotenumberComponent: React.FC<NotenumberProps> = ({
             <h2
               className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-back)] relative ${
                 !evenCard6Locked && evenCard6?.b
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
-              onClick={() =>
-                !evenCard6Locked &&
-                evenCard6?.b &&
-                handleBetClick(evenCard6, "back")
-              }
             >
               {evenCard6Locked && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -465,14 +369,9 @@ const NotenumberComponent: React.FC<NotenumberProps> = ({
             <h2
               className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-lay)] relative ${
                 !evenCard6Locked && evenCard6?.l
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
-              onClick={() =>
-                !evenCard6Locked &&
-                evenCard6?.l &&
-                handleBetClick(evenCard6, "lay")
-              }
             >
               {evenCard6Locked && (
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -501,14 +400,9 @@ const NotenumberComponent: React.FC<NotenumberProps> = ({
             <h2
               className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-back)] relative ${
                 !blackCardLocked && blackCard?.b
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
-              onClick={() =>
-                !blackCardLocked &&
-                blackCard?.b &&
-                handleBetClick(blackCard, "back")
-              }
             >
               {blackCardLocked && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -521,14 +415,9 @@ const NotenumberComponent: React.FC<NotenumberProps> = ({
             <h2
               className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-lay)] relative ${
                 !blackCardLocked && blackCard?.l
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
-              onClick={() =>
-                !blackCardLocked &&
-                blackCard?.l &&
-                handleBetClick(blackCard, "lay")
-              }
             >
               {blackCardLocked && (
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -548,14 +437,9 @@ const NotenumberComponent: React.FC<NotenumberProps> = ({
             <h2
               className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-back)] relative ${
                 !highCard6Locked && highCard6?.b
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
-              onClick={() =>
-                !highCard6Locked &&
-                highCard6?.b &&
-                handleBetClick(highCard6, "back")
-              }
             >
               {highCard6Locked && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -568,14 +452,9 @@ const NotenumberComponent: React.FC<NotenumberProps> = ({
             <h2
               className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-lay)] relative ${
                 !highCard6Locked && highCard6?.l
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
-              onClick={() =>
-                !highCard6Locked &&
-                highCard6?.l &&
-                handleBetClick(highCard6, "lay")
-              }
             >
               {highCard6Locked && (
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -599,14 +478,9 @@ const NotenumberComponent: React.FC<NotenumberProps> = ({
               <h2
                 className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-back)] relative ${
                   !baccarat1Locked && baccarat1?.b
-                    ? "cursor-pointer hover:opacity-90"
+                    ? "hover:opacity-90"
                     : ""
                 }`}
-                onClick={() =>
-                  !baccarat1Locked &&
-                  baccarat1?.b &&
-                  handleBetClick(baccarat1, "back")
-                }
               >
                 {baccarat1Locked && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -626,14 +500,9 @@ const NotenumberComponent: React.FC<NotenumberProps> = ({
               <h2
                 className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-back)] relative ${
                   !baccarat2Locked && baccarat2?.b
-                    ? "cursor-pointer hover:opacity-90"
+                    ? "hover:opacity-90"
                     : ""
                 }`}
-                onClick={() =>
-                  !baccarat2Locked &&
-                  baccarat2?.b &&
-                  handleBetClick(baccarat2, "back")
-                }
               >
                 {baccarat2Locked && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -673,11 +542,6 @@ const NotenumberComponent: React.FC<NotenumberProps> = ({
               </div>
                     )}
                     <img
-                      onClick={() =>
-                        !cardLocked &&
-                        cardOdd?.b &&
-                        handleBetClick(card6, "back", cardOdd)
-                      }
                       className="w-8 leading-6"
                       src={
                         numberCards[item as keyof typeof numberCards] as string
@@ -713,9 +577,8 @@ const NotenumberComponent: React.FC<NotenumberProps> = ({
               return (
                 <div
                   key={item.mid || `result-${item.win}-${index}`}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold text-yellow-500 cursor-pointer hover:scale-110 transition-transform`}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold text-yellow-500 `}
                   title={`Round ID: ${item.mid || "N/A"} - ${resultDisplay.title}`}
-                  onClick={() => handleResultClick(item)}
                 >
                   R
                 </div>
@@ -725,16 +588,7 @@ const NotenumberComponent: React.FC<NotenumberProps> = ({
         </div>
       {/* )} */}
 
-      {/* Individual Result Modal */}
-      {/* <IndividualResultModal
-        isOpen={resultModal.isOpen}
-        onClose={resultModal.closeModal}
-        resultId={resultModal.selectedResultId || undefined}
-        gameType={actualGameSlug}
-        title="Note Number Result"
-        customGetFilteredBets={getFilteredBets}
-      /> */}
-    </div>
+      {/* Individual Result Modal */}</div>
   );
 };
 

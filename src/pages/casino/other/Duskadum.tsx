@@ -14,20 +14,16 @@ import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 interface DuskadumProps {
   casinoData: any;
   remainingTime: number;
-  onBetClick: (sid: string, type: "back" | "lay") => void;
   results?: any[];
   gameCode?: string;
   gameName?: string;
-  currentBet?: any;
 }
 
 const DuskadumComponent: React.FC<DuskadumProps> = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results = [],
   gameCode,
-  currentBet,
 }) => {
   const navigate = useNavigate();
   // const resultModal = useIndividualResultModal();
@@ -150,67 +146,11 @@ const DuskadumComponent: React.FC<DuskadumProps> = ({
     }
   };
 
-  // Function to filter user bets based on selected filter
-  const getFilteredBets = (bets: any[], filter: string) => {
-    if (filter === "all") return bets;
-
-    return bets.filter((bet: any) => {
-      const oddCategory = bet.betData?.oddCategory?.toLowerCase();
-      const status = bet.status?.toLowerCase();
-
-      switch (filter) {
-        case "back":
-          return oddCategory === "back";
-        case "lay":
-          return oddCategory === "lay";
-        case "deleted":
-          return status === "deleted" || status === "cancelled";
-        default:
-          return true;
-      }
-    });
-  };
 
   /**
    * Handle clicking on individual result to show details
    */
-  const handleResultClick = (result: any) => {
-    console.log("🎰 Duskadum: handleResultClick called", { 
-      result, 
-      mid: result?.mid, 
-      roundId: result?.roundId, 
-      id: result?.id,
-      allKeys: Object.keys(result || {}),
-      gameSlug: actualGameSlug 
-    });
-    
-    // Try to get result ID from different possible fields
-    const resultId = result?.mid || result?.roundId || result?.id || result?.matchId;
-    
-    if (!resultId) {
-      console.error("🎰 Duskadum: No result ID found in result", result);
-      alert("Unable to open result details: Missing result ID");
-      return;
-    }
-    
-    if (!actualGameSlug) {
-      console.error("🎰 Duskadum: No gameSlug available", { gameCode, actualGameSlug });
-      alert("Unable to open result details: Missing game type");
-      return;
-    }
-    
-    console.log("🎰 Duskadum: Opening modal with", { resultId: String(resultId), gameSlug: actualGameSlug });
-    // resultModal.openModal(String(resultId), result);
-    
-    // Log modal state after a brief delay to allow state update
-    // setTimeout(() => {
-    //   console.log("🎰 Duskadum: Modal state after open", { 
-    //     isOpen: resultModal.isOpen, 
-    //     selectedResultId: resultModal.selectedResultId,
-    //     gameSlug: actualGameSlug 
-    //   });
-    // }, 100);
-  };
+
 
 
   // Map win value to display info
@@ -265,14 +205,10 @@ const DuskadumComponent: React.FC<DuskadumProps> = ({
               <td
                 className={`bg-[var(--bg-back)] relative ${
                   !isLocked(nextTotal60) && nextTotal60?.b
-                    ? "cursor-pointer hover:opacity-90"
+                    ? "hover:opacity-90"
                     : ""
                 }`}
-                onClick={() =>
-                  !isLocked(nextTotal60) &&
-                  nextTotal60?.b &&
-                  onBetClick(String(1), "back")
-                }
+                
               >
                 {isLocked(nextTotal60) && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -286,14 +222,10 @@ const DuskadumComponent: React.FC<DuskadumProps> = ({
               <td
                 className={`bg-[var(--bg-lay)] relative ${
                   !isLocked(nextTotal60) && nextTotal60?.l
-                    ? "cursor-pointer hover:opacity-90"
+                    ? "hover:opacity-90"
                     : ""
                 }`}
-                onClick={() =>
-                  !isLocked(nextTotal60) &&
-                  nextTotal60?.l &&
-                  onBetClick(String(1), "lay")
-                }
+                
               >
                 {isLocked(nextTotal60) && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -319,13 +251,11 @@ const DuskadumComponent: React.FC<DuskadumProps> = ({
           <button
             className={`relative bg-gradient-to-r leading-10 from-[var(--bg-primary)] to-[var(--bg-secondary)] text-white w-full ${
               !isLocked(even) && even?.b
-                ? "cursor-pointer hover:opacity-90"
+                ? "hover:opacity-90"
                 : ""
             }`}
             disabled={isLocked(even)}
-            onClick={() =>
-              !isLocked(even) && even?.b && onBetClick(String(5), "back")
-            }
+            
           >
             {isLocked(even) && (
               <span className="absolute inset-0 flex items-center justify-center bg-black/50 z-20">
@@ -344,12 +274,10 @@ const DuskadumComponent: React.FC<DuskadumProps> = ({
           </h2>
           <button
             className={`relative bg-gradient-to-r leading-10 from-[var(--bg-primary)] to-[var(--bg-secondary)] text-white w-full ${
-              !isLocked(red) && red?.b ? "cursor-pointer hover:opacity-90" : ""
+              !isLocked(red) && red?.b ? "hover:opacity-90" : ""
             }`}
             disabled={isLocked(red)}
-            onClick={() =>
-              !isLocked(red) && red?.b && onBetClick(String(3), "back")
-            }
+            
           >
             {isLocked(red) && (
               <span className="absolute inset-0 flex items-center justify-center bg-black/50 z-20">
@@ -370,12 +298,10 @@ const DuskadumComponent: React.FC<DuskadumProps> = ({
           </h2>
           <button
             className={`relative bg-gradient-to-r leading-10 from-[var(--bg-primary)] to-[var(--bg-secondary)] text-white w-full ${
-              !isLocked(odd) && odd?.b ? "cursor-pointer hover:opacity-90" : ""
+              !isLocked(odd) && odd?.b ? "hover:opacity-90" : ""
             }`}
             disabled={isLocked(odd)}
-            onClick={() =>
-              !isLocked(odd) && odd?.b && onBetClick(String(6), "back")
-            }
+            
           >
             {isLocked(odd) && (
               <span className="absolute inset-0 flex items-center justify-center bg-black/50 z-20">
@@ -395,13 +321,11 @@ const DuskadumComponent: React.FC<DuskadumProps> = ({
           <button
             className={`relative bg-gradient-to-r leading-10 from-[var(--bg-primary)] to-[var(--bg-secondary)] text-white w-full ${
               !isLocked(black) && black?.b
-                ? "cursor-pointer hover:opacity-90"
+                ? "hover:opacity-90"
                 : ""
             }`}
             disabled={isLocked(black)}
-            onClick={() =>
-              !isLocked(black) && black?.b && onBetClick(String(4), "back")
-            }
+            
           >
             {isLocked(black) && (
               <span className="absolute inset-0 flex items-center justify-center bg-black/50 z-20">
@@ -436,8 +360,7 @@ const DuskadumComponent: React.FC<DuskadumProps> = ({
               return (
                 <div
                   key={item.mid || `result-${item.win}-${index}`}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} cursor-pointer hover:scale-110 transition-transform`}
-                  onClick={() => handleResultClick(item)}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} `}
                   title={`Round ID: ${item.mid || "N/A"} - ${resultDisplay.title} - Click to view details`}
                 >
                   {resultDisplay.label}
@@ -452,17 +375,7 @@ const DuskadumComponent: React.FC<DuskadumProps> = ({
         </div>
       </div>
 
-      {/* Individual Result Details Modal - Using centralized component */}
-      {/* <IndividualResultModal
-        isOpen={resultModal.isOpen}
-        onClose={resultModal.closeModal}
-        resultId={resultModal.selectedResultId || undefined}
-        gameType={actualGameSlug}
-        title="Dus Ka Dum Result"
-        enableBetFiltering={true}
-        customGetFilteredBets={getFilteredBets}
-      /> */}
-    </div>
+      {/* Individual Result Details Modal - Using centralized component */}</div>
   );
 };
 

@@ -8,20 +8,16 @@ import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 interface Onecard2020Props {
   casinoData: any;
   remainingTime: number;
-  onBetClick: (sid: string, type: "back" | "lay") => void;
   results?: any[];
   gameCode?: string;
   gameName?: string;
-  currentBet?: any;
 }
 
 const Onecard2020Component: React.FC<Onecard2020Props> = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results = [],
   gameCode,
-  currentBet,
 }) => {
   const navigate = useNavigate();
   // const resultModal = useIndividualResultModal();
@@ -106,114 +102,7 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
   };
 
   // Profit/Loss calculation function
-  const getBetProfitLoss = (betType: string): number => {
-    if (!currentBet?.data || !casinoData?.data?.mid) return 0;
 
-    const currentMatchId = casinoData.data.mid;
-    let totalProfitLoss = 0;
-
-    // Only bets for this match
-    const bets = currentBet.data.filter(
-      (bet: any) => String(bet.matchId) === String(currentMatchId)
-    );
-
-    bets.forEach((bet: any) => {
-      const { sid, betName: currentBetName, name, nation: betNation, oddCategory, stake, betRate } = bet.betData;
-      const result = bet.betData?.result;
-
-      // Use either betName, name, or nation field
-      const actualBetName = currentBetName || name || betNation;
-      
-      if (actualBetName && typeof actualBetName === 'string') {
-        const actualBetNameLower = actualBetName.toLowerCase().trim();
-        const requestedBetTypeLower = betType.toLowerCase().trim();
-        
-        // Precise matching to avoid cross-matching between different bet types
-        let isMatch = false;
-        let isOppositeMatch = false; // For mutually exclusive bets (Player vs Dealer)
-        
-        // Exact match first
-        if (actualBetNameLower === requestedBetTypeLower) {
-          isMatch = true;
-        }
-        // Match "Player" - must be exactly "Player" (not "Player A" etc.)
-        else if (requestedBetTypeLower === "player") {
-          isMatch = actualBetNameLower === "player" || 
-                   actualBetNameLower.includes("player");
-          // Also check for opposite (Dealer) for cross-calculation
-          isOppositeMatch = actualBetNameLower === "dealer" || 
-                          actualBetNameLower.includes("dealer");
-        }
-        // Match "Dealer" - must be exactly "Dealer"
-        else if (requestedBetTypeLower === "dealer") {
-          isMatch = actualBetNameLower === "dealer" || 
-                   actualBetNameLower.includes("dealer");
-          // Also check for opposite (Player) for cross-calculation
-          isOppositeMatch = actualBetNameLower === "player" || 
-                          actualBetNameLower.includes("player");
-        }
-        // Match "Tie" - independent bet
-        else if (requestedBetTypeLower === "tie") {
-          isMatch = actualBetNameLower === "tie" || 
-                   actualBetNameLower.includes("tie");
-        }
-        // Match "Pair" - independent bet
-        else if (requestedBetTypeLower === "pair") {
-          isMatch = actualBetNameLower === "pair" || 
-                   actualBetNameLower.includes("pair");
-        }
-        
-        if (isMatch) {
-          // If bet is settled, use the actual profit/loss from the result
-          if (result && result.settled) {
-            let profitLoss = 0;
-
-            if (result.status === "won" || result.status === "profit") {
-              profitLoss = Number(result.profitLoss) || 0;
-            } else if (result.status === "lost") {
-              profitLoss = Number(result.profitLoss) || 0;
-            }
-
-            totalProfitLoss += profitLoss;
-          } else {
-            // For unsettled bets, show the stake as potential loss
-            totalProfitLoss -= Number(stake) || 0;
-          }
-        } else if (isOppositeMatch) {
-          // Cross-calculation: For mutually exclusive bets (Player vs Dealer)
-          // If betting on Player, Dealer shows profit (and vice versa)
-          // This is because they are mutually exclusive - if one loses, the other wins
-          if (result && result.settled) {
-            // If the opposite bet is settled, use its result
-            let profitLoss = 0;
-            if (result.status === "won" || result.status === "profit") {
-              profitLoss = Number(result.profitLoss) || 0;
-            } else if (result.status === "lost") {
-              profitLoss = Number(result.profitLoss) || 0;
-            }
-            totalProfitLoss += profitLoss;
-          } else {
-            // For unsettled opposite bets, calculate potential profit
-            const stakeAmount = Number(stake) || 0;
-            const rate = Number(betRate) || 0;
-            
-            if (oddCategory.toLowerCase() === "back") {
-              // If opposite bet wins, you get profit
-              const profit = rate > 0 ? stakeAmount * (rate - 1) : 0;
-              totalProfitLoss += profit;
-            } else if (oddCategory.toLowerCase() === "lay") {
-              // If opposite bet wins (your lay loses), you pay out
-              const loss = rate > 0 ? stakeAmount * (rate - 1) : 0;
-              const profit = stakeAmount;
-              totalProfitLoss += profit - loss;
-            }
-          }
-        }
-      }
-    });
-
-    return totalProfitLoss;
-  };
 
   // Get odds data for each betting option
   const playerRow = getOddsData(1); // Player
@@ -238,13 +127,9 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
   };
 
   // Handle clicking on individual result to show details
-  const handleResultClick = (result: any) => {
-    if (!result?.mid) return;
-    // resultModal.openModal(result.mid, result);
-  };
+
 
   // Function to filter user bets based on selected filter
-  const getFilteredBets = (bets: any[], filter: string) => {
     if (filter === "all") return bets;
 
     return bets.filter((bet: any) => {
@@ -288,8 +173,7 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
                     locked: isLocked(playerRow),
                   });
                   if (!isLocked(playerRow) && playerRow?.sid) {
-                    onBetClick?.(String(playerRow.sid), "back");
-                  }
+                                    }
                 }}
               >
                 {isLocked(playerRow) && (
@@ -302,15 +186,11 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
               <div className="absolute -bottom-6 left-0 right-0 text-center">
                 <span
                   className={`text-xs font-semibold ${
-                    getBetProfitLoss("Player") > 0
                       ? "text-green-600"
-                      : getBetProfitLoss("Player") < 0
                         ? "text-red-600"
                         : "text-gray-600"
                   }`}
                 >
-                  {getBetProfitLoss("Player") > 0 ? "+" : ""}
-                  {getBetProfitLoss("Player").toFixed(0)}
                 </span>
               </div>
             </div>
@@ -333,8 +213,7 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
                     locked: isLocked(tieRow),
                   });
                   if (!isLocked(tieRow) && tieRow?.sid) {
-                    onBetClick?.(String(tieRow.sid), "back");
-                  }
+                                    }
                 }}
               >
                 {isLocked(tieRow) && (
@@ -347,15 +226,11 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
               <div className="absolute -bottom-6 left-0 right-0 text-center">
                 <span
                   className={`text-xs font-semibold ${
-                    getBetProfitLoss("Tie") > 0
                       ? "text-green-600"
-                      : getBetProfitLoss("Tie") < 0
                         ? "text-red-600"
                         : "text-gray-600"
                   }`}
                 >
-                  {getBetProfitLoss("Tie") > 0 ? "+" : ""}
-                  {getBetProfitLoss("Tie").toFixed(0)}
                 </span>
               </div>
             </div>
@@ -378,8 +253,7 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
                     locked: isLocked(dealerRow),
                   });
                   if (!isLocked(dealerRow) && dealerRow?.sid) {
-                    onBetClick?.(String(dealerRow.sid), "back");
-                  }
+                                    }
                 }}
               >
                 {isLocked(dealerRow) && (
@@ -392,15 +266,11 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
               <div className="absolute -bottom-6 left-0 right-0 text-center">
                 <span
                   className={`text-xs font-semibold ${
-                    getBetProfitLoss("Dealer") > 0
                       ? "text-green-600"
-                      : getBetProfitLoss("Dealer") < 0
                         ? "text-red-600"
                         : "text-gray-600"
                   }`}
                 >
-                  {getBetProfitLoss("Dealer") > 0 ? "+" : ""}
-                  {getBetProfitLoss("Dealer").toFixed(0)}
                 </span>
               </div>
             </div>
@@ -425,8 +295,7 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
                     locked: isLocked(pairRow),
                   });
                   if (!isLocked(pairRow) && pairRow?.sid) {
-                    onBetClick?.(String(pairRow.sid), "back");
-                  }
+                                    }
                 }}
               >
                 {isLocked(pairRow) && (
@@ -439,15 +308,11 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
               <div className="absolute -bottom-6 left-0 right-0 text-center">
                 <span
                   className={`text-xs font-semibold ${
-                    getBetProfitLoss("Pair") > 0
                       ? "text-green-600"
-                      : getBetProfitLoss("Pair") < 0
                         ? "text-red-600"
                         : "text-gray-600"
                   }`}
                 >
-                  {getBetProfitLoss("Pair") > 0 ? "+" : ""}
-                  {getBetProfitLoss("Pair").toFixed(0)}
                 </span>
               </div>
             </div>
@@ -463,7 +328,7 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
           </h2>
           <h2
             onClick={() => navigate(`/casino-result?game=TEEN_120`)}
-            className="text-sm font-normal leading-8 text-white cursor-pointer hover:underline"
+            className="text-sm font-normal leading-8 text-white hover:underline"
           >
             View All
           </h2>
@@ -475,8 +340,7 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
               return (
                 <div
                   key={item.mid || `result-${item.win}-${index}`}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} cursor-pointer hover:scale-110 transition-transform`}
-                  onClick={() => handleResultClick(item)}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} `}
                   title={`Round ID: ${item.mid || "N/A"} - Winner: ${resultDisplay.title} - Click to view details`}
                 >
                   {resultDisplay.label}
@@ -489,17 +353,7 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
         </div>
       </div>
 
-      {/* Individual Result Details Modal */}
-      {/* <IndividualResultModal
-        isOpen={resultModal.isOpen}
-        onClose={resultModal.closeModal}
-        resultId={resultModal.selectedResultId || undefined}
-        gameType={normalizedGameSlug}
-        title="1 CARD 20-20 Result Details"
-        enableBetFiltering={true}
-        customGetFilteredBets={getFilteredBets}
-      /> */}
-    </div>
+      {/* Individual Result Details Modal */}</div>
   );
 };
 

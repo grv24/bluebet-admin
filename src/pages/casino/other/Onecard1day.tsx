@@ -7,25 +7,19 @@ import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 interface Onecard1dayProps {
   casinoData: any;
   remainingTime: number;
-  onBetClick: (sid: string, type: "back" | "lay") => void;
   results?: any[];
   gameCode?: string;
   gameName?: string;
-  currentBet?: any;
 }
 
 const Onecard1dayComponent: React.FC<Onecard1dayProps> = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results = [],
   gameCode,
   gameName,
-  currentBet,
 }) => {
   const navigate = useNavigate();
-  const [selectedResult, setSelectedResult] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Get game slug from gameCode for navigation
   const gameSlug = gameCode || "";
@@ -78,161 +72,7 @@ const Onecard1dayComponent: React.FC<Onecard1dayProps> = ({
   };
 
   // Profit/Loss calculation function
-  const getBetProfitLoss = (betType: string): number => {
-    if (!currentBet?.data || !casinoData?.data?.mid) return 0;
 
-    const currentMatchId = casinoData.data.mid;
-    let totalProfitLoss = 0;
-
-    // Only bets for this match
-    const bets = currentBet.data.filter(
-      (bet: any) => String(bet.matchId) === String(currentMatchId)
-    );
-
-    bets.forEach((bet: any) => {
-      const { sid, betName: currentBetName, name, nation: betNation, oddCategory, stake, betRate } = bet.betData;
-      const result = bet.betData?.result;
-
-      // Use either betName, name, or nation field
-      const actualBetName = currentBetName || name || betNation;
-      
-      if (actualBetName && typeof actualBetName === 'string') {
-        const actualBetNameLower = actualBetName.toLowerCase().trim();
-        const requestedBetTypeLower = betType.toLowerCase().trim();
-        
-        // Precise matching to avoid cross-matching between different bet types
-        let isMatch = false;
-        let isOppositeMatch = false; // For mutually exclusive bets
-        
-        // Exact match first
-        if (actualBetNameLower === requestedBetTypeLower) {
-          isMatch = true;
-        }
-        // Match "Player" - must be exactly "Player" (not "7 Up Player" etc.)
-        else if (requestedBetTypeLower === "player") {
-          isMatch = actualBetNameLower === "player" || 
-                   (actualBetNameLower.includes("player") && 
-                    !actualBetNameLower.includes("7") && 
-                    !actualBetNameLower.includes("seven") &&
-                    !actualBetNameLower.includes("up") &&
-                    !actualBetNameLower.includes("down"));
-          // Also check for opposite (Dealer) for cross-calculation - but NOT 7 Up/Down Dealer
-          isOppositeMatch = actualBetNameLower === "dealer" || 
-                          (actualBetNameLower.includes("dealer") && 
-                           !actualBetNameLower.includes("7") && 
-                           !actualBetNameLower.includes("seven") &&
-                           !actualBetNameLower.includes("up") &&
-                           !actualBetNameLower.includes("down"));
-        }
-        // Match "Dealer" - must be exactly "Dealer" (not "7 Up Dealer" etc.)
-        else if (requestedBetTypeLower === "dealer") {
-          isMatch = actualBetNameLower === "dealer" || 
-                   (actualBetNameLower.includes("dealer") && 
-                    !actualBetNameLower.includes("7") && 
-                    !actualBetNameLower.includes("seven") &&
-                    !actualBetNameLower.includes("up") &&
-                    !actualBetNameLower.includes("down"));
-          // Also check for opposite (Player) for cross-calculation - but NOT 7 Up/Down Player
-          isOppositeMatch = actualBetNameLower === "player" || 
-                          (actualBetNameLower.includes("player") && 
-                           !actualBetNameLower.includes("7") && 
-                           !actualBetNameLower.includes("seven") &&
-                           !actualBetNameLower.includes("up") &&
-                           !actualBetNameLower.includes("down"));
-        }
-        // Match "7 Up Player" - must include "7", "up", and "player" (exclude main Player/Dealer)
-        else if (requestedBetTypeLower === "7 up player" || requestedBetTypeLower === "7up player") {
-          isMatch = (actualBetNameLower.includes("7") || actualBetNameLower.includes("seven")) && 
-                   actualBetNameLower.includes("up") && 
-                   actualBetNameLower.includes("player");
-          // Also check for opposite (7 Down Player) for cross-calculation
-          isOppositeMatch = (actualBetNameLower.includes("7") || actualBetNameLower.includes("seven")) && 
-                          actualBetNameLower.includes("down") && 
-                          actualBetNameLower.includes("player");
-        }
-        // Match "7 Down Player" - must include "7", "down", and "player" (exclude main Player/Dealer)
-        else if (requestedBetTypeLower === "7 down player" || requestedBetTypeLower === "7down player") {
-          isMatch = (actualBetNameLower.includes("7") || actualBetNameLower.includes("seven")) && 
-                   actualBetNameLower.includes("down") && 
-                   actualBetNameLower.includes("player");
-          // Also check for opposite (7 Up Player) for cross-calculation
-          isOppositeMatch = (actualBetNameLower.includes("7") || actualBetNameLower.includes("seven")) && 
-                          actualBetNameLower.includes("up") && 
-                          actualBetNameLower.includes("player");
-        }
-        // Match "7 Up Dealer" - must include "7", "up", and "dealer" (exclude main Player/Dealer)
-        else if (requestedBetTypeLower === "7 up dealer" || requestedBetTypeLower === "7up dealer") {
-          isMatch = (actualBetNameLower.includes("7") || actualBetNameLower.includes("seven")) && 
-                   actualBetNameLower.includes("up") && 
-                   actualBetNameLower.includes("dealer");
-          // Also check for opposite (7 Down Dealer) for cross-calculation
-          isOppositeMatch = (actualBetNameLower.includes("7") || actualBetNameLower.includes("seven")) && 
-                          actualBetNameLower.includes("down") && 
-                          actualBetNameLower.includes("dealer");
-        }
-        // Match "7 Down Dealer" - must include "7", "down", and "dealer" (exclude main Player/Dealer)
-        else if (requestedBetTypeLower === "7 down dealer" || requestedBetTypeLower === "7down dealer") {
-          isMatch = (actualBetNameLower.includes("7") || actualBetNameLower.includes("seven")) && 
-                   actualBetNameLower.includes("down") && 
-                   actualBetNameLower.includes("dealer");
-          // Also check for opposite (7 Up Dealer) for cross-calculation
-          isOppositeMatch = (actualBetNameLower.includes("7") || actualBetNameLower.includes("seven")) && 
-                          actualBetNameLower.includes("up") && 
-                          actualBetNameLower.includes("dealer");
-        }
-        
-        if (isMatch) {
-          // If bet is settled, use the actual profit/loss from the result
-          if (result && result.settled) {
-            let profitLoss = 0;
-
-            if (result.status === "won" || result.status === "profit") {
-              profitLoss = Number(result.profitLoss) || 0;
-            } else if (result.status === "lost") {
-              profitLoss = Number(result.profitLoss) || 0;
-            }
-
-            totalProfitLoss += profitLoss;
-          } else {
-            // For unsettled bets, show the stake as potential loss
-            totalProfitLoss -= Number(stake) || 0;
-          }
-        } else if (isOppositeMatch) {
-          // Cross-calculation: For mutually exclusive bets
-          // - If betting on Player, Dealer shows profit (and vice versa)
-          // - If betting on 7 Up Player, 7 Down Player shows profit (and vice versa)
-          // - If betting on 7 Up Dealer, 7 Down Dealer shows profit (and vice versa)
-          if (result && result.settled) {
-            // If the opposite bet is settled, use its result
-            let profitLoss = 0;
-            if (result.status === "won" || result.status === "profit") {
-              profitLoss = Number(result.profitLoss) || 0;
-            } else if (result.status === "lost") {
-              profitLoss = Number(result.profitLoss) || 0;
-            }
-            totalProfitLoss += profitLoss;
-          } else {
-            // For unsettled opposite bets, calculate potential profit
-            const stakeAmount = Number(stake) || 0;
-            const rate = Number(betRate) || 0;
-            
-            if (oddCategory.toLowerCase() === "back") {
-              // If opposite bet wins, you get profit
-              const profit = rate > 0 ? stakeAmount * (rate - 1) : 0;
-              totalProfitLoss += profit;
-            } else if (oddCategory.toLowerCase() === "lay") {
-              // If opposite bet wins (your lay loses), you pay out
-              const loss = rate > 0 ? stakeAmount * (rate - 1) : 0;
-              const profit = stakeAmount;
-              totalProfitLoss += profit - loss;
-            }
-          }
-        }
-      }
-    });
-
-    return totalProfitLoss;
-  };
 
   // Get odds data for Player and Dealer
   const playerRow = getOddsData(1); // Player
@@ -258,16 +98,10 @@ const Onecard1dayComponent: React.FC<Onecard1dayProps> = ({
 
 
   // Handle clicking on individual result to show details
-  const handleResultClick = (result: any) => {
-    if (!result?.mid) return;
-    setSelectedResult(result);
-    setIsModalOpen(true);
-  };
+
 
   // Close the result details modal
   const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedResult(null);
   };
 
   return (
@@ -284,22 +118,17 @@ const Onecard1dayComponent: React.FC<Onecard1dayProps> = ({
                   <span>Player</span>
                   <h2
                     className={`text-xs font-semibold ${
-                      getBetProfitLoss("Player") > 0
                         ? "text-green-600"
-                        : getBetProfitLoss("Player") < 0
                           ? "text-red-600"
                           : "text-gray-600"
                     }`}
                   >
-                    {getBetProfitLoss("Player") > 0 ? "+" : ""}
-                    {getBetProfitLoss("Player").toFixed(0)}
                   </h2>
                 </div>
               </td>
               <td
-                className="border px-2 py-2 border-gray-300 text-center cursor-pointer bg-[var(--bg-back)] relative"
+                className="border px-2 py-2 border-gray-300 text-center bg-[var(--bg-back)] relative"
                 onClick={() =>
-                  !isSuspended(playerRow) && onBetClick("1", "back")
                 }
               >
                 {isSuspended(playerRow) && (
@@ -312,9 +141,8 @@ const Onecard1dayComponent: React.FC<Onecard1dayProps> = ({
                 </div>
               </td>
               <td
-                className="border px-2 py-2 border-gray-300 text-center cursor-pointer bg-[var(--bg-lay)] relative"
+                className="border px-2 py-2 border-gray-300 text-center bg-[var(--bg-lay)] relative"
                 onClick={() =>
-                  !isSuspended(playerRow) && onBetClick("1", "lay")
                 }
               >
                 {isSuspended(playerRow) && (
@@ -341,22 +169,17 @@ const Onecard1dayComponent: React.FC<Onecard1dayProps> = ({
                   <span>Dealer</span>
                   <h2
                     className={`text-xs font-semibold ${
-                      getBetProfitLoss("Dealer") > 0
                         ? "text-green-600"
-                        : getBetProfitLoss("Dealer") < 0
                           ? "text-red-600"
                           : "text-gray-600"
                     }`}
                   >
-                    {getBetProfitLoss("Dealer") > 0 ? "+" : ""}
-                    {getBetProfitLoss("Dealer").toFixed(0)}
                   </h2>
                 </div>
               </td>
               <td
-                className="border px-2 py-2 border-gray-300 text-center cursor-pointer bg-[var(--bg-back)] relative"
+                className="border px-2 py-2 border-gray-300 text-center bg-[var(--bg-back)] relative"
                 onClick={() =>
-                  !isSuspended(dealerRow) && onBetClick("2", "back")
                 }
               >
                 {isSuspended(dealerRow) && (
@@ -369,9 +192,8 @@ const Onecard1dayComponent: React.FC<Onecard1dayProps> = ({
                 </div>
               </td>
               <td
-                className="border px-2 py-2 border-gray-300 text-center cursor-pointer bg-[var(--bg-lay)] relative"
+                className="border px-2 py-2 border-gray-300 text-center bg-[var(--bg-lay)] relative"
                 onClick={() =>
-                  !isSuspended(dealerRow) && onBetClick("2", "lay")
                 }
               >
                 {isSuspended(dealerRow) && (
@@ -392,8 +214,7 @@ const Onecard1dayComponent: React.FC<Onecard1dayProps> = ({
         <div className="border-2 border-[var(--bg-primary)] w-full flex justify-center gap-14 items-center relative">
           {/* 7 Down Player Button */}
           <div 
-            className={`flex flex-col items-end justify-center w-full cursor-pointer relative ${isSuspended(playerDownRow) ? 'opacity-50' : ''}`}
-            onClick={() => !isSuspended(playerDownRow) && onBetClick("4", "back")}
+            className={`flex flex-col items-end justify-center w-full relative ${isSuspended(playerDownRow) ? 'opacity-50' : ''}`}
           >
             {isSuspended(playerDownRow) && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20 ">
@@ -411,8 +232,7 @@ const Onecard1dayComponent: React.FC<Onecard1dayProps> = ({
           />
           {/* 7 Up Player Button */}
           <div 
-            className={`flex flex-col items-start justify-center w-full cursor-pointer relative ${isSuspended(playerUpRow) ? 'opacity-50' : ''}`}
-            onClick={() => !isSuspended(playerUpRow) && onBetClick("3", "back")}
+            className={`flex flex-col items-start justify-center w-full relative ${isSuspended(playerUpRow) ? 'opacity-50' : ''}`}
           >
             {isSuspended(playerUpRow) && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20 ">
@@ -428,8 +248,7 @@ const Onecard1dayComponent: React.FC<Onecard1dayProps> = ({
         <div className="border-2 border-[var(--bg-primary)] w-full flex justify-center gap-14 items-center relative">
           {/* 7 Down Dealer Button */}
           <div 
-            className={`flex flex-col items-end justify-center w-full cursor-pointer relative ${isSuspended(dealerDownRow) ? 'opacity-50' : ''}`}
-            onClick={() => !isSuspended(dealerDownRow) && onBetClick("6", "back")}
+            className={`flex flex-col items-end justify-center w-full relative ${isSuspended(dealerDownRow) ? 'opacity-50' : ''}`}
           >
             {isSuspended(dealerDownRow) && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20 ">
@@ -447,8 +266,7 @@ const Onecard1dayComponent: React.FC<Onecard1dayProps> = ({
           />
           {/* 7 Up Dealer Button */}
           <div 
-            className={`flex flex-col items-start justify-center w-full cursor-pointer relative ${isSuspended(dealerUpRow) ? 'opacity-50' : ''}`}
-            onClick={() => !isSuspended(dealerUpRow) && onBetClick("5", "back")}
+            className={`flex flex-col items-start justify-center w-full relative ${isSuspended(dealerUpRow) ? 'opacity-50' : ''}`}
           >
             {isSuspended(dealerUpRow) && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
@@ -469,7 +287,7 @@ const Onecard1dayComponent: React.FC<Onecard1dayProps> = ({
           </h2>
           <h2
             onClick={() => navigate(`/casino-result?game=${gameSlug}`)}
-            className="text-sm font-normal leading-8 text-white cursor-pointer hover:underline"
+            className="text-sm font-normal leading-8 text-white hover:underline"
           >
             View All
           </h2>
@@ -481,8 +299,7 @@ const Onecard1dayComponent: React.FC<Onecard1dayProps> = ({
               return (
                 <div
                   key={item.mid || `result-${item.win}-${index}`}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} cursor-pointer hover:scale-110 transition-transform`}
-                  onClick={() => handleResultClick(item)}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} `}
                   title={`Round ID: ${item.mid || "N/A"} - Winner: ${resultDisplay.title} - Click to view details`}
                 >
                   {resultDisplay.label}
@@ -497,15 +314,7 @@ const Onecard1dayComponent: React.FC<Onecard1dayProps> = ({
         </div>
       </div>
 
-      {/* Result Details Modal */}
-      {/* <IndividualResultModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        resultId={selectedResult?.mid}
-        gameType={normalizedGameType}
-        title={`${gameName || "1 CARD ONE-DAY"} Result Details`}
-      /> */}
-    </div>
+      {/* Result Details Modal */}</div>
   );
 };
 

@@ -8,21 +8,17 @@ import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 interface TrioProps {
   casinoData: any;
   remainingTime: number;
-  onBetClick: (sid: string, type: "back" | "lay") => void;
   results?: any[];
   gameCode?: string;
   gameName?: string;
-  currentBet?: any;
 }
 
 const TrioComponent: React.FC<TrioProps> = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results = [],
   gameCode,
   gameName,
-  currentBet,
 }) => {
   const navigate = useNavigate();
   // const resultModal = useIndividualResultModal();
@@ -37,7 +33,6 @@ const TrioComponent: React.FC<TrioProps> = ({
   }, [gameSlug]);
 
   // Function to filter user bets based on selected filter
-  const getFilteredBets = (bets: any[], filter: string) => {
     if (filter === "all") return bets;
 
     return bets.filter((bet: any) => {
@@ -141,10 +136,9 @@ const TrioComponent: React.FC<TrioProps> = ({
           {/* Back Odds */}
           <h2
             className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-back)] relative ${
-              !locked && oddsItem?.b ? "cursor-pointer hover:opacity-90" : ""
+              !locked && oddsItem?.b ? "hover:opacity-90" : ""
             }`}
             onClick={() =>
-              !locked && oddsItem?.b && onBetClick(String(sid), "back")
             }
           >
             {locked && (
@@ -158,10 +152,9 @@ const TrioComponent: React.FC<TrioProps> = ({
           {showLay && (
             <h2
               className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-lay)] relative ${
-                !locked && oddsItem?.l ? "cursor-pointer hover:opacity-90" : ""
+                !locked && oddsItem?.l ? "hover:opacity-90" : ""
               }`}
               onClick={() =>
-                !locked && oddsItem?.l && onBetClick(String(sid), "lay")
               }
             >
               {locked && (
@@ -180,21 +173,7 @@ const TrioComponent: React.FC<TrioProps> = ({
   /**
    * Handle clicking on individual result to show details
    */
-  const handleResultClick = (result: any) => {
-    const resultId = result?.mid || result?.roundId || result?.id || result?.matchId;
-    
-    if (!resultId) {
-      console.error("🎰 Trio: No result ID found in result", result);
-      return;
-    }
-    
-    if (!actualGameSlug) {
-      console.error("🎰 Trio: No gameSlug available", { gameCode, gameSlug, actualGameSlug });
-      return;
-    }
-    
-    // resultModal.openModal(String(resultId), result);
-  };
+
 
 
   // Map win value to display info
@@ -266,8 +245,7 @@ const TrioComponent: React.FC<TrioProps> = ({
               return (
                 <div
                   key={item.mid || `result-${item.win}-${index}`}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} cursor-pointer hover:scale-110 transition-transform`}
-                  onClick={() => handleResultClick(item)}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} `}
                   title={`Round ID: ${item.mid || "N/A"} - ${resultDisplay.title} - Click to view details`}
                 >
                   {resultDisplay.label}
@@ -282,16 +260,7 @@ const TrioComponent: React.FC<TrioProps> = ({
         </div>
       </div>
 
-      {/* Individual Result Details Modal */}
-      {/* <IndividualResultModal
-        isOpen={resultModal.isOpen}
-        onClose={resultModal.closeModal}
-        resultId={resultModal.selectedResultId || undefined}
-        gameType={actualGameSlug}
-        title="Trio Result Details"
-        customGetFilteredBets={getFilteredBets}
-      /> */}
-    </div>
+      {/* Individual Result Details Modal */}</div>
   );
 };
 

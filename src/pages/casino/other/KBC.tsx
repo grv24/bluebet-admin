@@ -16,24 +16,19 @@ import { memoizeCasinoComponent } from "@/utils/casinoMemo";
 interface KBCProps {
   casinoData: any;
   remainingTime: number;
-  onBetClick: (sid: string, type: "back" | "lay", options?: any) => void;
   results?: any[];
   gameCode?: string;
   gameName?: string;
-  currentBet?: any;
 }
 
 const KBCComponent: React.FC<KBCProps> = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results = [],
   gameCode,
 }) => {
   const navigate = useNavigate();
   const [cookies] = useCookies(["clientToken"]);
-  const [selectedResult, setSelectedResult] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Get game slug from gameCode
   const gameSlug = gameCode?.toLowerCase() || "kbc";
@@ -126,11 +121,7 @@ const KBCComponent: React.FC<KBCProps> = ({
   const diamondOdds = getSubOdds(suitsOdds, "Diamond");
 
   // Handle clicking on individual result to show details
-  const handleResultClick = (result: any) => {
-    if (!result?.mid) return;
-    setSelectedResult(result);
-    setIsModalOpen(true);
-  };
+
 
   // Close the result details modal
   const closeModal = () => {
@@ -309,24 +300,7 @@ const KBCComponent: React.FC<KBCProps> = ({
   const blackShapes = getBlackShapes();
 
   // Handle bet click with nested odds
-  const handleBetClick = (
-    parentSid: number,
-    subNat: string,
-    type: "back" | "lay"
-  ) => {
-    const parentOdds = getOddsBySid(parentSid);
-    const subOdds = getSubOdds(parentOdds, subNat);
-    if (!isLocked(parentOdds, subOdds) && subOdds) {
-      // Use ssid for nested odds, or sno as fallback
-      const sid = String(subOdds.ssid || subOdds.sno || "");
-      onBetClick(sid, type, {
-        parentSid: String(parentSid),
-        parentNat: parentOdds?.nat,
-        outcome: subNat,
-        rate: type === "back" ? subOdds.b : subOdds.l,
-      });
-    }
-  };
+
 
   return (
     <div className="flex flex-col gap-1 py-1">
@@ -340,11 +314,10 @@ const KBCComponent: React.FC<KBCProps> = ({
             <button
               className={`bg-[var(--bg-back)] border-2 border-yellow-400 w-full flex gap-1 p-2 justify-center items-center relative ${
                 !isLocked(redBlackOdds, redOdds)
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
               disabled={isLocked(redBlackOdds, redOdds)}
-              onClick={() => handleBetClick(1, "Red", "back")}
             >
               {isLocked(redBlackOdds, redOdds) && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
@@ -370,11 +343,10 @@ const KBCComponent: React.FC<KBCProps> = ({
             <button
               className={`bg-[var(--bg-back)] border-2 border-yellow-400 w-full flex gap-1 p-2 justify-center items-center relative ${
                 !isLocked(redBlackOdds, blackOdds)
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
               disabled={isLocked(redBlackOdds, blackOdds)}
-              onClick={() => handleBetClick(1, "Black", "back")}
             >
               {isLocked(redBlackOdds, blackOdds) && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
@@ -409,11 +381,10 @@ const KBCComponent: React.FC<KBCProps> = ({
             <button
               className={`bg-[var(--bg-back)] border-2 border-yellow-400 w-full flex gap-1 p-2 justify-center items-center relative ${
                 !isLocked(oddEvenOdds, oddOdds)
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
               disabled={isLocked(oddEvenOdds, oddOdds)}
-              onClick={() => handleBetClick(2, "Odd", "back")}
             >
               {isLocked(oddEvenOdds, oddOdds) && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
@@ -430,11 +401,10 @@ const KBCComponent: React.FC<KBCProps> = ({
             <button
               className={`bg-[var(--bg-back)] border-2 border-yellow-400 w-full flex gap-1 p-2 justify-center items-center relative ${
                 !isLocked(oddEvenOdds, evenOdds)
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
               disabled={isLocked(oddEvenOdds, evenOdds)}
-              onClick={() => handleBetClick(2, "Even", "back")}
             >
               {isLocked(oddEvenOdds, evenOdds) && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
@@ -460,11 +430,10 @@ const KBCComponent: React.FC<KBCProps> = ({
             <button
               className={`bg-[var(--bg-back)] border-2 border-yellow-400 w-full flex gap-1 p-2 justify-center items-center relative ${
                 !isLocked(upDownOdds, upOdds)
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
               disabled={isLocked(upDownOdds, upOdds)}
-              onClick={() => handleBetClick(3, "Up", "back")}
             >
               {isLocked(upDownOdds, upOdds) && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
@@ -481,11 +450,10 @@ const KBCComponent: React.FC<KBCProps> = ({
             <button
               className={`bg-[var(--bg-back)] border-2 border-yellow-400 w-full flex gap-1 p-2 justify-center items-center relative ${
                 !isLocked(upDownOdds, downOdds)
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
               disabled={isLocked(upDownOdds, downOdds)}
-              onClick={() => handleBetClick(3, "Down", "back")}
             >
               {isLocked(upDownOdds, downOdds) && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
@@ -511,11 +479,10 @@ const KBCComponent: React.FC<KBCProps> = ({
             <button
               className={`bg-[var(--bg-back)] border-2 border-yellow-400 w-full flex gap-1 p-2 justify-center items-center relative ${
                 !isLocked(cardJudgementOdds, a23Odds)
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
               disabled={isLocked(cardJudgementOdds, a23Odds)}
-              onClick={() => handleBetClick(4, "A23", "back")}
             >
               {isLocked(cardJudgementOdds, a23Odds) && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
@@ -532,11 +499,10 @@ const KBCComponent: React.FC<KBCProps> = ({
             <button
               className={`bg-[var(--bg-back)] border-2 border-yellow-400 w-full flex gap-1 p-2 justify-center items-center relative ${
                 !isLocked(cardJudgementOdds, a456Odds)
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
               disabled={isLocked(cardJudgementOdds, a456Odds)}
-              onClick={() => handleBetClick(4, "456", "back")}
             >
               {isLocked(cardJudgementOdds, a456Odds) && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
@@ -555,11 +521,10 @@ const KBCComponent: React.FC<KBCProps> = ({
             <button
               className={`bg-[var(--bg-back)] border-2 border-yellow-400 w-full flex gap-1 p-2 justify-center items-center relative ${
                 !isLocked(cardJudgementOdds, a8910Odds)
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
               disabled={isLocked(cardJudgementOdds, a8910Odds)}
-              onClick={() => handleBetClick(4, "8910", "back")}
             >
               {isLocked(cardJudgementOdds, a8910Odds) && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
@@ -576,11 +541,10 @@ const KBCComponent: React.FC<KBCProps> = ({
             <button
               className={`bg-[var(--bg-back)] border-2 border-yellow-400 w-full flex gap-1 p-2 justify-center items-center relative ${
                 !isLocked(cardJudgementOdds, jqkOdds)
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
               disabled={isLocked(cardJudgementOdds, jqkOdds)}
-              onClick={() => handleBetClick(4, "JQK", "back")}
             >
               {isLocked(cardJudgementOdds, jqkOdds) && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
@@ -606,11 +570,10 @@ const KBCComponent: React.FC<KBCProps> = ({
             <button
               className={`bg-[var(--bg-back)] border-2 border-yellow-400 w-full flex gap-1 p-2 justify-center items-center relative ${
                 !isLocked(suitsOdds, heartOdds)
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
               disabled={isLocked(suitsOdds, heartOdds)}
-              onClick={() => handleBetClick(5, "Heart", "back")}
             >
               {isLocked(suitsOdds, heartOdds) && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
@@ -631,11 +594,10 @@ const KBCComponent: React.FC<KBCProps> = ({
             <button
               className={`bg-[var(--bg-back)] border-2 border-yellow-400 w-full flex gap-1 p-2 justify-center items-center relative ${
                 !isLocked(suitsOdds, diamondOdds)
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
               disabled={isLocked(suitsOdds, diamondOdds)}
-              onClick={() => handleBetClick(5, "Diamond", "back")}
             >
               {isLocked(suitsOdds, diamondOdds) && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
@@ -658,11 +620,10 @@ const KBCComponent: React.FC<KBCProps> = ({
             <button
               className={`bg-[var(--bg-back)] border-2 border-yellow-400 w-full flex gap-1 p-2 justify-center items-center relative ${
                 !isLocked(suitsOdds, clubOdds)
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
               disabled={isLocked(suitsOdds, clubOdds)}
-              onClick={() => handleBetClick(5, "Club", "back")}
             >
               {isLocked(suitsOdds, clubOdds) && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
@@ -683,11 +644,10 @@ const KBCComponent: React.FC<KBCProps> = ({
             <button
               className={`bg-[var(--bg-back)] border-2 border-yellow-400 w-full flex gap-1 p-2 justify-center items-center relative ${
                 !isLocked(suitsOdds, spadeOdds)
-                  ? "cursor-pointer hover:opacity-90"
+                  ? "hover:opacity-90"
                   : ""
               }`}
               disabled={isLocked(suitsOdds, spadeOdds)}
-              onClick={() => handleBetClick(5, "Spade", "back")}
             >
               {isLocked(suitsOdds, spadeOdds) && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
@@ -729,8 +689,7 @@ const KBCComponent: React.FC<KBCProps> = ({
               return (
                 <div
                   key={item.mid || `result-${item.win}-${index}`}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} cursor-pointer hover:scale-110 transition-transform`}
-                  onClick={() => handleResultClick(item)}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} `}
                   title={`Round ID: ${item.mid || "N/A"} - ${resultDisplay.title} - Click to view details`}
                 >
                   {resultDisplay.label}
