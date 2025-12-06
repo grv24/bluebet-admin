@@ -471,6 +471,7 @@ const Header: React.FC = () => {
               <Link
                 className="font-normal whitespace-nowrap tracking-wide text-sm hover:bg-[var(--bg-secondary)]  flex items-center gap-1 h-full px-2 py-2"
                 to={item.href}
+                onClick={(e) => item.items && e.preventDefault()}
               >
                 {item.label}
                 {item.items && (
@@ -481,7 +482,7 @@ const Header: React.FC = () => {
               {item.items && isDropdownOpen === item.label && (
                 <div
                   className="absolute left-0 top-full min-w-[220px] bg-[var(--bg-primary)] text-white py-2 px-0 shadow-lg z-50"
-                  style={{ marginTop: "2px" }}
+                  style={{ marginTop: "0px" }}
                 >
                   <ul className="flex flex-col">
                     {item.items.map((sub) => (
@@ -489,6 +490,7 @@ const Header: React.FC = () => {
                         <Link
                           to={sub.href}
                           className="block px-6 py-2 text-sm whitespace-nowrap hover:bg-[var(--bg-secondary)] cursor-pointer hover:text-white"
+                          onClick={() => setIsDropdownOpen(null)}
                         >
                           {sub.name}
                         </Link>
