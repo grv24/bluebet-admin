@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { memoizeCasinoComponent } from "@/utils/casinoMemo";
+import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 import {
   cardImage,
   getBlackShapes,
@@ -7,12 +7,12 @@ import {
   getNumberCard,
   getRedShapes,
   getShapeColor,
-} from "@/utils/card";
+} from "../../../utils/card";
 import { RiLockFill } from "react-icons/ri";
-import { getCasinoIndividualResult } from "@/helper/casino";
+// import { getCasinoIndividualResult } from "../../../helper/casino";
 import { useCookies } from "react-cookie";
 import { useQuery } from "@tanstack/react-query";
-import CasinoModal from "@/components/common/CasinoModal";
+// import CasinoModal from "../../../components/common/CasinoModal";
 import { useNavigate } from "react-router-dom";
 
 const AndarBahar2Component = ({
@@ -68,19 +68,20 @@ const AndarBahar2Component = ({
     casinoData?.data?.sub || casinoData?.data?.data?.data?.t2 || [];
 
   // React Query for individual result details
-  const {
-    data: resultDetails,
-    isLoading,
-    error,
-  } = useQuery<any>({
-    queryKey: ["casinoIndividualResult", selectedResult?.mid],
-    queryFn: () =>
-      getCasinoIndividualResult(selectedResult?.mid, cookies, gameSlug),
-    enabled: !!selectedResult?.mid && isModalOpen,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 10, // 10 minutes
-    retry: 2,
-  });
+  // const {
+  //   data: resultDetails,
+  //   isLoading,
+  //   error,
+  // } = useQuery<any>({
+  //   queryKey: ["casinoIndividualResult", selectedResult?.mid],
+  //   queryFn: () =>
+  //     // getCasinoIndividualResult(selectedResult?.mid, cookies, gameSlug),
+  //     Promise.resolve(null),
+  //   enabled: !!selectedResult?.mid && isModalOpen,
+  //   staleTime: 1000 * 60 * 5, // 5 minutes
+  //   gcTime: 1000 * 60 * 10, // 10 minutes
+  //   retry: 2,
+  // });
 
   // Function to get winner information
   const getWinnerInfo = (resultData: any) => {
@@ -141,31 +142,31 @@ const AndarBahar2Component = ({
   };
 
   // Parse result data
-  const resultData = resultDetails?.data?.matchData;
-  const jokerCard = resultData?.cards?.split(",")[0];
-  const { winner, description } = getWinnerInfo(resultData);
-  const jokerDetails = getJokerDetails(jokerCard, resultData?.desc);
-  const matchTimeDisplay = formatDateTime(
-    resultData?.winAt || resultData?.mtime || resultData?.matchTime
-  );
+  // const resultData = resultDetails?.data?.matchData;
+  // const jokerCard = resultData?.cards?.split(",")[0];
+  // const { winner, description } = getWinnerInfo(resultData);
+  // const jokerDetails = getJokerDetails(jokerCard, resultData?.desc);
+  // const matchTimeDisplay = formatDateTime(
+  //   resultData?.winAt || resultData?.mtime || resultData?.matchTime
+  // );
 
   // Debug: Log result details when available
-  useEffect(() => {
-    if (resultDetails?.data?.matchData) {
-      console.log("🎰 ABJ Individual Result Details:", {
-        mid: resultDetails.data.matchData.mid,
-        win: resultDetails.data.matchData.win,
-        cards: resultDetails.data.matchData.cards,
-        desc: resultDetails.data.matchData.desc,
-        winAt: resultDetails.data.matchData.winAt,
-        mtime: resultDetails.data.matchData.mtime,
-        parsedDesc: resultDetails.data.matchData.desc?.split("#") || [],
-        winner,
-        jokerDetails,
-        description
-      });
-    }
-  }, [resultDetails, winner, jokerDetails, description]);
+  // useEffect(() => {
+  //   if (resultDetails?.data?.matchData) {
+  //     console.log("🎰 ABJ Individual Result Details:", {
+  //       mid: resultDetails.data.matchData.mid,
+  //       win: resultDetails.data.matchData.win,
+  //       cards: resultDetails.data.matchData.cards,
+  //       desc: resultDetails.data.matchData.desc,
+  //       winAt: resultDetails.data.matchData.winAt,
+  //       mtime: resultDetails.data.matchData.mtime,
+  //       parsedDesc: resultDetails.data.matchData.desc?.split("#") || [],
+  //       winner,
+  //       jokerDetails,
+  //       description
+  //     });
+  //   }
+  // }, [resultDetails, winner, jokerDetails, description]);
 
   // Function to filter user bets based on selected filter
   const getFilteredBets = (bets: any[], filter: string) => {
@@ -924,417 +925,7 @@ const AndarBahar2Component = ({
         </div>
       </div>
 
-      {/* Individual Result Details Modal */}
-      <CasinoModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        title="Result Details"
-        size="xl"
-        resultDetails={true}
-      >
-        {/* Loading State */}
-        {isLoading ? (
-          <div className="flex justify-center items-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--bg-primary)]"></div>
-          </div>
-        ) : (
-          <div className="flex flex-col px-2">
-            {/* top */}
-            <div className="flex justify-between items-center">
-              <h2 className="text-xs md:text-sm font-semibold leading-8 text-black">
-                Round Id:
-                <span className="text-black font-normal pl-1">
-                  {resultDetails?.data?.matchData?.mid}
-                </span>
-              </h2>
-              <h2 className="text-xs md:text-sm font-semibold leading-8 text-black capitalize">
-                Match Time:{" "}
-                <span className="text-black font-normal pl-1">
-                  {matchTimeDisplay}
-                </span>
-              </h2>
-            </div>
-            {/* result data  */}
-            <div className="flex flex-col gap-1 justify-center items-center py-2">
-              <div className="flex md:flex-row flex-col  w-full py-4 justify-between items-center">
-                <div className="grid grid-cols-5 justify-between gap-2 w-fit mx-auto">
-                  <div className="col-span-1 w-full flex items-center justify-between">
-                    <div className="flex-col items-center justify-center">
-                      <h2 className="text-base font-semibold leading-8 text-black">
-                        A
-                      </h2>
-                      <h2 className="text-base font-semibold leading-8 text-black">
-                        B
-                      </h2>
-                    </div>
-                    <div className="flex items-center justify-center">
-                      <img
-                        src={getCardByCode(
-                          resultDetails?.data?.matchData?.cards?.split(
-                            ","
-                          )[0]
-                        )}
-                        alt=""
-                        className="w-8"
-                      />
-                    </div>
-                  </div>
-                  <div className="col-span-1 w-full flex flex-col items-center justify-center gap-2">
-                    <div>
-                      {" "}
-                      <img
-                        src={getCardByCode(
-                          resultDetails?.data?.matchData?.cards?.split(
-                            ","
-                          )[2]
-                        )}
-                        alt=""
-                        className="w-8"
-                      />
-                    </div>
-                    <div>
-                      {" "}
-                      <img
-                        src={getCardByCode(
-                          resultDetails?.data?.matchData?.cards?.split(
-                            ","
-                          )[1]
-                        )}
-                        alt=""
-                        className="w-8"
-                      />
-                    </div>
-                  </div>
-                  <div className="col-span-3 w-full  ">
-                    {(() => {
-                      const cards =
-                        resultDetails?.data?.matchData?.cards
-                          ?.split(",")
-                          .slice(3) || [];
-
-                      // distribute cards: first to B, then A, alternate
-                      const playerA: string[] = [];
-                      const playerB: string[] = [];
-
-                      cards.forEach((card: string, index: number) => {
-                        if (card === "1") return; // skip placeholder 1s
-                        if (index % 2 === 0) {
-                          // even index → Player B
-                          playerB.push(card);
-                        } else {
-                          // odd index → Player A
-                          playerA.push(card);
-                        }
-                      });
-
-                      return (
-                        <div className="flex flex-col gap-4">
-                          <div>
-                            <div className="flex gap-2 flex-nowrap overflow-x-auto">
-                              {playerA.map((card, i) => (
-                                <img
-                                  src={getCardByCode(card)}
-                                  alt=""
-                                  className="w-8"
-                                />
-                              ))}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="flex gap-2 flex-nowrap overflow-x-auto">
-                              {playerB.map((card, i) => (
-                                <img
-                                  src={getCardByCode(card)}
-                                  alt=""
-                                  className="w-8"
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                </div>
-              </div>
-            </div>
-            {/* bottom  description*/}
-            <div
-              className="max-w-lg  mx-auto w-full mb-4 box-shadow-lg border border-gray-100 bg-gray-50"
-              style={{ boxShadow: "0 0 4px -1px rgba(0, 0, 0, 0.5);" }}
-            >
-              <div className="flex flex-col gap-1 justify-center items-center">
-                <h2 className="text-sm font-normal leading-8 text-[var(--bg-secondary)]">
-                  Winner:{" "}
-                  <span className="text-black font-normal pl-1">
-                    {winner || "N/A"}
-                  </span>
-                </h2>
-                <h2 className="text-sm font-normal leading-8 text-[var(--bg-secondary)]">
-                  Suit:{" "}
-                  <span className="text-black font-normal pl-1">
-                    {jokerDetails.suit
-                      ? jokerDetails.suit.toUpperCase()
-                      : "N/A"}
-                  </span>
-                </h2>
-                <h2 className="text-sm font-normal leading-8 text-[var(--bg-secondary)]">
-                  Odd/Even:{" "}
-                  <span className="text-black font-normal pl-1">
-                    {jokerDetails.isOdd !== null
-                      ? jokerDetails.isOdd
-                        ? "Odd"
-                        : "Even"
-                      : "N/A"}
-                  </span>
-                </h2>
-                <h2 className="text-sm font-normal leading-8 text-[var(--bg-secondary)]">
-                  Joker:{" "}
-                  <span className="text-black font-normal pl-1">
-                    {jokerDetails.rank || "N/A"}
-                  </span>
-                </h2>
-              
-              </div>
-            </div>
-
-            {/* User Bets Table */}
-            {resultDetails?.data?.userBets &&
-              resultDetails.data.userBets.length > 0 && (
-                <div className="max-w-4xl mx-auto w-full mb-4">
-                  <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
-                    <h3 className="text-sm font-semibold text-gray-700">
-                      User Bets
-                    </h3>
-                  </div>
-
-                  {/* Filter Options */}
-                  <div className="bg-white px-4 py-2 border-b border-gray-200">
-                    <div className="flex items-center gap-4">
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name="betFilter"
-                          value="all"
-                          checked={betFilter === "all"}
-                          onChange={(e) => setBetFilter(e.target.value)}
-                          className="text-blue-600"
-                        />
-                        <span className="text-sm">All</span>
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name="betFilter"
-                          value="back"
-                          checked={betFilter === "back"}
-                          onChange={(e) => setBetFilter(e.target.value)}
-                          className="text-blue-600"
-                        />
-                        <span className="text-sm">Back</span>
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name="betFilter"
-                          value="lay"
-                          checked={betFilter === "lay"}
-                          onChange={(e) => setBetFilter(e.target.value)}
-                          className="text-blue-600"
-                        />
-                        <span className="text-sm">Lay</span>
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name="betFilter"
-                          value="deleted"
-                          checked={betFilter === "deleted"}
-                          onChange={(e) => setBetFilter(e.target.value)}
-                          className="text-blue-600"
-                        />
-                        <span className="text-sm">Deleted</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Summary */}
-                  <div className="bg-white px-4 py-2 border-b border-gray-200">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">
-                        Total Bets:{" "}
-                        {
-                          getFilteredBets(
-                            resultDetails.data.userBets,
-                            betFilter
-                          ).length
-                        }
-                      </span>
-                      <span className="text-sm font-medium">
-                        Total Amount:{" "}
-                        {(() => {
-                          const totalAmount = getFilteredBets(
-                            resultDetails.data.userBets,
-                            betFilter
-                          ).reduce((sum: number, bet: any) => {
-                            const result = bet.betData?.result;
-
-                            if (!result || !result.settled) return sum;
-
-                            let profitLoss = 0;
-
-                            if (
-                              result.status === "won" ||
-                              result.status === "profit"
-                            ) {
-                              profitLoss = Number(result.profitLoss) || 0;
-                            } else if (result.status === "lost") {
-                              profitLoss = (Number(result.profitLoss) || 0);
-                            }
-
-                            return sum + profitLoss;
-                          }, 0);
-
-                          return (
-                            <span
-                              className={
-                                totalAmount >= 0
-                                  ? "text-green-600"
-                                  : "text-red-600"
-                              }
-                            >
-                              {totalAmount.toFixed(2)}
-                            </span>
-                          );
-                        })()}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Table */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm border-collapse">
-                      <thead>
-                        <tr className="bg-gray-100 text-gray-700">
-                          <th className="border border-gray-300 px-3 py-2 text-left font-medium">
-                            Nation
-                          </th>
-                          <th className="border border-gray-300 px-3 py-2 text-left font-medium">
-                            Rate
-                          </th>
-                          <th className="border border-gray-300 px-3 py-2 text-left font-medium">
-                            Amount
-                          </th>
-                          <th className="border border-gray-300 px-3 py-2 text-left font-medium">
-                            Profit/Loss
-                          </th>
-                          <th className="border border-gray-300 px-3 py-2 text-left font-medium">
-                            Date
-                          </th>
-                          <th className="border border-gray-300 px-3 py-2 text-left font-medium text-nowrap">
-                            IP Address
-                          </th>
-                          <th className="border border-gray-300 px-3 py-2 text-left font-medium text-nowrap">
-                            Browser Details
-                          </th>
-                          <th className="border border-gray-300 px-3 py-2 text-center font-medium">
-                            <input type="checkbox" className="text-blue-600" />
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {getFilteredBets(
-                          resultDetails.data.userBets,
-                          betFilter
-                        ).map((bet: any, index: number) => (
-                          <tr
-                            key={bet.id}
-                            className={`hover:bg-gray-50 ${
-                              bet.betData?.oddCategory?.toLowerCase() === "back"
-                                ? "bg-[var(--bg-back)]"
-                                : bet.betData?.oddCategory?.toLowerCase() ===
-                                    "lay"
-                                  ? "bg-[var(--bg-lay)]"
-                                  : "bg-white"
-                            }`}
-                          >
-                            <td className="border text-nowrap border-gray-300 px-3 py-2">
-                              {bet.betData?.name ||
-                                bet.betData?.betName ||
-                                "N/A"}
-                            </td>
-                            <td className="border text-nowrap border-gray-300 px-3 py-2">
-                              {bet.betData?.betRate ||
-                                bet.betData?.matchOdd ||
-                                "N/A"}
-                            </td>
-                            <td className="border text-nowrap border-gray-300 px-3 py-2">
-                              {bet.betData?.stake || "N/A"}
-                            </td>
-                            <td
-                              className={`border text-nowrap border-gray-300 px-3 py-2 ${
-                                bet.betData?.result?.status === "won"
-                                  ? "text-green-600"
-                                  : "text-red-600"
-                              }`}
-                            >
-                              {bet.betData?.result?.status === "won"
-                                ? "+"
-                                : ""}{" "}
-                              {bet.betData?.result?.profitLoss?.toFixed(2) ||
-                                "N/A"}
-                            </td>
-                            <td className="border text-nowrap border-gray-300 px-3 py-2">
-                              {new Date(bet.createdAt).toLocaleString()}
-                            </td>
-                            <td className="border text-nowrap border-gray-300 px-3 py-2 text-xs">
-                              {/* IP address would come from bet data if available */}
-                              N/A
-                            </td>
-                            <td className="border border-gray-300 px-3 py-2">
-                              <button className="text-blue-600 hover:text-blue-800 text-sm">
-                                Detail
-                              </button>
-                            </td>
-                            <td className="border border-gray-300 px-3 py-2 text-center">
-                              <input
-                                type="checkbox"
-                                className="text-blue-600"
-                              />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-            {/* Error State */}
-            {error && (
-              <div className="flex justify-center items-center py-8">
-                <div className="text-red-500 text-center">
-                  <p>Failed to load result details</p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Please try again later
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* No Data State */}
-            {!isLoading &&
-              !error &&
-              !resultDetails?.data?.matchData && (
-                <div className="flex justify-center items-center py-8">
-                  <div className="text-gray-500 text-center">
-                    <p>No result data available</p>
-                  </div>
-                </div>
-              )}
-          </div>
-        )}
-      </CasinoModal>
+    
     </div>
   );
 };

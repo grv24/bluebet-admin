@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { cardImage, getCardByCode, getNumberCard } from "../../../utils/card";
-import { getCasinoIndividualResult } from "@/helper/casino";
+// import { getCasinoIndividualResult } from "../../../helper/casino";
 import { useCookies } from "react-cookie";
 import { useQuery } from "@tanstack/react-query";
-import CasinoModal from "@/components/common/CasinoModal";
+// import CasinoModal from "../../../components/common/CasinoModal";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { RiLockFill } from "react-icons/ri";
-import { memoizeCasinoComponent } from "@/utils/casinoMemo";
+import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 const formatDateTime = (
   value: string | number | Date | null | undefined
@@ -157,37 +157,37 @@ const AndarBahar150Component = ({
   });
 
   // React Query for individual result details
-  const {
-    data: resultDetails,
-    isLoading,
-    error,
-  } = useQuery<any>({
-    queryKey: ["casinoIndividualResult", selectedResult?.mid],
-    queryFn: () =>
-      getCasinoIndividualResult(selectedResult?.mid, cookies, "ab4"),
-    enabled: !!selectedResult?.mid && isModalOpen,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 10, // 10 minutes
-    retry: 2,
-  });
+  // const {
+  //   data: resultDetails,
+  //   isLoading,
+  //   error,
+  // } = useQuery<any>({
+  //   queryKey: ["casinoIndividualResult", selectedResult?.mid],
+  //   queryFn: () =>
+  //     getCasinoIndividualResult(selectedResult?.mid, cookies, "ab4"),
+  //   enabled: !!selectedResult?.mid && isModalOpen,
+  //   staleTime: 1000 * 60 * 5, // 5 minutes
+  //   gcTime: 1000 * 60 * 10, // 10 minutes
+  //   retry: 2,
+  // });
 
   // Debug logging for individual result details
-  React.useEffect(() => {
-    if (resultDetails?.data?.matchData) {
-      console.log("🎰 AB4 Individual Result Details:", {
-        mid: resultDetails.data.matchData.mid,
-        win: resultDetails.data.matchData.win,
-        cards: resultDetails.data.matchData.cards,
-        desc: resultDetails.data.matchData.desc,
-        winAt: resultDetails.data.matchData.winAt,
-        dateAndTime: resultDetails.data.matchData.dateAndTime,
-        // Legacy format fields
-        resultMid: resultDetails.data.matchData.result?.mid,
-        resultWin: resultDetails.data.matchData.result?.win,
-        resultCards: resultDetails.data.matchData.result?.cards,
-      });
-    }
-  }, [resultDetails]);
+  // React.useEffect(() => {
+  //   if (resultDetails?.data?.matchData) {
+  //     console.log("🎰 AB4 Individual Result Details:", {
+  //       mid: resultDetails.data.matchData.mid,
+  //       win: resultDetails.data.matchData.win,
+  //       cards: resultDetails.data.matchData.cards,
+  //       desc: resultDetails.data.matchData.desc,
+  //       winAt: resultDetails.data.matchData.winAt,
+  //       dateAndTime: resultDetails.data.matchData.dateAndTime,
+  //       // Legacy format fields
+  //       resultMid: resultDetails.data.matchData.result?.mid,
+  //       resultWin: resultDetails.data.matchData.result?.win,
+  //       resultCards: resultDetails.data.matchData.result?.cards,
+  //     });
+  //   }
+  // }, [resultDetails]);
 
   /**
    * Handle clicking on individual result to show details
@@ -359,24 +359,24 @@ const AndarBahar150Component = ({
     });
   };
 
-  const cards = resultDetails?.data?.matchData?.cards?.split(",") || [];
+  // const cards = resultDetails?.data?.matchData?.cards?.split(",") || [];
 
   // Filter and split cards into two rows with alternating pattern
-  const validCards = cards.filter((card: string) => card && card.trim());
+  // const validCards = cards.filter((card: string) => card && card.trim());
 
   // Distribute cards alternately: 0th index -> second row, 1st index -> first row, etc.
   const firstRowCards: string[] = [];
   const secondRowCards: string[] = [];
 
-  validCards.forEach((card: string, index: number) => {
-    if (index % 2 === 0) {
-      // Even indices (0, 2, 4, ...) go to second row
-      secondRowCards.push(card);
-    } else {
-      // Odd indices (1, 3, 5, ...) go to first row
-      firstRowCards.push(card);
-    }
-  });
+  //   validCards.forEach((card: string, index: number) => {
+  //     if (index % 2 === 0) {
+  //       // Even indices (0, 2, 4, ...) go to second row
+  //       secondRowCards.push(card);
+  //     } else {
+  //       // Odd indices (1, 3, 5, ...) go to first row
+  //       firstRowCards.push(card);
+  //     }
+  // });
 
   // Get visible cards for each row based on current index
   const getVisibleCards = (
@@ -647,332 +647,7 @@ const AndarBahar150Component = ({
         </div>
       </div>
 
-      {/* Individual Result Details Modal */}
-      <CasinoModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        title="Result Details"
-        size="xl"
-        resultDetails={true}
-      >
-        <div className="flex flex-col px-2">
-          {/* top */}
-          <div className="flex justify-between items-center">
-            <h2 className="text-xs md:text-sm font-semibold leading-8 text-black">
-              Round Id:
-              <span className="text-black font-normal pl-1">
-                {resultDetails?.data?.matchData?.mid ||
-                  resultDetails?.data?.matchData?.result?.mid ||
-                  "N/A"}
-              </span>
-            </h2>
-            <h2 className="text-xs md:text-sm font-semibold leading-8 text-black capitalize">
-              Match Time:{" "}
-              <span className="text-black font-normal pl-1">
-                {formatDateTime(
-                  resultDetails?.data?.matchData?.winAt ||
-                    resultDetails?.data?.matchData?.dateAndTime ||
-                    resultDetails?.data?.matchData?.matchTime
-                )}
-              </span>
-            </h2>
-          </div>
-          {/* result data */}
-          <div className="flex flex-col gap-1 justify-center items-center py-2">
-            {/* card display */}
-            <div className="flex flex-col gap-4">
-              {/* First Row */}
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  {/* <h3 className="text-sm font-semibold text-gray-700">First Row</h3> */}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={prevFirstRow}
-                      disabled={firstRowIndex === 0}
-                      className="p-1 bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
-                    >
-                      <FaChevronLeft className="w-3 h-3" />
-                    </button>
-                    <button
-                      onClick={nextFirstRow}
-                      disabled={firstRowIndex + 5 >= firstRowCards.length}
-                      className="p-1 bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
-                    >
-                      <FaChevronRight className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-                <div className="flex gap-2 items-center justify-center flex-wrap">
-                  {visibleFirstRow.map((card: string, cardIndex: number) => {
-                    // Calculate the original position: first row contains odd indices (1, 3, 5, ...)
-                    const originalPosition =
-                      (firstRowIndex + cardIndex) * 2 + 2;
-                    return (
-                      <div
-                        key={cardIndex}
-                        className="flex flex-col items-center gap-1"
-                      >
-                        <img
-                          src={getCardByCode(card, "ab4", "individual")}
-                          alt={`Card ${originalPosition}`}
-                          className="w-8 h-12"
-                        />
-                        <h2 className="text-xs font-semibold text-gray-600">
-                          {originalPosition}
-                        </h2>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Second Row */}
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  {/* <h3 className="text-sm font-semibold text-gray-700">Second Row</h3> */}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={prevSecondRow}
-                      disabled={secondRowIndex === 0}
-                      className="p-1 bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
-                    >
-                      <FaChevronLeft className="w-3 h-3" />
-                    </button>
-                    <button
-                      onClick={nextSecondRow}
-                      disabled={secondRowIndex + 5 >= secondRowCards.length}
-                      className="p-1 bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
-                    >
-                      <FaChevronRight className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-                <div className="flex gap-2 items-center justify-center flex-wrap">
-                  {visibleSecondRow.map((card: string, cardIndex: number) => {
-                    // Calculate the original position: second row contains even indices (0, 2, 4, ...)
-                    const originalPosition = (secondRowIndex + cardIndex) * 2;
-                    return (
-                      <div
-                        key={cardIndex}
-                        className="flex flex-col items-center gap-1"
-                      >
-                        <img
-                          src={getCardByCode(card, "ab4", "individual")}
-                          alt={`Card ${originalPosition + 1}`}
-                          className="w-8 h-12"
-                        />
-                        <h2 className="text-xs font-semibold text-gray-600">
-                          {originalPosition + 1}
-                        </h2>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* description */}
-            <div className="flex flex-col gap-1 justify-center items-center">
-              <p className="text-sm font-normal leading-8 text-black">
-                Winner:{" "}
-                <span className="text-[var(--bg-secondary)] font-normal pl-1">
-                  {(() => {
-                    const win = resultDetails?.data?.matchData?.win;
-                    const desc = resultDetails?.data?.matchData?.desc;
-
-                    // Parse the description to get the actual result
-                    if (desc) {
-                      // The desc field contains comma-separated values
-                      // For AB4, we need to determine the winner from the desc
-                      const descValues = desc.split(",");
-
-                      // If desc has values, show the first few as the result
-                      if (descValues.length > 0) {
-                        return descValues.join(", ");
-                      }
-                    }
-
-                    // Fallback to win field
-                    if (win === "1") return "Andar";
-                    if (win === "2") return "Bahar";
-                    if (win === "0") return "Tie";
-                    return win || "N/A";
-                  })()}
-                </span>
-              </p>
-            </div>
-
-            {/* User Bets */}
-            {resultDetails?.data?.userBets &&
-              resultDetails.data.userBets.length > 0 && (
-                <div className="max-w-4xl mx-auto w-full mb-4">
-                  <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                    <h3 className="text-sm font-semibold text-gray-700">
-                      User Bets
-                    </h3>
-                    <div className="flex items-center gap-4">
-                      {["all", "back", "lay", "deleted"].map((filter) => (
-                        <label key={filter} className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            name="betFilter"
-                            value={filter}
-                            checked={betFilter === filter}
-                            onChange={(e) => setBetFilter(e.target.value)}
-                            className="text-blue-600"
-                          />
-                          <span className="text-sm capitalize">{filter}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="bg-white px-4 py-2 border-b border-gray-200">
-                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                      <span className="text-sm font-medium">
-                        Total Bets:{" "}
-                        {
-                          getFilteredBets(
-                            resultDetails.data.userBets,
-                            betFilter
-                          ).length
-                        }
-                      </span>
-                      <span className="text-sm font-medium">
-                        Total Amount:{" "}
-                        {(() => {
-                          const totalAmount = getFilteredBets(
-                            resultDetails.data.userBets,
-                            betFilter
-                          ).reduce((sum: number, bet: any) => {
-                            const result = bet.betData?.result;
-                            if (!result || !result.settled) return sum;
-                            return sum + Number(result.profitLoss ?? 0);
-                          }, 0);
-
-                          return (
-                            <span
-                              className={
-                                totalAmount >= 0
-                                  ? "text-green-600"
-                                  : "text-red-600"
-                              }
-                            >
-                              {totalAmount.toFixed(2)}
-                            </span>
-                          );
-                        })()}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm border-collapse">
-                      <thead>
-                        <tr className="bg-gray-100 text-gray-700">
-                          <th className="border border-gray-300 px-3 py-2 text-left font-medium">
-                            Nation
-                          </th>
-                          <th className="border border-gray-300 px-3 py-2 text-left font-medium">
-                            Rate
-                          </th>
-                          <th className="border border-gray-300 px-3 py-2 text-left font-medium">
-                            Amount
-                          </th>
-                          <th className="border border-gray-300 px-3 py-2 text-left font-medium">
-                            Profit/Loss
-                          </th>
-                          <th className="border border-gray-300 px-3 py-2 text-left font-medium">
-                            Date
-                          </th>
-                          <th className="border border-gray-300 px-3 py-2 text-left font-medium">
-                            IP Address
-                          </th>
-                          <th className="border border-gray-300 px-3 py-2 text-left font-medium">
-                            Browser Details
-                          </th>
-                          <th className="border border-gray-300 px-3 py-2 text-center font-medium">
-                            <input type="checkbox" className="text-blue-600" />
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {getFilteredBets(
-                          resultDetails.data.userBets,
-                          betFilter
-                        ).map((bet: any, index: number) => (
-                          <tr
-                            key={bet.id || index}
-                            className={`hover:bg-gray-50 ${
-                              bet.betData?.oddCategory?.toLowerCase() === "back"
-                                ? "bg-[var(--bg-back)]"
-                                : bet.betData?.oddCategory?.toLowerCase() ===
-                                    "lay"
-                                  ? "bg-[var(--bg-lay)]"
-                                  : "bg-white"
-                            }`}
-                          >
-                            <td className="border text-nowrap border-gray-300 px-3 py-2">
-                              {bet.betData?.name ||
-                                bet.betData?.betName ||
-                                "N/A"}
-                            </td>
-                            <td className="border text-nowrap border-gray-300 px-3 py-2">
-                              {bet.betData?.betRate ||
-                                bet.betData?.matchOdd ||
-                                "N/A"}
-                            </td>
-                            <td className="border text-nowrap border-gray-300 px-3 py-2">
-                              {bet.betData?.stake ?? "N/A"}
-                            </td>
-                            <td
-                              className={`border text-nowrap border-gray-300 px-3 py-2 ${
-                                bet.betData?.result?.status === "won"
-                                  ? "text-green-600"
-                                  : "text-red-600"
-                              }`}
-                            >
-                              {bet.betData?.result?.status === "won" ? "+" : ""}{" "}
-                              {bet.betData?.result?.profitLoss?.toFixed(2) ??
-                                "N/A"}
-                            </td>
-                            <td className="border text-nowrap border-gray-300 px-3 py-2">
-                              {bet.createdAt
-                                ? new Date(bet.createdAt).toLocaleString()
-                                : "N/A"}
-                            </td>
-                            <td className="border text-nowrap border-gray-300 px-3 py-2 text-xs">
-                              {bet.ipAddress || "N/A"}
-                            </td>
-                            <td className="border text-nowrap border-gray-300 px-3 py-2">
-                              <div className="relative group">
-                                <button className="text-blue-600 hover:text-blue-800 text-sm">
-                                  Detail
-                                </button>
-                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 max-w-xs">
-                                  <div className="break-words">
-                                    {bet.userAgent || "N/A"}
-                                  </div>
-                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="border text-nowrap border-gray-300 px-3 py-2 text-center">
-                              <input
-                                type="checkbox"
-                                className="text-blue-600"
-                              />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-          </div>
-        </div>
-      </CasinoModal>
+ 
     </div>
   );
 };

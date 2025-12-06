@@ -50,12 +50,12 @@ import {
 // import { Poker6Player, Poker20, PokerOneDay } from "./poker";
 // import { Lucky7, Lucky715, Lucky7b, Lucky7c } from "./lucky7";
 
-// import {
-//   AndarBahar,
-//   AndarBahar2,
-//   AndarBahar50,
-//   AndarBahar150,
-// } from "./andar-bahar";
+import {
+  AndarBahar,
+  AndarBahar2,
+  AndarBahar50,
+  AndarBahar150,
+} from "./andar-bahar";
 // import { ThirtyTwoCardA, ThirtyTwoCardB } from "./32card";
 // import { Baccarat2, Baccarat, Baccarat29 } from "./baccarat";
 // import {
@@ -211,10 +211,10 @@ const GAME_COMPONENTS: Partial<Record<GameCode, React.ComponentType<any>>> = {
   // LUCKY7EU_2: Lucky7c,
   // LUCKY15: Lucky715,
   //andar bahar variants
-  // ABJ: AndarBahar2,
-  // AB_20: AndarBahar,
-  // AB_3: AndarBahar50,
-  // AB_4: AndarBahar150,
+  ABJ: AndarBahar2,
+  AB_20: AndarBahar,
+  AB_3: AndarBahar50,
+  AB_4: AndarBahar150,
   //32 card variants
   // CARD_32: ThirtyTwoCardA,
   // CARD32EU: ThirtyTwoCardB,
