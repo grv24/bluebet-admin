@@ -15,11 +15,9 @@ import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 const Lucky7Component = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results,
   gameSlug,
   name,
-  currentBet,
 }: any) => {
   // const resultModal = useIndividualResultModal();
   const navigate = useNavigate();
@@ -40,89 +38,7 @@ const Lucky7Component = ({
    * @param betType - The type of bet to calculate profit/loss for
    * @returns The profit/loss amount (negative for loss-only display)
    */
-  const getBetProfitLoss = (betType: string): number => {
-    if (!currentBet?.data || !casinoData?.data?.mid) return 0;
 
-    const currentMatchId = casinoData.data.mid;
-    let profitLoss = 0;
-
-    // Only bets for this match
-    const bets = currentBet.data.filter(
-      (bet: any) => String(bet.matchId) === String(currentMatchId)
-    );
-
-    bets.forEach((bet: any) => {
-      const { betName, stake } = bet.betData;
-
-      // Normalize bet name for comparison
-      const normalizedBetName = betName?.toLowerCase() || "";
-      const normalizedBetType = betType.toLowerCase();
-
-      // More precise matching to avoid cross-contamination
-      let isMatch = false;
-
-      // Exact match first
-      if (normalizedBetName === normalizedBetType) {
-        isMatch = true;
-      }
-      // Handle Low Card specifically
-      else if (
-        betType === "Low Card" &&
-        (normalizedBetName === "low card" || normalizedBetName === "low")
-      ) {
-        isMatch = true;
-      }
-      // Handle High Card specifically
-      else if (
-        betType === "High Card" &&
-        (normalizedBetName === "high card" || normalizedBetName === "high")
-      ) {
-        isMatch = true;
-      }
-      // Handle Even specifically
-      else if (betType === "Even" && normalizedBetName === "even") {
-        isMatch = true;
-      }
-      // Handle Odd specifically
-      else if (betType === "Odd" && normalizedBetName === "odd") {
-        isMatch = true;
-      }
-      // Handle Red specifically
-      else if (betType === "Red" && normalizedBetName === "red") {
-        isMatch = true;
-      }
-      // Handle Black specifically
-      else if (betType === "Black" && normalizedBetName === "black") {
-        isMatch = true;
-      }
-      // Handle Card bets (Card A, Card 2, etc.)
-      else if (
-        betType.startsWith("Card") &&
-        normalizedBetName.startsWith("card")
-      ) {
-        // Extract card number from both
-        const betTypeCardNum = betType.replace("Card ", "").trim();
-        const betNameCardNum = normalizedBetName.replace("card ", "").trim();
-        isMatch = betTypeCardNum === betNameCardNum;
-      }
-      // Handle Line bets (Line 1, Line 2, Line 3, Line 4)
-      else if (
-        betType.startsWith("Line") &&
-        normalizedBetName.startsWith("line")
-      ) {
-        // Extract line number from both
-        const betTypeLineNum = betType.replace("Line", "").trim();
-        const betNameLineNum = normalizedBetName.replace("line", "").trim();
-        isMatch = betTypeLineNum === betNameLineNum;
-      }
-
-      if (isMatch) {
-        profitLoss += -stake; // Accumulate loss-only display for multiple bets
-      }
-    });
-
-    return profitLoss;
-  };
 
 
   // Function to filter user bets based on selected filter
@@ -146,44 +62,9 @@ const Lucky7Component = ({
     });
   };
 
-  // Debug logging for Lucky7EU component
-  console.log("🎰 Lucky7EU component debug:", {
-    casinoData,
-    casinoDataStructure: {
-      hasData: !!casinoData?.data,
-      hasSub: !!casinoData?.data?.sub,
-      hasDataData: !!casinoData?.data?.data,
-      hasDataDataData: !!casinoData?.data?.data?.data,
-      hasT2: !!casinoData?.data?.data?.data?.t2,
-      subLength: casinoData?.data?.sub?.length || 0,
-      t2Length: casinoData?.data?.data?.data?.t2?.length || 0,
-    },
-    t2,
-    t2Length: t2.length,
-    results,
-    resultsLength: results?.length || 0,
-    firstResult: results?.[0],
-    sampleT2Item: t2[0],
-  });
 
-  /**
-   * Handle clicking on individual result to show details
-   */
-  const handleResultClick = (result: any) => {
-    const resultId = result?.mid || result?.roundId || result?.id || result?.matchId;
-    
-    if (!resultId) {
-      console.error("🎰 Lucky7: No result ID found in result", result);
-      return;
-    }
-    
-    if (!normalizedGameSlug) {
-      console.error("🎰 Lucky7: No gameSlug available", { gameSlug, normalizedGameSlug });
-      return;
-    }
-    
-    // resultModal.openModal(String(resultId), result);
-  };
+
+
 
   const getByNat = (name: string) =>
     t2.find(
@@ -213,8 +94,6 @@ const Lucky7Component = ({
                 <button
                   className="relative bg-gradient-to-r from-[var(--bg-primary)] text-white font-semibold to-[var(--bg-secondary)] w-full py-2"
                   disabled={locked}
-                  onClick={() =>
-                    !locked && row?.sid && onBetClick?.(String(row.sid), "back")
                   }
                 >
                   {locked && (
@@ -226,15 +105,11 @@ const Lucky7Component = ({
                 </button>
                 <h2 
                   className={`text-xs font-semibold leading-5 text-center ${
-                    getBetProfitLoss("Low Card") > 0
                       ? "text-green-600"
-                      : getBetProfitLoss("Low Card") < 0
                         ? "text-red-600"
                         : "text-gray-600"
                   }`}
                 >
-                  {getBetProfitLoss("Low Card") > 0 ? "+" : ""}
-                  {getBetProfitLoss("Low Card").toFixed(0)}
                 </h2>
               </>
             );
@@ -256,8 +131,6 @@ const Lucky7Component = ({
                 <button
                   className="relative bg-gradient-to-r from-[var(--bg-primary)] text-white font-semibold to-[var(--bg-secondary)] w-full py-2"
                   disabled={locked}
-                  onClick={() =>
-                    !locked && row?.sid && onBetClick?.(String(row.sid), "back")
                   }
                 >
                   {locked && (
@@ -269,15 +142,11 @@ const Lucky7Component = ({
                 </button>
                 <h2 
                   className={`text-xs font-semibold leading-5 text-center ${
-                    getBetProfitLoss("High Card") > 0
                       ? "text-green-600"
-                      : getBetProfitLoss("High Card") < 0
                         ? "text-red-600"
                         : "text-gray-600"
                   }`}
                 >
-                  {getBetProfitLoss("High Card") > 0 ? "+" : ""}
-                  {getBetProfitLoss("High Card").toFixed(0)}
                 </h2>
               </>
             );
@@ -300,10 +169,8 @@ const Lucky7Component = ({
                   <button
                     className="relative bg-gradient-to-r from-[var(--bg-primary)] text-white font-semibold to-[var(--bg-secondary)] w-full py-2.5"
                     disabled={locked}
-                    onClick={() =>
                       !locked &&
                       row?.sid &&
-                      onBetClick?.(String(row.sid), "back")
                     }
                   >
                     {locked && (
@@ -315,15 +182,11 @@ const Lucky7Component = ({
                   </button>
                   <h2 
                     className={`text-xs font-semibold leading-5 text-center ${
-                      getBetProfitLoss("Even") > 0
                         ? "text-green-600"
-                        : getBetProfitLoss("Even") < 0
                           ? "text-red-600"
                           : "text-gray-600"
                     }`}
                   >
-                    {getBetProfitLoss("Even") > 0 ? "+" : ""}
-                    {getBetProfitLoss("Even").toFixed(0)}
                   </h2>
                 </>
               );
@@ -342,10 +205,8 @@ const Lucky7Component = ({
                   <button
                     className="relative bg-gradient-to-r from-[var(--bg-primary)] text-white font-semibold to-[var(--bg-secondary)] w-full py-2.5"
                     disabled={locked}
-                    onClick={() =>
                       !locked &&
                       row?.sid &&
-                      onBetClick?.(String(row.sid), "back")
                     }
                   >
                     {locked && (
@@ -357,15 +218,11 @@ const Lucky7Component = ({
                   </button>
                   <h2 
                     className={`text-xs font-semibold leading-5 text-center ${
-                      getBetProfitLoss("Odd") > 0
                         ? "text-green-600"
-                        : getBetProfitLoss("Odd") < 0
                           ? "text-red-600"
                           : "text-gray-600"
                     }`}
                   >
-                    {getBetProfitLoss("Odd") > 0 ? "+" : ""}
-                    {getBetProfitLoss("Odd").toFixed(0)}
                   </h2>
                 </>
               );
@@ -386,10 +243,8 @@ const Lucky7Component = ({
                   <button
                     className="relative bg-gradient-to-r from-[var(--bg-primary)] text-white font-semibold to-[var(--bg-secondary)] w-full py-2.5"
                     disabled={locked}
-                    onClick={() =>
                       !locked &&
                       row?.sid &&
-                      onBetClick?.(String(row.sid), "back")
                     }
                   >
                     {locked && (
@@ -413,15 +268,11 @@ const Lucky7Component = ({
                   </button>
                   <h2 
                     className={`text-xs font-semibold leading-5 text-center ${
-                      getBetProfitLoss("Red") > 0
                         ? "text-green-600"
-                        : getBetProfitLoss("Red") < 0
                           ? "text-red-600"
                           : "text-gray-600"
                     }`}
                   >
-                    {getBetProfitLoss("Red") > 0 ? "+" : ""}
-                    {getBetProfitLoss("Red").toFixed(0)}
                   </h2>
                 </>
               );
@@ -440,10 +291,8 @@ const Lucky7Component = ({
                   <button
                     className="relative bg-gradient-to-r from-[var(--bg-primary)] text-white font-semibold to-[var(--bg-secondary)] w-full py-2.5"
                     disabled={locked}
-                    onClick={() =>
                       !locked &&
                       row?.sid &&
-                      onBetClick?.(String(row.sid), "back")
                     }
                   >
                     {locked && (
@@ -458,15 +307,11 @@ const Lucky7Component = ({
                   </button>
                   <h2 
                     className={`text-xs font-semibold leading-5 text-center ${
-                      getBetProfitLoss("Black") > 0
                         ? "text-green-600"
-                        : getBetProfitLoss("Black") < 0
                           ? "text-red-600"
                           : "text-gray-600"
                     }`}
                   >
-                    {getBetProfitLoss("Black") > 0 ? "+" : ""}
-                    {getBetProfitLoss("Black").toFixed(0)}
                   </h2>
                 </>
               );
@@ -490,10 +335,8 @@ const Lucky7Component = ({
                   <button
                     className="relative"
                     disabled={locked}
-                    onClick={() =>
                       !locked &&
                       lineRow?.sid &&
-                      onBetClick?.(String(lineRow.sid), "back")
                     }
                   >
                     {locked && (
@@ -513,15 +356,11 @@ const Lucky7Component = ({
           </div>
                   <h2 
                     className={`text-xs font-semibold leading-3 ${
-                      getBetProfitLoss("Line 1") > 0
                         ? "text-green-600"
-                        : getBetProfitLoss("Line 1") < 0
                           ? "text-red-600"
                           : "text-gray-600"
                     }`}
                   >
-                    {getBetProfitLoss("Line 1") > 0 ? "+" : ""}
-                    {getBetProfitLoss("Line 1").toFixed(0)}
                   </h2>
         </div>
         {/* Line 2: Cards 4, 5, 6 */}
@@ -538,10 +377,8 @@ const Lucky7Component = ({
                   <button
                     className="relative"
                     disabled={locked}
-                    onClick={() =>
                       !locked &&
                       lineRow?.sid &&
-                      onBetClick?.(String(lineRow.sid), "back")
                     }
                   >
                     {locked && (
@@ -561,15 +398,11 @@ const Lucky7Component = ({
           </div>
                   <h2 
                     className={`text-xs font-semibold leading-3 ${
-                      getBetProfitLoss("Line 2") > 0
                         ? "text-green-600"
-                        : getBetProfitLoss("Line 2") < 0
                           ? "text-red-600"
                           : "text-gray-600"
                     }`}
                   >
-                    {getBetProfitLoss("Line 2") > 0 ? "+" : ""}
-                    {getBetProfitLoss("Line 2").toFixed(0)}
                   </h2>
         </div>
         {/* Line 3: Cards  8, 9,10 */}
@@ -586,10 +419,8 @@ const Lucky7Component = ({
                   <button
                     className="relative"
                     disabled={locked}
-                    onClick={() =>
                       !locked &&
                       lineRow?.sid &&
-                      onBetClick?.(String(lineRow.sid), "back")
                     }
                   >
                     {locked && (
@@ -609,15 +440,11 @@ const Lucky7Component = ({
           </div>
                   <h2 
                     className={`text-xs font-semibold leading-3 ${
-                      getBetProfitLoss("Line 3") > 0
                         ? "text-green-600"
-                        : getBetProfitLoss("Line 3") < 0
                           ? "text-red-600"
                           : "text-gray-600"
                     }`}
                   >
-                    {getBetProfitLoss("Line 3") > 0 ? "+" : ""}
-                    {getBetProfitLoss("Line 3").toFixed(0)}
                   </h2>
         </div>
         {/* Line 4: Cards 10, J, Q, K (or 10, J, Q if only 3) */}
@@ -634,10 +461,8 @@ const Lucky7Component = ({
                   <button
                     className="relative"
                     disabled={locked}
-                    onClick={() =>
                       !locked &&
                       lineRow?.sid &&
-                      onBetClick?.(String(lineRow.sid), "back")
                     }
                   >
                     {locked && (
@@ -657,15 +482,11 @@ const Lucky7Component = ({
           </div>
                   <h2 
                     className={`text-xs font-semibold leading-3 ${
-                      getBetProfitLoss("Line 4") > 0
                         ? "text-green-600"
-                        : getBetProfitLoss("Line 4") < 0
                           ? "text-red-600"
                           : "text-gray-600"
                     }`}
                   >
-                    {getBetProfitLoss("Line 4") > 0 ? "+" : ""}
-                    {getBetProfitLoss("Line 4").toFixed(0)}
                   </h2>
         </div>
       </div>
@@ -697,8 +518,6 @@ const Lucky7Component = ({
                 <button
                   className="relative"
                   disabled={locked}
-                  onClick={() =>
-                    !locked && row?.sid && onBetClick?.(String(row.sid), "back")
                   }
                 >
                   {locked && (
@@ -714,15 +533,11 @@ const Lucky7Component = ({
                 </button>
                 <h2 
                   className={`text-xs font-semibold leading-3 ${
-                    getBetProfitLoss(`Card ${item}`) > 0
                       ? "text-green-600"
-                      : getBetProfitLoss(`Card ${item}`) < 0
                         ? "text-red-600"
                         : "text-gray-600"
                   }`}
                 >
-                  {getBetProfitLoss(`Card ${item}`) > 0 ? "+" : ""}
-                  {getBetProfitLoss(`Card ${item}`).toFixed(0)}
                 </h2>
               </div>
             );
@@ -737,7 +552,7 @@ const Lucky7Component = ({
           </h2>
           <h2
             onClick={() => navigate(`/casino-result?game=${normalizedGameSlug.toUpperCase()}`)}
-            className="text-sm font-normal leading-8 text-white cursor-pointer hover:text-gray-200"
+            className="text-sm font-normal leading-8 text-white hover:text-gray-200"
           >
             View All
           </h2>
@@ -764,9 +579,7 @@ const Lucky7Component = ({
             return (
               <h2
                 key={index}
-                className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor} cursor-pointer hover:scale-110 transition-transform`}
-                onClick={() => handleResultClick(item)}
-                title="Click to view details"
+                className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor} `}
               >
                 {displayText}
               </h2>

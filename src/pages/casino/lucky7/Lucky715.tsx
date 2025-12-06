@@ -8,21 +8,17 @@ import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 interface Lucky715Props {
   casinoData: any;
   remainingTime: number;
-  onBetClick: (sid: string, type: "back" | "lay") => void;
   results?: any[];
   gameCode?: string;
   gameName?: string;
-  currentBet?: any;
 }
 
 const Lucky715Component: React.FC<Lucky715Props> = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results = [],
   gameCode,
   gameName,
-  currentBet,
 }) => {
   // const resultModal = useIndividualResultModal();
   const navigate = useNavigate();
@@ -74,126 +70,7 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
   // Get all odds data
   const oddsData = getOddsData();
 
-  // Profit/Loss calculation function
-  const getBetProfitLoss = React.useCallback((betType: string): number => {
-    if (!currentBet?.data || !casinoData?.data?.mid) return 0;
 
-    const currentMatchId = casinoData.data.mid;
-    let totalProfitLoss = 0;
-
-    // Only bets for this match
-    const bets = currentBet.data.filter(
-      (bet: any) => String(bet.matchId) === String(currentMatchId)
-    );
-
-    // Find the sid for the requested bet type by matching with odds data
-    const requestedOdd = oddsData.find((odd: any) => 
-      odd?.nat && odd.nat.toLowerCase().trim() === betType.toLowerCase().trim()
-    );
-    const requestedSid = requestedOdd?.sid ? String(requestedOdd.sid) : null;
-
-    bets.forEach((bet: any) => {
-      const { sid, betName: currentBetName, name, nation: betNation, oddCategory, stake, betRate } = bet.betData;
-      const result = bet.betData?.result;
-
-      // Use either betName, name, or nation field
-      const actualBetName = currentBetName || name || betNation;
-      const betSid = sid ? String(sid) : null;
-      
-      // Check if this bet matches the requested bet type
-      let isMatch = false;
-      
-      // Match by sid first (most reliable)
-      if (requestedSid && betSid && requestedSid === betSid) {
-        isMatch = true;
-      }
-      // Match by name
-      else if (actualBetName && typeof actualBetName === 'string') {
-        const actualBetNameLower = actualBetName.toLowerCase().trim();
-        const requestedBetTypeLower = betType.toLowerCase().trim();
-        
-        // Exact match
-        if (actualBetNameLower === requestedBetTypeLower) {
-          isMatch = true;
-        }
-        // Match "0 Runs", "1 Runs", etc. - need to match the full number
-        else if (requestedBetTypeLower.includes("runs") && actualBetNameLower.includes("runs")) {
-          // Extract numbers from both
-          const requestedNum = requestedBetTypeLower.match(/\d+/)?.[0];
-          const actualNum = actualBetNameLower.match(/\d+/)?.[0];
-          if (requestedNum && actualNum && requestedNum === actualNum) {
-            isMatch = true;
-          }
-        }
-        // Match "Wicket" exactly
-        else if (requestedBetTypeLower.includes("wicket") && actualBetNameLower.includes("wicket")) {
-          isMatch = true;
-        }
-      }
-      
-      if (isMatch) {
-        // If bet is settled, use the actual profit/loss from the result
-        if (result && result.settled) {
-          let profitLoss = 0;
-
-          if (result.status === "won" || result.status === "profit") {
-            profitLoss = Number(result.profitLoss) || 0;
-          } else if (result.status === "lost") {
-            profitLoss = Number(result.profitLoss) || 0;
-          }
-
-          totalProfitLoss += profitLoss;
-        } else {
-          // For unsettled bets, calculate potential profit
-          const stakeAmount = Number(stake) || 0;
-          const rate = Number(betRate) || 0;
-          
-          if (oddCategory?.toLowerCase() === "back") {
-            // Calculate profit if this bet wins
-            let profit = 0;
-            if (rate > 0) {
-              if (rate < 1) {
-                profit = stakeAmount * rate;
-              } else {
-                profit = stakeAmount * (rate - 1);
-              }
-            }
-            totalProfitLoss += profit;
-          }
-        }
-      } else {
-        // For other options (mutually exclusive), show potential loss if this bet loses
-        // If bet is settled and lost, show the loss
-        if (result && result.settled) {
-          if (result.status === "lost") {
-            totalProfitLoss += Number(result.profitLoss) || 0;
-          }
-        } else {
-          // For unsettled bets on other options, show potential loss (stake)
-          totalProfitLoss -= Number(stake) || 0;
-        }
-      }
-    });
-
-    return totalProfitLoss;
-  }, [currentBet, casinoData, oddsData]);
-
-  // Handle clicking on individual result to show details
-  const handleResultClick = (result: any) => {
-    const resultId = result?.mid || result?.roundId || result?.id || result?.matchId;
-    
-    if (!resultId) {
-      console.error("🎰 Lucky715: No result ID found in result", result);
-      return;
-    }
-    
-    if (!gameSlug) {
-      console.error("🎰 Lucky715: No gameSlug available", { gameCode, gameSlug });
-      return;
-    }
-    
-    // resultModal.openModal(String(resultId), result);
-  };
 
   // Map win value to display info
   const getResultDisplay = (win: string) => {
@@ -253,8 +130,6 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
             {[oddsData[0], oddsData[3]]?.map((odd: any) => {
               const locked = isLocked(odd);
               const oddsValue = odd?.b || 0;
-              const profitLoss = currentBet?.data ? getBetProfitLoss(odd?.nat || "") : 0;
-
               return (
                 <tr
                   key={odd?.sid}
@@ -263,24 +138,18 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
                   <td className="w-1/2">
                     <div className="flex items-center gap-1">
                       <h2 className="text-sm font-normal px-2">{odd?.nat}</h2>
-                      {profitLoss !== 0 && (
                         <span
                           className={`text-[10px] font-semibold ${
-                            profitLoss > 0 ? "text-green-500" : "text-red-500"
                           }`}
                         >
-                          {profitLoss > 0 ? "+" : ""}
-                          {profitLoss.toFixed(0)}
                         </span>
                       )}
                     </div>
                   </td>
                   <td
                     className="bg-[var(--bg-back)] text-sm font-semibold relative cursor-pointer"
-                    onClick={() =>
                       !locked &&
                       odd?.sid &&
-                      onBetClick(odd?.sid.toString(), "back")
                     }
                   >
                     {locked && (
@@ -323,8 +192,6 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
             {[oddsData[1], oddsData[4]].map((odd: any) => {
               const locked = isLocked(odd);
               const oddsValue = odd?.b || 0;
-              const profitLoss = currentBet?.data ? getBetProfitLoss(odd?.nat || "") : 0;
-
               return (
                 <tr
                   key={odd?.sid}
@@ -333,24 +200,18 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
                   <td className="w-1/2">
                     <div className="flex items-center gap-1">
                       <h2 className="text-sm font-normal px-2">{odd?.nat}</h2>
-                      {profitLoss !== 0 && (
                         <span
                           className={`text-[10px] font-semibold ${
-                            profitLoss > 0 ? "text-green-500" : "text-red-500"
                           }`}
                         >
-                          {profitLoss > 0 ? "+" : ""}
-                          {profitLoss.toFixed(0)}
                         </span>
                       )}
                     </div>
                   </td>
                   <td
                     className="bg-[var(--bg-back)] w-1/4 text-sm font-semibold relative cursor-pointer"
-                    onClick={() =>
                       !locked &&
                       odd?.sid &&
-                      onBetClick(odd?.sid.toString(), "back")
                     }
                   >
                     {locked && (
@@ -393,8 +254,6 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
             {[oddsData[2], oddsData[5]].map((odd: any) => {
               const locked = isLocked(odd);
               const oddsValue = odd?.b || 0;
-              const profitLoss = currentBet?.data ? getBetProfitLoss(odd?.nat || "") : 0;
-
               return (
                 <tr
                   key={odd?.sid}
@@ -403,24 +262,18 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
                   <td className="w-1/2">
                     <div className="flex items-center gap-1">
                       <h2 className="text-sm font-normal px-2">{odd?.nat}</h2>
-                      {profitLoss !== 0 && (
                         <span
                           className={`text-[10px] font-semibold ${
-                            profitLoss > 0 ? "text-green-500" : "text-red-500"
                           }`}
                         >
-                          {profitLoss > 0 ? "+" : ""}
-                          {profitLoss.toFixed(0)}
                         </span>
                       )}
                     </div>
                   </td>
                   <td
                     className="bg-[var(--bg-back)] w-1/4 text-sm font-semibold relative cursor-pointer"
-                    onClick={() =>
                       !locked &&
                       odd?.sid &&
-                      onBetClick(odd?.sid.toString(), "back")
                     }
                   >
                     {locked && (
@@ -465,8 +318,6 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
             {oddsData?.map((odd: any) => {
               const locked = isLocked(odd);
               const oddsValue = odd?.b || 0;
-              const profitLoss = currentBet?.data ? getBetProfitLoss(odd?.nat || "") : 0;
-
               return (
                 <tr
                   key={odd?.sid}
@@ -475,24 +326,18 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
                   <td className="w-1/2">
                     <div className="flex items-center gap-1">
                       <h2 className="text-sm font-normal px-2">{odd?.nat}</h2>
-                      {profitLoss !== 0 && (
                         <span
                           className={`text-[10px] font-semibold ${
-                            profitLoss > 0 ? "text-green-500" : "text-red-500"
                           }`}
                         >
-                          {profitLoss > 0 ? "+" : ""}
-                          {profitLoss.toFixed(0)}
                         </span>
                       )}
                     </div>
                   </td>
                   <td
                     className="bg-[var(--bg-back)] text-sm font-semibold relative cursor-pointer"
-                    onClick={() =>
                       !locked &&
                       odd?.sid &&
-                      onBetClick(odd?.sid.toString(), "back")
                     }
                   >
                     {locked && (
@@ -543,8 +388,7 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
               return (
                 <div
                   key={item.mid || `result-${item.win}-${index}`}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold text-white cursor-pointer hover:scale-110 transition-transform`}
-                  onClick={() => handleResultClick(item)}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold text-white `}
                   title={`Round ID: ${item.mid || "N/A"} - Winner: ${resultDisplay.title} - Click to view details`}
                 >
                   {resultDisplay.label}
