@@ -401,20 +401,6 @@ const SuperOverComponent: React.FC<SuperOverProps> = ({
     return "superover"; // Default fallback
   }, [gameCode]);
 
-  // Handle clicking on individual result to show details
-    const resultId =
-      result?.mid || result?.roundId || result?.id || result?.matchId;
-    if (!resultId) {
-      console.error("🎰 SuperOver: No result ID found in result", result);
-      alert("Unable to open result details: Missing result ID");
-      return;
-    }
-    // resultModal.openModal(String(resultId), result);
-  };
-
-  // Function to filter user bets based on selected filter (kept for customGetFilteredBets)
-
-
   return (
     <div className="flex flex-col gap-1">
       {/* Bookmaker Section */}
@@ -467,7 +453,7 @@ const SuperOverComponent: React.FC<SuperOverProps> = ({
                           <span className="truncate md:text-[12px] text-xs md:font-semibold font-normal px-2 text-wrap">
                             {teamName}
                           </span>
-                          )}</div>
+                        </div>
                       </div>
                     </td>
                     <td colSpan={2} className="relative p-0">
@@ -574,15 +560,15 @@ const SuperOverComponent: React.FC<SuperOverProps> = ({
                         key={`fancy-${idx}-${section.sid || idx}`}
                         className="border-[var(--border)]"
                       >
-                        <td className="border-[var(--border)] border-b md:w-72 w-50 align-top">
-                          <div className="flex flex-col justify-start pt-1">
-                            <div className="flex items-center gap-1">
-                              <span className="truncate md:w-72 w-50 md:text-[12px] md:font-semibold text-xs font-normal px-2 text-wrap">
-                                {section.nat}
-                              </span>
-                          )}</div>
-                          </div>
-                        </td>
+                          <td className="border-[var(--border)] border-b md:w-72 w-50 align-top">
+                            <div className="flex flex-col justify-start pt-1">
+                              <div className="flex items-center gap-1">
+                                <span className="truncate md:w-72 w-50 md:text-[12px] md:font-semibold text-xs font-normal px-2 text-wrap">
+                                  {section.nat}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
                         <td className="border-[var(--border)] w-full">
                           <div className="relative">
                             {isLocked &&
@@ -669,7 +655,8 @@ const SuperOverComponent: React.FC<SuperOverProps> = ({
         </div>
       )}
 
-      {/* Individual Result Details Modal */}</div>
+      {/* Individual Result Details Modal */}
+    </div>
   );
 };
 
