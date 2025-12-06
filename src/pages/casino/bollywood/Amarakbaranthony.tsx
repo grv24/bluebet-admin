@@ -9,35 +9,11 @@ import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 const AmarakbaranthonyComponent = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results,
   gameSlug,
   gameName,
-  currentBet,
 }: any) => {
-  // const resultModal = useIndividualResultModal();
   const navigate = useNavigate();
-
-  // Function to filter user bets based on selected filter
-  const getFilteredBets = (bets: any[], filter: string) => {
-    if (filter === "all") return bets;
-
-    return bets.filter((bet: any) => {
-      const oddCategory = bet.betData?.oddCategory?.toLowerCase();
-      const status = bet.status?.toLowerCase();
-
-      switch (filter) {
-        case "back":
-          return oddCategory === "back";
-        case "lay":
-          return oddCategory === "lay";
-        case "deleted":
-          return status === "deleted" || status === "cancelled";
-        default:
-          return true;
-      }
-    });
-  };
 
   // Normalize game slug for IndividualResultModal
   const normalizedGameSlug = React.useMemo(() => {
@@ -51,18 +27,6 @@ const AmarakbaranthonyComponent = ({
     return "aaa"; // Default fallback
   }, [gameSlug]);
 
-  /**
-   * Handle clicking on individual result to show details
-   */
-  const handleResultClick = (result: any) => {
-    const resultId = result?.mid || result?.roundId || result?.id || result?.matchId;
-    if (!resultId) {
-      console.error("🎰 AAA: No result ID found in result", result);
-      alert("Unable to open result details: Missing result ID");
-      return;
-    }
-    // resultModal.openModal(String(resultId), result);
-  };
   // Handle both new API format (casinoData?.data?.sub) and legacy format (casinoData?.data?.data?.data?.t2)
   const t2: any[] = casinoData?.data?.sub || casinoData?.data?.data?.data?.t2 || [];
   
@@ -238,13 +202,7 @@ const AmarakbaranthonyComponent = ({
               </h2>
               <div className="flex lg:gap-1 gap-0 items-center w-full">
                 <div
-                  className="relative bg-[var(--bg-back)] w-full border border-gray-300 text-center text-base font-semibold leading-10 text-[var(--bg-secondary)] cursor-pointer"
-                  onClick={() => {
-                    console.log("🎰 AAA Back bet click:", { name, sid: row?.sid, odds: row, locked });
-                    if (!locked) {
-                      onBetClick?.(String(row?.sid), "back");
-                    }
-                  }}
+                  className="relative bg-[var(--bg-back)] w-full border border-gray-300 text-center text-base font-semibold leading-10 text-[var(--bg-secondary)]"
                 >
                   {locked && (
                     <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
@@ -254,13 +212,7 @@ const AmarakbaranthonyComponent = ({
                   {(row?.b || row?.b1) ?? "-"}
                 </div>
                 <div
-                  className="relative bg-[var(--bg-lay)] w-full border border-gray-300 text-center text-base font-semibold leading-10 text-[var(--bg-secondary)] cursor-pointer"
-                  onClick={() => {
-                    console.log("🎰 AAA Lay bet click:", { name, sid: row?.sid, odds: row, locked });
-                    if (!locked) {
-                      onBetClick?.(String(row?.sid), "lay");
-                    }
-                  }}
+                  className="relative bg-[var(--bg-lay)] w-full border border-gray-300 text-center text-base font-semibold leading-10 text-[var(--bg-secondary)]"
                 >
                   {locked && (
                     <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
@@ -310,12 +262,6 @@ const AmarakbaranthonyComponent = ({
                   <button
                     className="relative gradient left to right bg-gradient-to-r from-[var(--bg-primary)] to-[var(--bg-secondary)] text-white w-full leading-10"
                     disabled={locked}
-                    onClick={() => {
-                      console.log("🎰 AAA Button bet click:", { label, sid: row?.sid, odds: row, locked });
-                      if (!locked) {
-                        onBetClick?.(String(row?.sid), "back");
-                      }
-                    }}
                   >
                     {locked && (
                       <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
@@ -387,12 +333,6 @@ const AmarakbaranthonyComponent = ({
                 <button
                   className="relative w-full h-full flex items-center justify-center"
                   disabled={locked}
-                  onClick={() => {
-                    console.log("🎰 AAA Card bet click:", { key, sid: row?.sid, odds: row, locked });
-                    if (!locked) {
-                      onBetClick?.(String(row?.sid), "back");
-                    }
-                  }}
                 >
                   {locked && (
                     <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
@@ -434,12 +374,6 @@ const AmarakbaranthonyComponent = ({
                   <button
                     className="relative w-full h-full flex items-center justify-center"
                       disabled={locked}
-                      onClick={() => {
-                        console.log("🎰 AAA Mobile card bet click:", { key, sid: row?.sid, odds: row, locked });
-                        if (!locked) {
-                          onBetClick?.(String(row?.sid), "back");
-                        }
-                      }}
                     >
                     {locked && (
                       <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
@@ -480,12 +414,6 @@ const AmarakbaranthonyComponent = ({
                     <button
                       className="relative w-full h-full flex items-center justify-center"
                       disabled={locked}
-                      onClick={() => {
-                        console.log("🎰 AAA Mobile JQK bet click:", { key, sid: row?.sid, odds: row, locked });
-                        if (!locked) {
-                          onBetClick?.(String(row?.sid), "back");
-                        }
-                      }}
                     >
                       {locked && (
                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
@@ -550,8 +478,7 @@ const AmarakbaranthonyComponent = ({
               return (
                 <h2
                   key={index}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${color} cursor-pointer hover:scale-110 transition-transform`}
-                  onClick={() => handleResultClick(item)}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${color}`}
                   title="Click to view details"
                 >
                   {displayText}
