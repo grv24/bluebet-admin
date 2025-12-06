@@ -188,23 +188,6 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
   };
 
 
-  /**
-   * Handle clicking on individual result to show details
-   */
-  const handleResultClick = (result: any) => {
-    if (!result?.mid) return;
-
-    setSelectedResult(result);
-    // setIsModalOpen(true);
-  };
-
-  /**
-   * Close the result details modal
-   */
-  const closeModal = () => {
-    // setIsModalOpen(false);
-    setSelectedResult(null);
-  };
 
   return (
     <div className="w-full flex flex-col gap-1.5">
@@ -219,12 +202,7 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
               </div>
               
               <div className="grid grid-cols-2 w-28 sm:w-36">
-                <div
-                  className="relative h-10 sm:h-12 flex flex-col items-center justify-center text-base sm:text-lg font-semibold bg-[var(--bg-back)] text-black border border-gray-200"
-                  onClick={() =>
-                    !isSuspended(playerA, remainingTime) &&
-                  }
-                >
+                <div className="relative h-10 sm:h-12 flex flex-col items-center justify-center text-base sm:text-lg font-semibold bg-[var(--bg-back)] text-black border border-gray-200">
                   {isSuspended(playerA, remainingTime) && (
                     <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
                       <RiLockFill className="text-white text-xl" />
@@ -236,12 +214,7 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
                   </h2>
                  
                 </div>
-                <div
-                  className="relative h-10 sm:h-12 flex flex-col items-center justify-center text-base sm:text-lg font-semibold bg-[var(--bg-lay)] text-black border border-gray-200"
-                  onClick={() =>
-                    !isSuspended(playerA, remainingTime) &&
-                  }
-                >
+                <div className="relative h-10 sm:h-12 flex flex-col items-center justify-center text-base sm:text-lg font-semibold bg-[var(--bg-lay)] text-black border border-gray-200">
                   {isSuspended(playerA, remainingTime) && (
                     <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
                       <RiLockFill className="text-white text-xl" />
@@ -263,12 +236,7 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
               <div className="text-sm font-semibold px-2">Player B
               </div>
               <div className="grid grid-cols-2 w-28 sm:w-36">
-                <div
-                  className="relative h-10 sm:h-12 flex flex-col items-center justify-center text-base sm:text-lg font-semibold bg-[var(--bg-back)] text-black border border-gray-200"
-                  onClick={() =>
-                    !isSuspended(playerB, remainingTime) &&
-                  }
-                >
+                <div className="relative h-10 sm:h-12 flex flex-col items-center justify-center text-base sm:text-lg font-semibold bg-[var(--bg-back)] text-black border border-gray-200">
                   {isSuspended(playerB, remainingTime) && (
                     <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
                       <RiLockFill className="text-white text-xl" />
@@ -280,12 +248,7 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
                   </h2>
                  
                 </div>
-                <div
-                  className="relative h-10 sm:h-12 flex flex-col items-center justify-center text-base sm:text-lg font-semibold bg-[var(--bg-lay)] text-black border border-gray-200"
-                  onClick={() =>
-                    !isSuspended(playerB, remainingTime) &&
-                  }
-                >
+                <div className="relative h-10 sm:h-12 flex flex-col items-center justify-center text-base sm:text-lg font-semibold bg-[var(--bg-lay)] text-black border border-gray-200">
                   {isSuspended(playerB, remainingTime) && (
                     <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
                       <RiLockFill className="text-white text-xl" />
@@ -308,11 +271,7 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
             Player A
           </h2>
           <div className="grid grid-cols-2 gap-1.5">
-            <button
-              className={`relative w-full bg-[var(--bg-back)] text-sm leading-10 font-extrabold tracking-wide border border-gray-300 flex flex-col items-center justify-center`}
-            
-              }
-            >
+            <button className="relative w-full bg-[var(--bg-back)] text-sm leading-10 font-extrabold tracking-wide border border-gray-300 flex flex-col items-center justify-center">
               {isSuspended(a2Card, remainingTime) && (
                 <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
                   <RiLockFill className="text-white text-2xl" />
@@ -320,11 +279,7 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
               )}
               <h2 className="text-sm font-semibold">2 Cards Bonus</h2>
             </button>
-            <button
-              className={`relative w-full bg-[var(--bg-back)] text-sm leading-10 font-extrabold tracking-wide border border-gray-300 flex flex-col items-center justify-center`}
-            
-              }
-            >
+            <button className="relative w-full bg-[var(--bg-back)] text-sm leading-10 font-extrabold tracking-wide border border-gray-300 flex flex-col items-center justify-center">
               {isSuspended(a7Card, remainingTime) && (
                 <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
                   <RiLockFill className="text-white text-2xl" />
@@ -339,11 +294,7 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
             Player B
           </h2>
           <div className="grid grid-cols-2 gap-1.5">
-            <button
-              className={`relative w-full bg-[var(--bg-back)] text-sm leading-10 font-extrabold tracking-wide border border-gray-300 flex flex-col items-center justify-center`}
-            
-              }
-            >
+            <button className="relative w-full bg-[var(--bg-back)] text-sm leading-10 font-extrabold tracking-wide border border-gray-300 flex flex-col items-center justify-center">
               {isSuspended(b2Card, remainingTime) && (
                 <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
                   <RiLockFill className="text-white text-2xl" />
@@ -351,11 +302,7 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
               )}
               <h2 className="text-sm font-semibold">2 Cards Bonus</h2>
             </button>
-            <button
-              className={`relative w-full bg-[var(--bg-back)] text-sm leading-10 font-extrabold tracking-wide border border-gray-300 flex flex-col items-center justify-center`}
-            
-              }
-            >
+            <button className="relative w-full bg-[var(--bg-back)] text-sm leading-10 font-extrabold tracking-wide border border-gray-300 flex flex-col items-center justify-center">
               {isSuspended(b7Card, remainingTime) && (
                 <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
                   <RiLockFill className="text-white text-2xl" />
@@ -398,9 +345,7 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
               return (
                 <h2
                   key={index}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${isA ? "text-red-500" : "text-yellow-500"} hover:scale-110 transition-transform`}
-                  onClick={() => handleResultClick(item)}
-                  title="Click to view details"
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${isA ? "text-red-500" : "text-yellow-500"}`}
                 >
                   {isA ? "A" : "B"}
                 </h2>
