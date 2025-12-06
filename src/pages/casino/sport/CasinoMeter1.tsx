@@ -9,11 +9,9 @@ import { memoizeCasinoComponent } from "@/utils/casinoMemo";
 interface CasinoMeter1Props {
   casinoData: any;
   remainingTime: number;
-  onBetClick?: (sid: string, type: "back" | "lay") => void;
   results?: any[];
   gameCode?: string;
   gameName?: string;
-  currentBet?: any;
 }
 
 /**
@@ -30,7 +28,6 @@ const isStatusLocked = (status: string): boolean => {
 
 
 // Function to filter user bets based on selected filter
-const getFilteredBets = (bets: any[], filter: string) => {
   if (filter === "all") return bets;
 
   return bets.filter((bet: any) => {
@@ -53,7 +50,6 @@ const getFilteredBets = (bets: any[], filter: string) => {
 const CasinoMeter1Component: React.FC<CasinoMeter1Props> = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results = [],
   gameCode,
   gameName,
@@ -105,9 +101,6 @@ const CasinoMeter1Component: React.FC<CasinoMeter1Props> = ({
   // Handle bet click
   const handleBetClick = (fighter: any, betType: "back" | "lay") => {
     if (!setPlaceBet || !setBetData || !setLatestBetData) {
-      // Fallback to onBetClick if context not available
-      if (onBetClick && fighter) {
-        onBetClick(String(fighter.sid), betType);
       }
       return;
     }
@@ -161,7 +154,6 @@ const CasinoMeter1Component: React.FC<CasinoMeter1Props> = ({
   }, [gameCode]);
 
   // Handle clicking on individual result to show details
-  const handleResultClick = (result: any) => {
     const resultId = result?.mid || result?.roundId || result?.id || result?.matchId;
     if (!resultId) {
       console.error("🎰 CasinoMeter1: No result ID found in result", result);
@@ -199,7 +191,7 @@ const CasinoMeter1Component: React.FC<CasinoMeter1Props> = ({
           }
           className={`bg-[var(--bg-back)] flex border-2 border-red-600 justify-center items-center gap-2 relative ${
             !isFighterALocked && fighterA?.b && fighterA.b !== "0.0" && fighterA.b !== 0
-              ? "cursor-pointer hover:opacity-90"
+              ? "hover:opacity-90"
               : ""
           }`}
         >
@@ -223,7 +215,7 @@ const CasinoMeter1Component: React.FC<CasinoMeter1Props> = ({
             <div className="absolute bottom-0 left-0 right-0 flex border-t border-gray-300">
               <div
                 className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-back)] ${
-                  !isFighterALocked && fighterA.b ? "cursor-pointer hover:opacity-90" : ""
+                  !isFighterALocked && fighterA.b ? "hover:opacity-90" : ""
                 }`}
                 onClick={() =>
                   !isFighterALocked &&
@@ -250,7 +242,7 @@ const CasinoMeter1Component: React.FC<CasinoMeter1Props> = ({
           }
           className={`bg-[var(--bg-back)] border-2 border-yellow-400 flex justify-center items-center gap-2 relative ${
             !isFighterBLocked && fighterB?.b && fighterB.b !== "0.0" && fighterB.b !== 0
-              ? "cursor-pointer hover:opacity-90"
+              ? "hover:opacity-90"
               : ""
           }`}
         >
@@ -274,7 +266,7 @@ const CasinoMeter1Component: React.FC<CasinoMeter1Props> = ({
             <div className="absolute bottom-0 left-0 right-0 flex border-t border-gray-300">
               <div
                 className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-back)] ${
-                  !isFighterBLocked && fighterB.b ? "cursor-pointer hover:opacity-90" : ""
+                  !isFighterBLocked && fighterB.b ? "hover:opacity-90" : ""
                 }`}
                 onClick={() =>
                   !isFighterBLocked &&
@@ -311,9 +303,8 @@ const CasinoMeter1Component: React.FC<CasinoMeter1Props> = ({
               return (
                 <div
                   key={item.mid || `result-${item.win}-${index}`}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} cursor-pointer hover:scale-110 transition-transform`}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} `}
                   title={`Round ID: ${item.mid || "N/A"} - ${resultDisplay.title}`}
-                  onClick={() => handleResultClick(item)}
                 >
                   {resultDisplay.label}
                 </div>
@@ -329,11 +320,9 @@ const CasinoMeter1Component: React.FC<CasinoMeter1Props> = ({
       <IndividualResultModal
         isOpen={resultModal.isOpen}
         onClose={resultModal.closeModal}
-        resultId={resultModal.selectedResultId || undefined}
         gameType={normalizedGameSlug}
         title={`${gameName || "1 Card Meter"} Result Details`}
         enableBetFiltering={true}
-        customGetFilteredBets={getFilteredBets}
       />
     </div>
   );

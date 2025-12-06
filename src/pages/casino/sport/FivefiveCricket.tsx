@@ -8,11 +8,9 @@ import { memoizeCasinoComponent } from '../../../utils/casinoMemo';
 interface FivefiveCricketProps {
   casinoData: any;
   remainingTime: number;
-  onBetClick?: (sid: string, type: "back" | "lay") => void;
   results?: any[];
   gameCode?: string;
   gameName?: string;
-  currentBet?: any;
 }
 
 /**
@@ -111,7 +109,7 @@ const BlinkingOddsCell = ({
   
     const backgroundClass = useMemo(() => {
       const baseClass =
-      "text-center w-1/2 cursor-pointer border-r border-[var(--border)] min-h-[40px] flex flex-col justify-center";
+      "text-center w-1/2 border-r border-[var(--border)] min-h-[40px] flex flex-col justify-center";
   
       if (isBlinking) {
         return `${baseClass} bg-yellow-300 shadow-lg transform scale-105 animate-pulse`;
@@ -169,7 +167,7 @@ const FancyOddsCell = ({
 
   const backgroundClass = useMemo(() => {
     const baseClass =
-      "text-center w-full cursor-pointer border-r border-[var(--border)] min-h-[40px] flex flex-col justify-center";
+      "text-center w-full border-r border-[var(--border)] min-h-[40px] flex flex-col justify-center";
 
     if (isBlinking) {
       return `${baseClass} bg-yellow-300 shadow-lg transform scale-105 animate-pulse`;
@@ -210,10 +208,8 @@ FancyOddsCell.displayName = "FancyOddsCell";
 const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results = [],
   gameCode,
-  currentBet,
 }) => {
   const navigate = useNavigate();
   // const placeBetContext = useContext(PlaceBetUseContext);
@@ -252,22 +248,17 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
   }, [markets]);
 
   // Profit/Loss calculation function
-  const getBetProfitLoss = React.useCallback((sectionSid: string | number, sectionName: string, marketName: string): number => {
-    if (!currentBet?.data || !matchId) return 0;
 
     let totalProfitLoss = 0;
 
     // Only bets for this match
-    const bets = currentBet.data.filter(
       (bet: any) => String(bet.matchId) === String(matchId)
     );
 
     bets.forEach((bet: any) => {
-      const { sid, betName: currentBetName, name, nation: betNation, oddCategory, stake, betRate, market: betMarket, mname: betMname } = bet.betData;
       const result = bet.betData?.result;
 
       // Use either betName, name, or nation field
-      const actualBetName = currentBetName || name || betNation;
       const betSid = sid ? String(sid) : null;
       const requestedSid = sectionSid ? String(sectionSid) : null;
       
@@ -305,15 +296,11 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
       if (isMatch) {
         // If bet is settled, use the actual profit/loss from the result
         if (result && result.settled) {
-          let profitLoss = 0;
 
           if (result.status === "won" || result.status === "profit") {
-            profitLoss = Number(result.profitLoss) || 0;
           } else if (result.status === "lost") {
-            profitLoss = Number(result.profitLoss) || 0;
           }
 
-          totalProfitLoss += profitLoss;
         } else {
           // For unsettled bets, calculate potential profit
           const stakeAmount = Number(stake) || 0;
@@ -341,7 +328,6 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
         // If bet is settled and lost, show the loss
         if (result && result.settled) {
           if (result.status === "lost") {
-            totalProfitLoss += Number(result.profitLoss) || 0;
           }
         } else {
           // For unsettled bets on other options, show potential loss (stake)
@@ -351,7 +337,7 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
     });
 
     return totalProfitLoss;
-  }, [currentBet, matchId]);
+  }, [, matchId]);
 
   // Extract odds from section odds array
   const getOddsFromSection = (section: any, oname: string) => {
@@ -366,9 +352,6 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
     oddsValue: string | number
   ) => {
     // if (!setPlaceBet || !setBetData || !setLatestBetData) {
-      // Fallback to onBetClick if context not available
-    //   if (onBetClick) {
-    //     onBetClick(String(section.sid), betType);
     //   }
     //   return;
     // }
@@ -421,9 +404,6 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
     oddsValue: string | number
   ) => {
     //  if (!setPlaceBet || !setBetData || !setLatestBetData) {
-      // Fallback to onBetClick if context not available
-    //   if (onBetClick) {
-    //     onBetClick(String(section.sid), betType);
     // //   }
     //   return;
     // }
@@ -512,7 +492,6 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
   }, [gameCode]);
 
   // Handle clicking on individual result to show details
-  const handleResultClick = (result: any) => {
     const resultId = result?.mid || result?.roundId || result?.id || result?.matchId;
     if (!resultId) {
       console.error("🎰 FivefiveCricket: No result ID found in result", result);
@@ -523,19 +502,7 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
   };
 
   // Function to filter user bets based on selected filter (kept for customGetFilteredBets)
-  const getFilteredBets = (bets: any[], filter: string) => {
-    if (filter === "all") return bets;
-    return bets.filter((bet: any) => {
-      const oddCategory = bet.betData?.oddCategory?.toLowerCase();
-      const status = bet.status?.toLowerCase();
-      switch (filter) {
-        case "back": return oddCategory === "back";
-        case "lay": return oddCategory === "lay";
-        case "deleted": return status === "deleted" || status === "cancelled";
-        default: return true;
-      }
-    });
-  };
+
 
   return (
     <div className="flex flex-col gap-1">
@@ -590,7 +557,6 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
                   const lay1 = getOddsFromSection(section, "lay1");
                   
                   // Calculate profit/loss
-                  const profitLoss = currentBet?.data ? getBetProfitLoss(section.sid, teamName, bookmakerMarket.mname) : 0;
 
                   return (
                     <tr
@@ -603,14 +569,10 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
                             <span className="truncate md:text-[12px] text-xs md:font-semibold font-normal px-2 text-wrap">
                               {teamName}
                             </span>
-                            {profitLoss !== 0 && (
                               <span
                                 className={`text-[10px] font-semibold ${
-                                  profitLoss > 0 ? "text-green-500" : "text-red-500"
                                 }`}
                               >
-                                {profitLoss > 0 ? "+" : ""}
-                                {profitLoss.toFixed(0)}
                               </span>
                             )}
                           </div>
@@ -718,7 +680,6 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
                       const lay1 = getOddsFromSection(section, "lay1");
                       
                       // Calculate profit/loss
-                      const profitLoss = currentBet?.data ? getBetProfitLoss(section.sid, section.nat, market.mname) : 0;
 
                       return (
                         <tr key={`fancy-${idx}-${section.sid || idx}`} className="border-[var(--border)]">
@@ -728,14 +689,10 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
                                 <span className="truncate md:w-72 w-50 md:text-[12px] md:font-semibold text-xs font-normal px-2 text-wrap">
                                   {section.nat}
                                 </span>
-                                {profitLoss !== 0 && (
                                   <span
                                     className={`text-[10px] font-semibold ${
-                                      profitLoss > 0 ? "text-green-500" : "text-red-500"
                                     }`}
                                   >
-                                    {profitLoss > 0 ? "+" : ""}
-                                    {profitLoss.toFixed(0)}
                                   </span>
                                 )}
                               </div>
@@ -816,9 +773,8 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
               return (
                 <div
                   key={item.mid || `result-${item.win}-${index}`}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} cursor-pointer hover:scale-110 transition-transform`}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} `}
                   title={`Round ID: ${item.mid || "N/A"} - ${resultDisplay.title}`}
-                  onClick={() => handleResultClick(item)}
                 >
                   {resultDisplay.label}
                 </div>
@@ -832,11 +788,9 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
       {/* <IndividualResultModal
         isOpen={resultModal.isOpen}
         onClose={resultModal.closeModal}
-        resultId={resultModal.selectedResultId || undefined}
         gameType={normalizedGameSlug}
         title={`${gameCode || "CRICKET_V3"} Result Details`}
         enableBetFiltering={true}
-        customGetFilteredBets={getFilteredBets}
       /> */}
     </div>
   );

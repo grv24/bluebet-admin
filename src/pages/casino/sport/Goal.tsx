@@ -8,21 +8,17 @@ import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 interface GoalProps {
   casinoData: any;
   remainingTime: number;
-  onBetClick: (sid: string, type: "back" | "lay") => void;
   results: any;
   gameSlug?: string;
   gameName?: string;
-  currentBet: any;
 }
 
 const GoalComponent: React.FC<GoalProps> = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results,
   gameSlug = "goal",
   gameName = "Goal",
-  currentBet,
 }) => {
   const navigate = useNavigate();
   // const resultModal = useIndividualResultModal();
@@ -40,25 +36,7 @@ const GoalComponent: React.FC<GoalProps> = ({
   }, [gameSlug]);
 
   // Function to filter user bets based on selected filter
-  const getFilteredBets = (bets: any[], filter: string) => {
-    if (filter === "all") return bets;
 
-    return bets.filter((bet: any) => {
-      const oddCategory = bet.betData?.oddCategory?.toLowerCase();
-      const status = bet.status?.toLowerCase();
-
-      switch (filter) {
-        case "back":
-          return oddCategory === "back";
-        case "lay":
-          return oddCategory === "lay";
-        case "deleted":
-          return status === "deleted" || status === "cancelled";
-        default:
-          return true;
-      }
-    });
-  };
 
   const getOddsData = (sid: string) => {
     // Handle new API response format (goal game)
@@ -74,18 +52,7 @@ const GoalComponent: React.FC<GoalProps> = ({
     );
   };
 
-  /**
-   * Handle clicking on individual result to show details
-   */
-  const handleResultClick = (result: any) => {
-    const resultId = result?.mid || result?.roundId || result?.id || result?.matchId;
-    if (!resultId) {
-      console.error("🎯 Goal: No result ID found in result", result);
-      alert("Unable to open result details: Missing result ID");
-      return;
-    }
-    // resultModal.openModal(String(resultId), result);
-  };
+
 
   const isSuspended = (sid: string) => {
     const oddsData = getOddsData(sid);
@@ -160,101 +127,7 @@ const GoalComponent: React.FC<GoalProps> = ({
    * @param groupType - The group type: "player" or "method"
    * @returns The profit/loss amount with cross-calculation
    */
-  const getBetProfitLoss = (betType: string, groupType: "player" | "method"): number => {
-    if (!currentBet?.data || !casinoData?.data?.mid) return 0;
 
-    const currentMatchId = casinoData.data.mid;
-    let profitLoss = 0;
-
-    // Only bets for this match
-    const bets = currentBet.data.filter(
-      (bet: any) => String(bet.matchId) === String(currentMatchId)
-    );
-
-    bets.forEach((bet: any) => {
-      const { betName, oddCategory, stake, betRate } = bet.betData;
-
-      // Normalize bet name for comparison
-      const normalizedBetName = betName?.toLowerCase() || "";
-      const normalizedBetType = betType.toLowerCase();
-
-      // Check if this bet belongs to the same group
-      let isSameGroup = false;
-      let isExactMatch = false;
-
-      if (groupType === "player") {
-        // Handle player bets (Who Will Goal Next?)
-        const playerMap: { [key: string]: string[] } = {
-          "cr7": ["cr7", "cristiano", "ronaldo"],
-          "messi": ["messi", "lionel"],
-          "lewa": ["lewa", "lewandowski"],
-          "neymar": ["neymar"],
-          "kane": ["kane", "harry"],
-          "ibra": ["ibra", "ibrahimovic"],
-          "lukaku": ["lukaku"],
-          "mbappe": ["mbappe"],
-          "haaland": ["haaland"],
-          "no goal": ["no goal", "no-goal", "nogal"]
-        };
-
-        // Check if this bet is a player bet
-        const allPlayerVariations = Object.values(playerMap).flat();
-        isSameGroup = allPlayerVariations.some(variation => 
-          normalizedBetName.includes(variation) || variation.includes(normalizedBetName)
-        );
-
-        // Check if it's an exact match
-        const playerVariations = playerMap[normalizedBetType] || [normalizedBetType];
-        isExactMatch = playerVariations.some(variation => 
-          normalizedBetName.includes(variation) || variation.includes(normalizedBetName)
-        );
-      } else if (groupType === "method") {
-        // Handle method bets (Method Of Next Goal)
-        const methodMap: { [key: string]: string[] } = {
-          "shot": ["shot", "shots"],
-          "header": ["header", "headers"],
-          "penalty": ["penalty", "penalties"],
-          "free kick": ["free kick", "free-kick", "freekick"],
-          "no goal": ["no goal", "no-goal", "nogal"]
-        };
-
-        // Check if this bet is a method bet
-        const allMethodVariations = Object.values(methodMap).flat();
-        isSameGroup = allMethodVariations.some(variation => 
-          normalizedBetName.includes(variation) || variation.includes(normalizedBetName)
-        );
-
-        // Check if it's an exact match
-        const methodVariations = methodMap[normalizedBetType] || [normalizedBetType];
-        isExactMatch = methodVariations.some(variation => 
-          normalizedBetName.includes(variation) || variation.includes(normalizedBetName)
-        );
-      }
-
-      if (isSameGroup) {
-        if (isExactMatch) {
-          // Exact match - calculate profit/loss like Dragon/Tiger
-          if (oddCategory.toLowerCase() === "back") {
-            const profit = stake * (betRate - 1);
-            profitLoss += profit; // Show profit potential
-          } else if (oddCategory.toLowerCase() === "lay") {
-            const loss = stake * (betRate - 1);
-            const profit = stake;
-            profitLoss += profit - loss; // Show net profit/loss
-          }
-        } else {
-          // Different option in same group - show loss (like Dragon/Tiger cross-calculation)
-          if (oddCategory.toLowerCase() === "back") {
-            profitLoss += -stake; // Loss if this option wins instead
-          } else if (oddCategory.toLowerCase() === "lay") {
-            profitLoss += stake; // Profit if this option wins instead
-          }
-        }
-      }
-    });
-
-    return profitLoss;
-  };
 
   console.log(results, "from goal");
   return (
@@ -284,22 +157,14 @@ const GoalComponent: React.FC<GoalProps> = ({
                   <td className="w-1/2">
                     <h2 className="text-sm font-semibold px-2">{player.nat}</h2>
                     <h2 className={`text-xs px-2 font-semibold ${
-                        getBetProfitLoss(player.nat, "player") > 0
                           ? "text-green-600"
-                          : getBetProfitLoss(player.nat, "player") < 0
                             ? "text-red-600"
                             : "text-gray-600"
                       }`}>
-                        {getBetProfitLoss(player.nat, "player") > 0 ? "+" : ""}
-                        {getBetProfitLoss(player.nat, "player").toFixed(0)}
                       </h2>
                   </td>
                   <td
-                    className="bg-[var(--bg-back)] text-sm font-semibold relative cursor-pointer"
-                    onClick={() =>
-                      !isSuspended(player.sid.toString()) &&
-                      onBetClick(player.sid.toString(), "back")
-                    }
+                    className="bg-[var(--bg-back)] text-sm font-semibold relative"
                   >
                     {isSuspended(player.sid.toString()) && (
                       <div className="absolute inset-0 bg-black/60 flex flex-col w-full h-full justify-center items-center font-bold uppercase z-20">
@@ -354,22 +219,14 @@ const GoalComponent: React.FC<GoalProps> = ({
                   <td className="w-1/2">
                     <h2 className="text-sm font-semibold px-2">{method.nat}</h2>
                     <h2 className={`text-xs font-semibold px-2 ${
-                        getBetProfitLoss(method.nat, "method") > 0
                           ? "text-green-600"
-                          : getBetProfitLoss(method.nat, "method") < 0
                             ? "text-red-600"
                             : "text-gray-600"
                       }`}>
-                        {getBetProfitLoss(method.nat, "method") > 0 ? "+" : ""}
-                        {getBetProfitLoss(method.nat, "method").toFixed(0)}
                       </h2>
                   </td>
                   <td
-                    className="bg-[var(--bg-back)] relative cursor-pointer hover:bg-blue-100"
-                    onClick={() =>
-                      !isSuspended(method.sid.toString()) &&
-                      onBetClick(method.sid.toString(), "back")
-                    }
+                    className="bg-[var(--bg-back)] relative hover:bg-blue-100"
                   >
                     {isSuspended(method.sid.toString()) && (
                       <div className="absolute inset-0 bg-black/60 flex flex-col w-full h-full justify-center items-center font-bold uppercase z-20">
@@ -416,7 +273,7 @@ const GoalComponent: React.FC<GoalProps> = ({
           </h2>
           <h2
             onClick={() => navigate(`/casino-result?game=GOAL`)}
-            className="text-sm font-normal leading-8 text-white cursor-pointer"
+            className="text-sm font-normal leading-8 text-white"
           >
             View All
           </h2>
@@ -426,9 +283,8 @@ const GoalComponent: React.FC<GoalProps> = ({
             results?.slice(0, 10).map((item: any, index: number) => (
               <h2
                 key={index}
-                className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold text-yellow-400 cursor-pointer hover:scale-110 transition-transform`}
-                onClick={() => handleResultClick(item)}
-                title="Click to view details"
+                className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold text-yellow-400 `}
+                
               >
                 {/* {getResultDisplay(item?.win)} */}R
               </h2>
@@ -440,11 +296,9 @@ const GoalComponent: React.FC<GoalProps> = ({
       {/* <IndividualResultModal
         isOpen={resultModal.isOpen}
         onClose={resultModal.closeModal}
-        resultId={resultModal.selectedResultId || undefined}
         gameType={normalizedGameSlug}
         title={`${gameName || "Goal"} Result Details`}
         enableBetFiltering={true}
-        customGetFilteredBets={getFilteredBets}
       /> */}
     </div>
   );

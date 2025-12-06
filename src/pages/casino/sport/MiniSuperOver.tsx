@@ -5,11 +5,9 @@ import { useNavigate } from "react-router-dom";
 interface MiniSuperOverProps {
   casinoData: any;
   remainingTime: number;
-  onBetClick?: (sid: string, type: "back" | "lay") => void;
   results?: any[];
   gameCode?: string;
   gameName?: string;
-  currentBet?: any;
 }
 
 const LOCKED_STATUSES = {
@@ -87,7 +85,7 @@ const BlinkingOddsCell = ({
 
   const backgroundClass = useMemo(() => {
     const baseClass =
-      "text-center w-1/2 cursor-pointer border-r border-[var(--border)] min-h-[40px] flex flex-col justify-center";
+      "text-center w-1/2 border-r border-[var(--border)] min-h-[40px] flex flex-col justify-center";
 
     if (isBlinking) {
       return `${baseClass} bg-yellow-300 shadow-lg transform scale-105 animate-pulse`;
@@ -130,7 +128,7 @@ const FancyOddsCell = ({
 
   const backgroundClass = useMemo(() => {
     const baseClass =
-      "text-center w-full cursor-pointer border-r border-[var(--border)] min-h-[40px] flex flex-col justify-center";
+      "text-center w-full border-r border-[var(--border)] min-h-[40px] flex flex-col justify-center";
 
     if (isBlinking) {
       return `${baseClass} bg-yellow-300 shadow-lg transform scale-105 animate-pulse`;
@@ -167,10 +165,8 @@ const getOddsFromSection = (section: any, oname: string) => {
 const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results = [],
   gameCode,
-  currentBet,
 }) => {
   const navigate = useNavigate();
   // const placeBetContext = useContext(PlaceBetUseContext);
@@ -206,20 +202,15 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
     return markets.find((market: any) => market.mname === "Fancy1");
   }, [markets]);
 
-  const getBetProfitLoss = React.useCallback((sectionSid: string | number, sectionName: string, marketName: string): number => {
-    if (!currentBet?.data || !matchId) return 0;
 
     let totalProfitLoss = 0;
 
-    const bets = currentBet.data.filter(
       (bet: any) => String(bet.matchId) === String(matchId)
     );
 
     bets.forEach((bet: any) => {
-      const { sid, betName: currentBetName, name, nation: betNation, oddCategory, stake, betRate, market: betMarket, mname: betMname } = bet.betData;
       const result = bet.betData?.result;
 
-      const actualBetName = currentBetName || name || betNation;
       const betSid = sid ? String(sid) : null;
       const requestedSid = sectionSid ? String(sectionSid) : null;
 
@@ -248,14 +239,10 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
 
       if (isMatch) {
         if (result && result.settled) {
-          let profitLoss = 0;
 
           if (result.status === "won" || result.status === "profit") {
-            profitLoss = Number(result.profitLoss) || 0;
           } else if (result.status === "lost") {
-            profitLoss = Number(result.profitLoss) || 0;
           }
-          totalProfitLoss += profitLoss;
         } else {
           const stakeAmount = Number(stake) || 0;
           const rate = Number(betRate) || 0;
@@ -273,7 +260,6 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
         }
       } else {
         if (result && result.settled && result.status === "lost") {
-          totalProfitLoss += Number(result.profitLoss) || 0;
         } else {
           totalProfitLoss -= Number(stake) || 0;
         }
@@ -281,7 +267,7 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
     });
 
     return totalProfitLoss;
-  }, [currentBet, matchId]);
+  }, [, matchId]);
 
   const formatMax = (max: number | string | undefined): string => {
     if (!max) return "";
@@ -343,9 +329,6 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
                 const back1 = getOddsFromSection(section, "back1");
                 const lay1 = getOddsFromSection(section, "lay1");
 
-                const profitLoss =
-                  currentBet?.data &&
-                  getBetProfitLoss(section.sid, section.nat, bookmakerMarket.mname);
 
                 return (
                   <tr key={`book-${idx}`} className="border-b border-t border-[var(--border)]">
@@ -356,14 +339,10 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
                             {section.nat}
                           </span>
 
-                          {profitLoss !== 0 && (
                             <span
                               className={`text-[10px] font-semibold ${
-                                profitLoss > 0 ? "text-green-500" : "text-red-500"
                               }`}
                             >
-                              {profitLoss > 0 ? "+" : ""}
-                              {profitLoss.toFixed(0)}
                             </span>
                           )}
                         </div>
@@ -446,9 +425,6 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
                     const back1 = getOddsFromSection(section, "back1");
                     const lay1 = getOddsFromSection(section, "lay1");
 
-                    const profitLoss =
-                      currentBet?.data &&
-                      getBetProfitLoss(section.sid, section.nat, fancy1Market.mname);
 
                     return (
                       <tr key={`f1-${idx}`} className="border-b border-[var(--border)]">
@@ -459,14 +435,10 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
                                 {section.nat}
                               </span>
 
-                              {profitLoss !== 0 && (
                                 <span
                                   className={`text-[10px] font-semibold ${
-                                    profitLoss > 0 ? "text-green-500" : "text-red-500"
                                   }`}
                                 >
-                                  {profitLoss > 0 ? "+" : ""}
-                                  {profitLoss.toFixed(0)}
                                 </span>
                               )}
                             </div>
@@ -545,9 +517,6 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
                   const back1 = getOddsFromSection(section, "back1");
                   const lay1 = getOddsFromSection(section, "lay1");
 
-                  const profitLoss =
-                    currentBet?.data &&
-                    getBetProfitLoss(section.sid, section.nat, fancyMarket.mname);
 
                   return (
                     <tr key={`fm-${idx}`} className="border-b border-[var(--border)]">
@@ -558,14 +527,10 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
                               {section.nat}
                             </span>
 
-                            {profitLoss !== 0 && (
                               <span
                                 className={`text-[10px] font-semibold ${
-                                  profitLoss > 0 ? "text-green-500" : "text-red-500"
                                 }`}
                               >
-                                {profitLoss > 0 ? "+" : ""}
-                                {profitLoss.toFixed(0)}
                               </span>
                             )}
                           </div>
@@ -646,9 +611,6 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
                     const back1 = getOddsFromSection(section, "back1");
                     const lay1 = getOddsFromSection(section, "lay1");
 
-                    const profitLoss =
-                      currentBet?.data &&
-                      getBetProfitLoss(section.sid, section.nat, fancy1Market.mname);
 
                     return (
                       <tr key={`tie-${idx}`} className="border-b border-[var(--border)]">
@@ -659,14 +621,10 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
                                 {section.nat}
                               </span>
 
-                              {profitLoss !== 0 && (
                                 <span
                                   className={`text-[10px] font-semibold ${
-                                    profitLoss > 0 ? "text-green-500" : "text-red-500"
                                   }`}
                                 >
-                                  {profitLoss > 0 ? "+" : ""}
-                                  {profitLoss.toFixed(0)}
                                 </span>
                               )}
                             </div>
@@ -754,7 +712,6 @@ const MiniSuperOver = React.memo(
       prevProps.remainingTime !== nextProps.remainingTime ||
       prevProps.gameCode !== nextProps.gameCode ||
       prevProps.gameName !== nextProps.gameName ||
-      prevProps.onBetClick !== nextProps.onBetClick
     ) {
       return false;
     }
@@ -771,9 +728,6 @@ const MiniSuperOver = React.memo(
       if (prevResults !== nextResults) return false;
     }
 
-    if (prevProps.currentBet !== nextProps.currentBet) {
-      const prevBet = JSON.stringify(prevProps.currentBet);
-      const nextBet = JSON.stringify(nextProps.currentBet);
       if (prevBet !== nextBet) return false;
     }
 
