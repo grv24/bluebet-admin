@@ -8,20 +8,16 @@ import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 interface Race2Props {
   casinoData: any;
   remainingTime: number;
-  onBetClick: (sid: string, type: "back" | "lay") => void;
   results?: any[];
   gameCode?: string;
   gameName?: string;
-  currentBet?: any;
 }
 
 const Race2Component: React.FC<Race2Props> = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results = [],
   gameCode,
-  currentBet,
 }) => {
   const navigate = useNavigate();
   // const resultModal = useIndividualResultModal();
@@ -130,23 +126,18 @@ const Race2Component: React.FC<Race2Props> = ({
   const playerD = getOddsBySid(4);
 
   // Profit/Loss calculation function
-  const getBetProfitLoss = useCallback((playerSid: number): number => {
-    if (!currentBet?.data || !casinoData?.data?.mid) return 0;
 
     const currentMatchId = casinoData.data.mid;
     let totalProfitLoss = 0;
 
     // Only bets for this match
-    const bets = currentBet.data.filter(
       (bet: any) => String(bet.matchId) === String(currentMatchId)
     );
 
     bets.forEach((bet: any) => {
-      const { sid, betName: currentBetName, name, nation: betNation, oddCategory, stake, betRate } = bet.betData;
       const result = bet.betData?.result;
 
       // Use either betName, name, or nation field
-      const actualBetName = currentBetName || name || betNation;
       const betSid = sid ? Number(sid) : null;
       
       // Check if this bet matches the requested player
@@ -175,15 +166,11 @@ const Race2Component: React.FC<Race2Props> = ({
       if (isMatch) {
         // If bet is settled, use the actual profit/loss from the result
         if (result && result.settled) {
-          let profitLoss = 0;
 
           if (result.status === "won" || result.status === "profit") {
-            profitLoss = Number(result.profitLoss) || 0;
           } else if (result.status === "lost") {
-            profitLoss = Number(result.profitLoss) || 0;
           }
 
-          totalProfitLoss += profitLoss;
         } else {
           // For unsettled bets, calculate potential profit
           const stakeAmount = Number(stake) || 0;
@@ -211,7 +198,6 @@ const Race2Component: React.FC<Race2Props> = ({
         // If bet is settled and lost, show the loss
         if (result && result.settled) {
           if (result.status === "lost") {
-            totalProfitLoss += Number(result.profitLoss) || 0;
           }
         } else {
           // For unsettled bets on other players, show potential loss (stake)
@@ -221,38 +207,13 @@ const Race2Component: React.FC<Race2Props> = ({
     });
 
     return totalProfitLoss;
-  }, [currentBet, casinoData]);
+  }, [, casinoData]);
 
   // Handle clicking on individual result to show details
-  const handleResultClick = (result: any) => {
-    if (!result?.mid) return;
-    // resultModal.openModal(result.mid, result);
-  };
+
 
   // Function to filter user bets based on selected filter
-  const getFilteredBets = (bets: any[], filter: string) => {
-    if (filter === "all") return bets;
 
-    return bets.filter((bet: any) => {
-      const oddCategory = bet.betData?.oddCategory?.toLowerCase();
-      const status = bet.status?.toLowerCase();
-
-      switch (filter) {
-        case "back":
-          return oddCategory === "back";
-        case "lay":
-          return oddCategory === "lay";
-        case "pending":
-          return status === "pending" || status === "matched";
-        case "won":
-          return status === "won" || status === "settled";
-        case "lost":
-          return status === "lost" || status === "settled";
-        default:
-          return true;
-      }
-    });
-  };
 
   // Map win value to display info
   // win "1" = Player A, "2" = Player B, "3" = Player C, "4" = Player D
@@ -292,7 +253,6 @@ const Race2Component: React.FC<Race2Props> = ({
     const locked = isLocked(oddsItem);
     const backOdds = formatOdds(oddsItem?.b);
     const layOdds = formatOdds(oddsItem?.l);
-    const profitLoss = currentBet?.data ? getBetProfitLoss(sid) : 0;
 
     return (
       <div className="flex flex-col w-full gap-1">
@@ -303,10 +263,9 @@ const Race2Component: React.FC<Race2Props> = ({
           {/* Back Odds */}
           <h2
             className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-back)] relative ${
-              !locked && oddsItem?.b ? "cursor-pointer hover:opacity-90" : ""
+              !locked && oddsItem?.b ? "hover:opacity-90" : ""
             }`}
             onClick={() =>
-              !locked && oddsItem?.b && onBetClick(String(sid), "back")
             }
           >
             {locked && (
@@ -319,10 +278,9 @@ const Race2Component: React.FC<Race2Props> = ({
           {/* Lay Odds */}
           <h2
             className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-lay)] relative ${
-              !locked && oddsItem?.l ? "cursor-pointer hover:opacity-90" : ""
+              !locked && oddsItem?.l ? "hover:opacity-90" : ""
             }`}
             onClick={() =>
-              !locked && oddsItem?.l && onBetClick(String(sid), "lay")
             }
           >
             {locked && (
@@ -334,15 +292,11 @@ const Race2Component: React.FC<Race2Props> = ({
           </h2>
         </div>
         {/* Profit/Loss Display */}
-        {currentBet?.data && profitLoss !== 0 && (
           <div className="text-center">
             <span
               className={`text-sm font-semibold ${
-                profitLoss > 0 ? "text-green-500" : "text-red-500"
               }`}
             >
-              {profitLoss > 0 ? "+" : ""}
-              {profitLoss.toFixed(1)}
             </span>
           </div>
         )}
@@ -368,7 +322,7 @@ const Race2Component: React.FC<Race2Props> = ({
           </h2>
           <h2
             onClick={() => navigate(`/casino-result?game=${gameSlug}`)}
-            className="text-sm font-normal leading-8 text-white cursor-pointer hover:underline"
+            className="text-sm font-normal leading-8 text-white hover:underline"
           >
             View All
           </h2>
@@ -380,8 +334,8 @@ const Race2Component: React.FC<Race2Props> = ({
               return (
                 <div
                   key={item.mid || `result-${item.win}-${index}`}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} cursor-pointer hover:scale-110 transition-transform`}
-                  onClick={() => handleResultClick(item)}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} hover:scale-110 transition-transform`}
+                  
                   title={`Round ID: ${item.mid || "N/A"} - ${resultDisplay.title} - Click to view details`}
                 >
                   {resultDisplay.label}

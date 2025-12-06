@@ -19,17 +19,14 @@ import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 interface Race20Props {
   casinoData: any;
   remainingTime: number;
-  onBetClick: (sid: string, type: "back" | "lay") => void;
   results?: any[];
   gameCode?: string;
   gameName?: string;
-  currentBet?: any;
 }
 
 const Race20Component: React.FC<Race20Props> = ({
   casinoData,
   remainingTime,
-  onBetClick,
   results = [],
   gameCode,
 }) => {
@@ -159,35 +156,10 @@ const Race20Component: React.FC<Race20Props> = ({
   const winWith17 = getOddsBySid(12);
 
   // Handle clicking on individual result to show details
-  const handleResultClick = (result: any) => {
-    if (!result?.mid) return;
-    // resultModal.openModal(result.mid, result);
-  };
+
 
   // Function to filter user bets based on selected filter
-  const getFilteredBets = (bets: any[], filter: string) => {
-    if (filter === "all") return bets;
 
-    return bets.filter((bet: any) => {
-      const oddCategory = bet.betData?.oddCategory?.toLowerCase();
-      const status = bet.status?.toLowerCase();
-
-      switch (filter) {
-        case "back":
-          return oddCategory === "back";
-        case "lay":
-          return oddCategory === "lay";
-        case "pending":
-          return status === "pending" || status === "matched";
-        case "won":
-          return status === "won" || status === "settled";
-        case "lost":
-          return status === "lost" || status === "settled";
-        default:
-          return true;
-      }
-    });
-  };
 
   // Map win value to display info
   // win "1" = K of spade, "2" = K of heart, "3" = K of club, "4" = K of diamond
@@ -247,10 +219,9 @@ const Race20Component: React.FC<Race20Props> = ({
             {/* Back Odds */}
             <h2
               className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-back)] relative ${
-              !locked && oddsItem?.b ? "cursor-pointer hover:opacity-90" : ""
+              !locked && oddsItem?.b ? "hover:opacity-90" : ""
             }`}
             onClick={() =>
-              !locked && oddsItem?.b && onBetClick(String(sid), "back")
             }
           >
             {locked && (
@@ -263,10 +234,9 @@ const Race20Component: React.FC<Race20Props> = ({
             {/* Lay Odds */}
             <h2
               className={`text-sm w-full font-semibold text-black text-center leading-10 bg-[var(--bg-lay)] relative ${
-              !locked && oddsItem?.l ? "cursor-pointer hover:opacity-90" : ""
+              !locked && oddsItem?.l ? "hover:opacity-90" : ""
             }`}
             onClick={() =>
-              !locked && oddsItem?.l && onBetClick(String(sid), "lay")
             }
           >
             {locked && (
@@ -301,10 +271,9 @@ const Race20Component: React.FC<Race20Props> = ({
         </td>
         <td
           className={`w-1/3 min-w-14 bg-[var(--bg-back)] relative ${
-            !locked && oddsItem?.b ? "cursor-pointer hover:opacity-90" : ""
+            !locked && oddsItem?.b ? "hover:opacity-90" : ""
           }`}
           onClick={() =>
-            !locked && oddsItem?.b && onBetClick(String(sid), "back")
           }
         >
           {locked && (
@@ -321,10 +290,9 @@ const Race20Component: React.FC<Race20Props> = ({
         </td>
         <td
           className={`w-1/3 min-w-14 bg-[var(--bg-lay)] relative ${
-            !locked && oddsItem?.l ? "cursor-pointer hover:opacity-90" : ""
+            !locked && oddsItem?.l ? "hover:opacity-90" : ""
           }`}
           onClick={() =>
-            !locked && oddsItem?.l && onBetClick(String(sid), "lay")
           }
         >
           {locked && (
@@ -359,10 +327,9 @@ const Race20Component: React.FC<Race20Props> = ({
             </h2>
         <h2
           className={`w-full bg-[var(--bg-back)] flex justify-center items-center leading-8 relative ${
-            !locked && oddsItem?.b ? "cursor-pointer hover:opacity-90" : ""
+            !locked && oddsItem?.b ? "hover:opacity-90" : ""
           }`}
           onClick={() =>
-            !locked && oddsItem?.b && onBetClick(String(sid), "back")
           }
         >
           {locked && (
@@ -426,7 +393,7 @@ const Race20Component: React.FC<Race20Props> = ({
             Last Result
           </h2>
         
-          <h2 onClick={() => navigate(`/casino-result?game=${gameSlug}`)} className="text-sm font-normal leading-8 text-white cursor-pointer hover:text-gray-200">
+          <h2 onClick={() => navigate(`/casino-result?game=${gameSlug}`)} className="text-sm font-normal leading-8 text-white hover:text-gray-200">
             View All
           </h2>
         </div>
@@ -437,8 +404,8 @@ const Race20Component: React.FC<Race20Props> = ({
               return (
                 <div
                   key={item.mid || `result-${item.win}-${index}`}
-                  className={`h-7 w-7 bg-gray-50 inner-shadow rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} cursor-pointer hover:scale-110 transition-transform`}
-                  onClick={() => handleResultClick(item)}
+                  className={`h-7 w-7 bg-gray-50 inner-shadow rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} hover:scale-110 transition-transform`}
+                  
                 >
                  <img src={resultDisplay.label} className="w-4" alt="" />
                 </div>
