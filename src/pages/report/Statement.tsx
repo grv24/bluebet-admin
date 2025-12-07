@@ -161,7 +161,7 @@ const Statement = () => {
     queryFn: () => getAccountStatementWithFilters(cookies, {
       accountType,
       sportType: accountType === "Sports Report" ? sportList : undefined,
-      gameName: accountType === "Casino Report" ? casinoList : gameName,
+      gameName: accountType === "Casino Report" ? undefined : gameName,
       startdate: fromDate,
       enddate: toDate,
       page,
