@@ -9,6 +9,8 @@ import { useCookies } from "react-cookie";
 import { getAccountStatementWithFilters } from "@/helper/account_statement";
 import { SERVER_URL } from "@/helper/auth";
 import useCasinoGames from "@/hooks/useCasinoGames";
+import SportMatchDetailsModal from "@/components/modals/SportMatchDetailsModal";
+import CasinoMatchDetailsModal from "@/components/modals/CasinoMatchDetailsModal";
 
 const accountTypes = [
   "All",
@@ -64,6 +66,13 @@ const Statement = () => {
   const [isExportingExcel, setIsExportingExcel] = useState(false);
   const [shouldFetch, setShouldFetch] = useState(false);
   const clientInputRef = useRef<HTMLInputElement>(null);
+
+  // Modal states
+  const [isSportModalOpen, setIsSportModalOpen] = useState(false);
+  const [isCasinoModalOpen, setIsCasinoModalOpen] = useState(false);
+  const [sportMatchData, setSportMatchData] = useState<any>(null);
+  const [casinoMatchData, setCasinoMatchData] = useState<any>(null);
+  const [selectedCasinoType, setSelectedCasinoType] = useState<string>("");
 
   // Get dynamic game names based on account type
   const gameNames = getGameNamesByAccountType(accountType);
@@ -146,9 +155,20 @@ const Statement = () => {
       }
 
       const data = await response.json();
-      console.log(`${transactionDetails.type.toUpperCase()} Match Details:`, data);
-      toast.success(`${transactionDetails.type === 'casino' ? 'Casino' : 'Sport'} match details loaded - check console`);
-      // TODO: Show match details in modal or navigate to details page
+        console.log(`${transactionDetails.type.toUpperCase()} Match Details:`, data);
+        
+        if (transactionDetails.type === 'sport') {
+          // Open sport modal
+          setSportMatchData(data);
+          setIsSportModalOpen(true);
+          toast.success('Sport match details loaded');
+        } else if (transactionDetails.type === 'casino') {
+          // Open casino modal
+          setCasinoMatchData(data);
+          setSelectedCasinoType(transactionDetails.casinoType || '');
+          setIsCasinoModalOpen(true);
+          toast.success('Casino match details loaded');
+        }
       
     } catch (error) {
       console.error('Error fetching match details:', error);
@@ -692,6 +712,28 @@ const Statement = () => {
         </button>
         </div>
       </div>
+
+      {/* Sport Match Details Modal */}
+      <SportMatchDetailsModal
+        isOpen={isSportModalOpen}
+        onClose={() => {
+          setIsSportModalOpen(false);
+          setSportMatchData(null);
+        }}
+        matchData={sportMatchData}
+      />
+
+      {/* Casino Match Details Modal */}
+      <CasinoMatchDetailsModal
+        isOpen={isCasinoModalOpen}
+        onClose={() => {
+          setIsCasinoModalOpen(false);
+          setCasinoMatchData(null);
+          setSelectedCasinoType("");
+        }}
+        matchData={casinoMatchData}
+        casinoType={selectedCasinoType}
+      />
     </div>
   );
 };
