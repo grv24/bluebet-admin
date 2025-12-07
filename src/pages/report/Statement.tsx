@@ -66,6 +66,9 @@ const Statement = () => {
   // Get dynamic game names based on account type
   const gameNames = getGameNamesByAccountType(accountType);
 
+  // Get token from cookies
+  const token = cookies.Admin || cookies.TechAdmin || cookies.token;
+
   // Fetch account statement data
   const { data: statementResponse, isLoading, error, refetch } = useQuery({
     queryKey: ["accountStatement", accountType, sportList, casinoList, gameName, fromDate, toDate, page, pageSize],
@@ -77,8 +80,9 @@ const Statement = () => {
       enddate: toDate,
       page,
       limit: pageSize,
+      token,
     }),
-    enabled: shouldFetch,
+    enabled: shouldFetch && !!token,
     staleTime: 0,
   });
 

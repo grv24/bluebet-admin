@@ -32,13 +32,14 @@ export interface AccountStatementParams {
   enddate?: string;
   page: number;
   limit: number;
+  token?: string;
 }
 
 export const getAccountStatementWithFilters = async (
   cookies: any,
   params: AccountStatementParams
 ) => {
-  const token = isAuthenticated(cookies);
+  const token = params.token || isAuthenticated(cookies);
   
   // Build query string
   const queryParams = new URLSearchParams();
@@ -49,6 +50,7 @@ export const getAccountStatementWithFilters = async (
   if (params.enddate) queryParams.append("enddate", params.enddate);
   queryParams.append("page", params.page.toString());
   queryParams.append("limit", params.limit.toString());
+  if (token) queryParams.append("token", token);
   
   try {
     const response = await fetch(
