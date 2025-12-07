@@ -4,6 +4,9 @@ import toast from "react-hot-toast";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
+import { useQuery } from "@tanstack/react-query";
+import { useCookies } from "react-cookie";
+import { getAccountStatementWithFilters } from "@/helper/account_statement";
 
 const accountTypes = [
   "All",
@@ -43,6 +46,7 @@ const getGameNamesByAccountType = (accountType: string): string[] => {
 };
 
 const Statement = () => {
+  const [cookies] = useCookies(["Admin", "TechAdmin", "token"]);
   const [accountType, setAccountType] = useState("All");
   const [gameName, setGameName] = useState("All");
   const [sportList, setSportList] = useState("All");
@@ -56,10 +60,32 @@ const Statement = () => {
   const [page, setPage] = useState(1);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [isExportingExcel, setIsExportingExcel] = useState(false);
+  const [shouldFetch, setShouldFetch] = useState(false);
   const clientInputRef = useRef<HTMLInputElement>(null);
 
   // Get dynamic game names based on account type
   const gameNames = getGameNamesByAccountType(accountType);
+
+  // Fetch account statement data
+  const { data: statementResponse, isLoading, error, refetch } = useQuery({
+    queryKey: ["accountStatement", accountType, sportList, casinoList, gameName, fromDate, toDate, page, pageSize],
+    queryFn: () => getAccountStatementWithFilters(cookies, {
+      accountType,
+      sportType: accountType === "Sports Report" ? sportList : undefined,
+      gameName: accountType === "Casino Report" ? casinoList : gameName,
+      startdate: fromDate,
+      enddate: toDate,
+      page,
+      limit: pageSize,
+    }),
+    enabled: shouldFetch,
+    staleTime: 0,
+  });
+
+  // Extract data from response
+  const statementData = statementResponse?.data || [];
+  const totalPages = statementResponse?.pagination?.totalPages || 1;
+  const totalRecords = statementResponse?.pagination?.total || 0;
 
   // Table columns
   const columns = [
@@ -74,11 +100,11 @@ const Statement = () => {
   // No client options for now
   const clientOptions: string[] = [];
 
-  // Sample data for demonstration (will be replaced with actual API data)
-  const statementData: any[] = [];
-
-  // Pagination (empty for now)
-  const totalPages = 1;
+  // Handle Load button click
+  const handleLoad = () => {
+    setShouldFetch(true);
+    setTimeout(() => refetch(), 0);
+  };
 
   /**
    * Export statement data to PDF
@@ -388,8 +414,16 @@ const Statement = () => {
 
       {/* Load Button */}
       <div className="flex mb-2">
-        <button className="px-6 leading-9 cursor-pointer rounded font-medium text-white text-sm bg-[var(--bg-primary)] hover:opacity-90 transition">
-          Load
+        <button 
+          onClick={handleLoad}
+          disabled={isLoading}
+          className={`px-6 leading-9 cursor-pointer rounded font-medium text-white text-sm transition ${
+            isLoading 
+              ? 'bg-gray-400 cursor-not-allowed' 
+              : 'bg-[var(--bg-primary)] hover:opacity-90'
+          }`}
+        >
+          {isLoading ? 'Loading...' : 'Load'}
         </button>
       </div>
 
@@ -466,36 +500,86 @@ const Statement = () => {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td
-                colSpan={columns.length}
-                className="text-center py-6 text-gray-500 border border-[#e0e0e0]"
-              >
-                No data available in table
-              </td>
-            </tr>
+            {isLoading ? (
+              <tr>
+                <td
+                  colSpan={columns.length}
+                  className="text-center py-6 text-gray-500 border border-[#e0e0e0]"
+                >
+                  Loading data...
+                </td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td
+                  colSpan={columns.length}
+                  className="text-center py-6 text-red-500 border border-[#e0e0e0]"
+                >
+                  Error loading data
+                </td>
+              </tr>
+            ) : statementData.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={columns.length}
+                  className="text-center py-6 text-gray-500 border border-[#e0e0e0]"
+                >
+                  No data available in table
+                </td>
+              </tr>
+            ) : (
+              statementData.map((row: any, index: number) => (
+                <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                  <td className="py-2 px-2 text-sm border border-[#e0e0e0]">
+                    {row.date || '-'}
+                  </td>
+                  <td className="py-2 px-2 text-sm text-right border border-[#e0e0e0]">
+                    {row.credit || '0'}
+                  </td>
+                  <td className="py-2 px-2 text-sm text-right border border-[#e0e0e0]">
+                    {row.debit || '0'}
+                  </td>
+                  <td className="py-2 px-2 text-sm text-right border border-[#e0e0e0]">
+                    {row.closing || '0'}
+                  </td>
+                  <td className="py-2 px-2 text-sm border border-[#e0e0e0]">
+                    {row.description || '-'}
+                  </td>
+                  <td className="py-2 px-2 text-sm border border-[#e0e0e0]">
+                    {row.fromto || '-'}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
       {/* Pagination */}
-      <div className="flex flex-wrap justify-end items-center gap-2 w-full">
-        <button
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
-          disabled={page === 1}
-          className="bg-gray-200 rounded px-3 py-1 disabled:opacity-60"
-        >
-          &lt;
-        </button>
-        <span className="min-w-[32px] text-center font-medium text-base">
-          {page}
-        </span>
-        <button
-          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-          disabled={page === totalPages}
-          className="bg-gray-200 rounded px-3 py-1 disabled:opacity-60"
-        >
-          &gt;
-        </button>
+      <div className="flex flex-wrap justify-between items-center gap-2 w-full">
+        <div className="text-sm text-gray-600">
+          {statementData.length > 0 && (
+            <>Showing {statementData.length} of {totalRecords} entries</>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1 || isLoading}
+            className="bg-gray-200 rounded px-3 py-1 disabled:opacity-60 disabled:cursor-not-allowed hover:bg-gray-300 transition"
+          >
+            Previous
+          </button>
+          <span className="min-w-[80px] text-center font-medium text-base">
+            Page {page} of {totalPages}
+          </span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages || isLoading}
+            className="bg-gray-200 rounded px-3 py-1 disabled:opacity-60 disabled:cursor-not-allowed hover:bg-gray-300 transition"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );
