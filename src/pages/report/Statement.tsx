@@ -656,26 +656,26 @@ const Statement = () => {
                     }`}
                     onClick={() => isClickable && handleRowClick(row)}
                   >
-                    <td className="py-2 px-2 text-xs border border-[#e0e0e0]">
+                    <td className="py-1 px-2 text-nowrap text-xs border border-[#e0e0e0]">
                       {row.date}
                     </td>
-                    <td className="py-2 px-2 text-xs text-right border border-[#e0e0e0] text-green-600 font-medium">
+                    <td className="py-1 px-2 text-xs text-right border border-[#e0e0e0] text-green-600 font-medium">
                       {row.credit ? Number(row.credit).toFixed(2) : ''}
                     </td>
                     <td className="py-2 px-2 text-xs text-right border border-[#e0e0e0] text-red-600 font-medium">
                       {row.debit ? Number(row.debit).toFixed(2) : ''}
                     </td>
-                    <td className={`py-2 px-2 text-xs text-right border border-[#e0e0e0] font-medium ${
+                    <td className={`py-1 px-2 text-xs text-right border border-[#e0e0e0] font-medium ${
                       Number(row.closing) > 0 ? 'text-green-600' : ''
                     }`}>
                       {Number(row.closing) === 0 ? '-' : Number(row.closing).toFixed(2)}
                     </td>
-                    <td className="py-2 px-2 text-xs border border-[#e0e0e0]">
-                      <span className="inline-block bg-[#4a4a4a] text-white px-2 py-1 rounded text-xs">
+                    <td className="py-1 px-2 text-xs border border-[#e0e0e0]">
+                      <span className="inline-block text-nowrap bg-[#4a4a4a] text-white px-2 py-1 rounded text-xs">
                         {row.description}
                       </span>
                     </td>
-                    <td className="py-2 px-2 text-xs border border-[#e0e0e0]">
+                    <td className="py-1 px-2 text-nowrap text-xs border border-[#e0e0e0]">
                       {row.fromTo || ''}
                     </td>
                   </tr>
