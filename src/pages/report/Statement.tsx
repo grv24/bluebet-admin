@@ -7,6 +7,7 @@ import * as XLSX from "xlsx";
 import { useQuery } from "@tanstack/react-query";
 import { useCookies } from "react-cookie";
 import { getAccountStatementWithFilters } from "@/helper/account_statement";
+import { SERVER_URL } from "@/helper/auth";
 
 const accountTypes = [
   "All",
@@ -68,6 +69,63 @@ const Statement = () => {
 
   // Get token from cookies
   const token = cookies.Admin || cookies.TechAdmin || cookies.token;
+
+  // Helper function to parse casino transaction details
+  const parseCasinoDetails = (description: string) => {
+    // Check if it's a casino transaction (has R.NO pattern)
+    const matchIdMatch = description.match(/R\.NO\s*:\s*(\d+)/i);
+    if (!matchIdMatch) return null;
+
+    const matchId = matchIdMatch[1];
+    
+    // Extract casino type (before " / R.NO")
+    const casinoTypeMatch = description.match(/^([A-Z_0-9]+)\s*\//);
+    if (!casinoTypeMatch) return null;
+
+    let casinoType = casinoTypeMatch[1].toLowerCase();
+    // Remove trailing numbers (e.g., TEEN_3 -> teen, RACE20 -> race)
+    casinoType = casinoType.replace(/_?\d+$/, '');
+
+    return { matchId, casinoType };
+  };
+
+  // Handle row click for casino transactions
+  const handleRowClick = async (row: any) => {
+    const casinoDetails = parseCasinoDetails(row.description);
+    
+    if (!casinoDetails) {
+      console.log('Not a casino transaction');
+      return;
+    }
+
+    const { matchId, casinoType } = casinoDetails;
+    
+    try {
+      const response = await fetch(
+        `${SERVER_URL}/api/v1/casinos/match-details?matchId=${matchId}&casinoType=${casinoType}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch match details');
+      }
+
+      const data = await response.json();
+      console.log('Match Details:', data);
+      toast.success('Match details loaded - check console');
+      // TODO: Show match details in modal or navigate to details page
+      
+    } catch (error) {
+      console.error('Error fetching match details:', error);
+      toast.error('Failed to load match details');
+    }
+  };
 
   // Fetch account statement data
   const { data: statementResponse, isLoading, error, refetch } = useQuery({
@@ -538,8 +596,15 @@ const Statement = () => {
             </tr>
             ) : (
               statementData.map((row: any, index: number) => {
+                const isCasino = parseCasinoDetails(row.description) !== null;
                 return (
-                  <tr key={row.id || index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                  <tr 
+                    key={row.id || index} 
+                    className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"} ${
+                      isCasino ? "cursor-pointer hover:bg-blue-50" : ""
+                    }`}
+                    onClick={() => isCasino && handleRowClick(row)}
+                  >
                     <td className="py-2 px-2 text-xs border border-[#e0e0e0]">
                       {row.date}
                     </td>
