@@ -87,9 +87,10 @@ const Statement = () => {
   });
 
   // Extract data from response
-  const statementData = statementResponse?.data || [];
-  const totalPages = statementResponse?.pagination?.totalPages || 1;
-  const totalRecords = statementResponse?.pagination?.total || 0;
+  const statementData = statementResponse?.data?.transactions || [];
+  const totalPages = statementResponse?.data?.pagination?.totalPages || 1;
+  const totalRecords = statementResponse?.data?.pagination?.total || 0;
+  const summary = statementResponse?.data?.summary;
 
   // Table columns
   const columns = [
@@ -136,14 +137,21 @@ const Statement = () => {
       doc.text(`Total Records: ${data.length}`, 14, 50);
       
       // Prepare table data
-      const tableData = data.map((row, index) => [
-        row.date || '-',
-        row.credit || '0',
-        row.debit || '0',
-        row.closing || '0',
-        row.description || '-',
-        row.fromto || '-',
-      ]);
+      const tableData = data.map((row) => {
+        const isCredit = row.type === 'deposit' || 
+                         (row.type === 'settle-bet' && parseFloat(row.balanceAfter) > parseFloat(row.balanceBefore));
+        const credit = isCredit ? Number(row.amount).toFixed(2) : '';
+        const debit = !isCredit ? Number(row.amount).toFixed(2) : '';
+        
+        return [
+          `${row.date} ${row.time}`,
+          credit,
+          debit,
+          Number(row.balanceAfter).toFixed(2),
+          row.remarks,
+          `${row.userName} (${row.loginId})`,
+        ];
+      });
       
       // Table headers
       const headers = ['Date', 'Credit', 'Debit', 'Closing', 'Description', 'From/To'];
@@ -201,14 +209,21 @@ const Statement = () => {
         // Header row
         ['Date', 'Credit', 'Debit', 'Closing', 'Description', 'From/To'],
         // Data rows
-        ...data.map((row) => [
-          row.date || '-',
-          row.credit || '0',
-          row.debit || '0',
-          row.closing || '0',
-          row.description || '-',
-          row.fromto || '-',
-        ]),
+        ...data.map((row) => {
+          const isCredit = row.type === 'deposit' || 
+                           (row.type === 'settle-bet' && parseFloat(row.balanceAfter) > parseFloat(row.balanceBefore));
+          const credit = isCredit ? Number(row.amount).toFixed(2) : '';
+          const debit = !isCredit ? Number(row.amount).toFixed(2) : '';
+          
+          return [
+            `${row.date} ${row.time}`,
+            credit,
+            debit,
+            Number(row.balanceAfter).toFixed(2),
+            row.remarks,
+            `${row.userName} (${row.loginId})`,
+          ];
+        }),
       ];
       
       // Create workbook and worksheet
@@ -343,21 +358,21 @@ const Statement = () => {
         )}
         {/* Game Name - Hide for Casino Report */}
         {accountType !== "Casino Report" && (
-          <div className="flex flex-col min-w-[140px] w-full">
-            <label className="text-sm font-medium mb-1">Game Name</label>
-            <select
+        <div className="flex flex-col min-w-[140px] w-full">
+          <label className="text-sm font-medium mb-1">Game Name</label>
+          <select
               className="border border-gray-300 rounded px-3 py-2 text-sm text-gray-500 focus:border-gray-300 focus:ring-0 outline-none transition w-full disabled:bg-gray-100 disabled:cursor-not-allowed"
-              value={gameName}
-              onChange={(e) => setGameName(e.target.value)}
+            value={gameName}
+            onChange={(e) => setGameName(e.target.value)}
               disabled={accountType === "All"}
-            >
-              {gameNames.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          </div>
+          >
+            {gameNames.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </div>
         )}
         {/* Improved Search By Client Name */}
         <div className="flex flex-col min-w-[160px] w-full relative">
@@ -428,8 +443,8 @@ const Statement = () => {
           }`}
         >
           {isLoading ? 'Loading...' : 'Load'}
-        </button>
-      </div>
+          </button>
+        </div>
 
       {/* Export Buttons */}
       <div className="flex flex-wrap gap-1 mb-2">
@@ -523,37 +538,45 @@ const Statement = () => {
                 </td>
               </tr>
             ) : statementData.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="text-center py-6 text-gray-500 border border-[#e0e0e0]"
-                >
-                  No data available in table
-                </td>
-              </tr>
+            <tr>
+              <td
+                colSpan={columns.length}
+                className="text-center py-6 text-gray-500 border border-[#e0e0e0]"
+              >
+                No data available in table
+              </td>
+            </tr>
             ) : (
-              statementData.map((row: any, index: number) => (
-                <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                  <td className="py-2 px-2 text-sm border border-[#e0e0e0]">
-                    {row.date || '-'}
-                  </td>
-                  <td className="py-2 px-2 text-sm text-right border border-[#e0e0e0]">
-                    {row.credit || '0'}
-                  </td>
-                  <td className="py-2 px-2 text-sm text-right border border-[#e0e0e0]">
-                    {row.debit || '0'}
-                  </td>
-                  <td className="py-2 px-2 text-sm text-right border border-[#e0e0e0]">
-                    {row.closing || '0'}
-                  </td>
-                  <td className="py-2 px-2 text-sm border border-[#e0e0e0]">
-                    {row.description || '-'}
-                  </td>
-                  <td className="py-2 px-2 text-sm border border-[#e0e0e0]">
-                    {row.fromto || '-'}
-                  </td>
-                </tr>
-              ))
+              statementData.map((row: any, index: number) => {
+                // Determine credit/debit based on transaction type
+                const isCredit = row.type === 'deposit' || 
+                                 (row.type === 'settle-bet' && parseFloat(row.balanceAfter) > parseFloat(row.balanceBefore));
+                const credit = isCredit ? row.amount : 0;
+                const debit = !isCredit ? row.amount : 0;
+                
+                return (
+                  <tr key={row.id || index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                    <td className="py-2 px-2 text-xs border border-[#e0e0e0]">
+                      {row.date} {row.time}
+                    </td>
+                    <td className="py-2 px-2 text-xs text-right border border-[#e0e0e0] text-green-600 font-medium">
+                      {credit > 0 ? Number(credit).toFixed(2) : ''}
+                    </td>
+                    <td className="py-2 px-2 text-xs text-right border border-[#e0e0e0] text-red-600 font-medium">
+                      {debit > 0 ? Number(debit).toFixed(2) : ''}
+                    </td>
+                    <td className="py-2 px-2 text-xs text-right border border-[#e0e0e0] font-medium">
+                      {Number(row.balanceAfter).toFixed(2)}
+                    </td>
+                    <td className="py-2 px-2 text-xs border border-[#e0e0e0]">
+                      {row.remarks}
+                    </td>
+                    <td className="py-2 px-2 text-xs border border-[#e0e0e0]">
+                      {row.userName} ({row.loginId})
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
@@ -566,23 +589,23 @@ const Statement = () => {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
+        <button
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1 || isLoading}
             className="bg-gray-200 rounded px-3 py-1 disabled:opacity-60 disabled:cursor-not-allowed hover:bg-gray-300 transition"
-          >
+        >
             Previous
-          </button>
+        </button>
           <span className="min-w-[80px] text-center font-medium text-base">
             Page {page} of {totalPages}
-          </span>
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+        </span>
+        <button
+          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages || isLoading}
             className="bg-gray-200 rounded px-3 py-1 disabled:opacity-60 disabled:cursor-not-allowed hover:bg-gray-300 transition"
-          >
+        >
             Next
-          </button>
+        </button>
         </div>
       </div>
     </div>
