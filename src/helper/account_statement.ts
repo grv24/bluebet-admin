@@ -88,12 +88,29 @@ export const getAccountStatementWithFilters = async (
 ) => {
   const token = params.token || isAuthenticated(cookies);
   
+  // Transform account type display names to API values
+  const transformAccountType = (type: string): string => {
+    switch (type) {
+      case "Deposit/Withdraw Report":
+        return "deposit-withdraw";
+      case "Sports Report":
+        return "sports";
+      case "Casino Report":
+        return "casino";
+      case "Third Party Casino Report":
+        return "third-party-casino";
+      default:
+        return type.toLowerCase();
+    }
+  };
+  
   // Build query string (token NOT included in query params)
   const queryParams = new URLSearchParams();
   
   // If accountType is "All", only pass page and limit
   if (params.accountType !== "All") {
-    queryParams.append("accountType", params.accountType);
+    const transformedAccountType = transformAccountType(params.accountType);
+    queryParams.append("accountType", transformedAccountType);
     if (params.sportType) queryParams.append("sportType", params.sportType);
     if (params.gameName) queryParams.append("gameName", params.gameName);
     if (params.startdate) queryParams.append("startdate", params.startdate);
