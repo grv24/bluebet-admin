@@ -549,7 +549,9 @@ const Statement = () => {
                     <td className="py-2 px-2 text-xs text-right border border-[#e0e0e0] text-red-600 font-medium">
                       {row.debit ? Number(row.debit).toFixed(2) : ''}
                     </td>
-                    <td className="py-2 px-2 text-xs text-right border border-[#e0e0e0] font-medium">
+                    <td className={`py-2 px-2 text-xs text-right border border-[#e0e0e0] font-medium ${
+                      row.closing > 0 ? 'text-green-600' : ''
+                    }`}>
                       {Number(row.closing).toFixed(2)}
                     </td>
                     <td className="py-2 px-2 text-xs border border-[#e0e0e0]">
