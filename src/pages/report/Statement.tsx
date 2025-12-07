@@ -70,55 +70,83 @@ const Statement = () => {
   // Get token from cookies
   const token = cookies.Admin || cookies.TechAdmin || cookies.token;
 
-  // Helper function to parse casino transaction details
-  const parseCasinoDetails = (description: string) => {
-    // Check if it's a casino transaction (has R.NO pattern)
+  // Helper function to determine transaction type
+  const getTransactionType = (description: string, betId: string | null) => {
+    if (!betId) return null;
+
+    // Sport transactions (CRICKET, FOOTBALL, TENNIS, etc.)
+    const sportTypes = ['CRICKET', 'FOOTBALL', 'TENNIS'];
+    for (const sport of sportTypes) {
+      if (description.toUpperCase().startsWith(sport)) {
+        return { type: 'sport', betId };
+      }
+    }
+
+    // Casino transactions (has R.NO pattern)
     const matchIdMatch = description.match(/R\.NO\s*:\s*(\d+)/i);
-    if (!matchIdMatch) return null;
+    if (matchIdMatch) {
+      const matchId = matchIdMatch[1];
+      
+      // Extract casino type (before " / R.NO")
+      const casinoTypeMatch = description.match(/^([A-Z_0-9]+)\s*\//);
+      if (casinoTypeMatch) {
+        let casinoType = casinoTypeMatch[1].toLowerCase();
+        // Remove trailing numbers (e.g., TEEN_3 -> teen, RACE20 -> race)
+        casinoType = casinoType.replace(/_?\d+$/, '');
+        return { type: 'casino', matchId, casinoType };
+      }
+    }
 
-    const matchId = matchIdMatch[1];
-    
-    // Extract casino type (before " / R.NO")
-    const casinoTypeMatch = description.match(/^([A-Z_0-9]+)\s*\//);
-    if (!casinoTypeMatch) return null;
-
-    let casinoType = casinoTypeMatch[1].toLowerCase();
-    // Remove trailing numbers (e.g., TEEN_3 -> teen, RACE20 -> race)
-    casinoType = casinoType.replace(/_?\d+$/, '');
-
-    return { matchId, casinoType };
+    return null;
   };
 
-  // Handle row click for casino transactions
+  // Handle row click for casino and sport transactions
   const handleRowClick = async (row: any) => {
-    const casinoDetails = parseCasinoDetails(row.description);
+    const transactionDetails = getTransactionType(row.description, row.betId);
     
-    if (!casinoDetails) {
-      console.log('Not a casino transaction');
+    if (!transactionDetails) {
+      console.log('Not a casino or sport transaction');
       return;
     }
 
-    const { matchId, casinoType } = casinoDetails;
-    
     try {
-      const response = await fetch(
-        `${SERVER_URL}/api/v1/casinos/match-details?matchId=${matchId}&casinoType=${casinoType}`,
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      let response;
+      
+      if (transactionDetails.type === 'casino') {
+        // Casino API call
+        const { matchId, casinoType } = transactionDetails;
+        response = await fetch(
+          `${SERVER_URL}/api/v1/casinos/match-details?matchId=${matchId}&casinoType=${casinoType}`,
+          {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+      } else if (transactionDetails.type === 'sport') {
+        // Sport API call
+        const { betId } = transactionDetails;
+        response = await fetch(
+          `${SERVER_URL}/api/v1/sports/match-details/${betId}`,
+          {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+      }
 
-      if (!response.ok) {
+      if (!response || !response.ok) {
         throw new Error('Failed to fetch match details');
       }
 
       const data = await response.json();
-      console.log('Match Details:', data);
-      toast.success('Match details loaded - check console');
+      console.log(`${transactionDetails.type.toUpperCase()} Match Details:`, data);
+      toast.success(`${transactionDetails.type === 'casino' ? 'Casino' : 'Sport'} match details loaded - check console`);
       // TODO: Show match details in modal or navigate to details page
       
     } catch (error) {
@@ -596,14 +624,14 @@ const Statement = () => {
             </tr>
             ) : (
               statementData.map((row: any, index: number) => {
-                const isCasino = parseCasinoDetails(row.description) !== null;
+                const isClickable = getTransactionType(row.description, row.betId) !== null;
                 return (
                   <tr 
                     key={row.id || index} 
                     className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"} ${
-                      isCasino ? "cursor-pointer hover:bg-blue-50" : ""
+                      isClickable ? "cursor-pointer hover:bg-blue-50" : ""
                     }`}
-                    onClick={() => isCasino && handleRowClick(row)}
+                    onClick={() => isClickable && handleRowClick(row)}
                   >
                     <td className="py-2 px-2 text-xs border border-[#e0e0e0]">
                       {row.date}

@@ -32,6 +32,7 @@ export interface Transaction {
   closing: number;
   description: string;
   fromTo: string | null;
+  betId: string | null;
 }
 
 export interface Pagination {
