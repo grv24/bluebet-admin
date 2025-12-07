@@ -111,8 +111,8 @@ export const getAccountStatementWithFilters = async (
   if (params.accountType !== "All") {
     const transformedAccountType = transformAccountType(params.accountType);
     queryParams.append("accountType", transformedAccountType);
-    if (params.sportType) queryParams.append("sportType", params.sportType);
-    if (params.gameName) queryParams.append("gameName", params.gameName);
+    if (params.sportType) queryParams.append("sportType", params.sportType.toLowerCase());
+    if (params.gameName) queryParams.append("gameName", params.gameName.toLowerCase());
     if (params.startdate) queryParams.append("startdate", params.startdate);
     if (params.enddate) queryParams.append("enddate", params.enddate);
   }
