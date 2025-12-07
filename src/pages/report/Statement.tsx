@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useCookies } from "react-cookie";
 import { getAccountStatementWithFilters } from "@/helper/account_statement";
 import { SERVER_URL } from "@/helper/auth";
+import useCasinoGames from "@/hooks/useCasinoGames";
 
 const accountTypes = [
   "All",
@@ -17,7 +18,6 @@ const accountTypes = [
   "Third Party Casino Report",
 ];
 const sportListOptions = ["All", "Football", "Tennis", "Cricket"];
-const casinoListOptions = ["All", "Casino 1", "Casino 2", "Casino 3"]; // Will be replaced with actual casino names
 const pageSizeOptions = [25, 50, 100];
 
 // Function to get game names based on account type
@@ -48,6 +48,7 @@ const getGameNamesByAccountType = (accountType: string): string[] => {
 
 const Statement = () => {
   const [cookies] = useCookies(["Admin", "TechAdmin", "token"]);
+  const { data: casinoGamesData } = useCasinoGames();
   const [accountType, setAccountType] = useState("All");
   const [gameName, setGameName] = useState("All");
   const [sportList, setSportList] = useState("All");
@@ -162,6 +163,7 @@ const Statement = () => {
       accountType,
       sportType: accountType === "Sports Report" ? sportList : undefined,
       gameName: accountType === "Casino Report" ? undefined : gameName,
+      casinoList: accountType === "Casino Report" ? casinoList : undefined,
       startdate: fromDate,
       enddate: toDate,
       page,
@@ -424,9 +426,10 @@ const Statement = () => {
               value={casinoList}
               onChange={(e) => setCasinoList(e.target.value)}
             >
-              {casinoListOptions.map((casino) => (
-                <option key={casino} value={casino}>
-                  {casino}
+              <option value="All">All</option>
+              {casinoGamesData?.data?.map((casino: any) => (
+                <option key={casino.casinoGameCode} value={casino.casinoGameCode}>
+                  {casino.casinoGameName}
                 </option>
               ))}
             </select>
