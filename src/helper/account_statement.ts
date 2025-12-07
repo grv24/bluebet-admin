@@ -41,7 +41,7 @@ export const getAccountStatementWithFilters = async (
 ) => {
   const token = params.token || isAuthenticated(cookies);
   
-  // Build query string
+  // Build query string (token NOT included in query params)
   const queryParams = new URLSearchParams();
   queryParams.append("accountType", params.accountType);
   if (params.sportType) queryParams.append("sportType", params.sportType);
@@ -50,7 +50,6 @@ export const getAccountStatementWithFilters = async (
   if (params.enddate) queryParams.append("enddate", params.enddate);
   queryParams.append("page", params.page.toString());
   queryParams.append("limit", params.limit.toString());
-  if (token) queryParams.append("token", token);
   
   try {
     const response = await fetch(
