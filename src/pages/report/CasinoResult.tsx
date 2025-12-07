@@ -178,7 +178,7 @@ const CasinoResult = () => {
               <option key={casinoGame.casinoGameCode} value={casinoGame.casinoGameCode}>
                 {casinoGame.casinoGameName}
               </option>
-            ))}
+          ))}
         </select>
       </div>
       {/* Show entries and search */}
@@ -230,11 +230,11 @@ const CasinoResult = () => {
                 </td>
               </tr>
             ) : filteredData.length === 0 ? (
-              <tr>
-                <td colSpan={2} className="text-center py-6 text-gray-500 border border-[#e0e0e0] bg-[#f0f4f8]">
-                  No data available in table
-                </td>
-              </tr>
+            <tr>
+              <td colSpan={2} className="text-center py-6 text-gray-500 border border-[#e0e0e0] bg-[#f0f4f8]">
+                No data available in table
+              </td>
+            </tr>
             ) : (
               filteredData.map((item, index) => (
                 <tr 
@@ -262,23 +262,23 @@ const CasinoResult = () => {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
+        <button
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1 || isLoading}
             className="bg-gray-200 rounded px-3 py-1 disabled:opacity-60 disabled:cursor-not-allowed hover:bg-gray-300 transition"
-          >
+        >
             Previous
-          </button>
+        </button>
           <span className="min-w-[80px] text-center font-medium text-base">
             Page {page} of {totalPages}
-          </span>
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+        </span>
+        <button
+          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages || isLoading}
             className="bg-gray-200 rounded px-3 py-1 disabled:opacity-60 disabled:cursor-not-allowed hover:bg-gray-300 transition"
-          >
+        >
             Next
-          </button>
+        </button>
         </div>
       </div>
 
