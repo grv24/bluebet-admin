@@ -43,11 +43,17 @@ export const getAccountStatementWithFilters = async (
   
   // Build query string (token NOT included in query params)
   const queryParams = new URLSearchParams();
-  queryParams.append("accountType", params.accountType);
-  if (params.sportType) queryParams.append("sportType", params.sportType);
-  if (params.gameName) queryParams.append("gameName", params.gameName);
-  if (params.startdate) queryParams.append("startdate", params.startdate);
-  if (params.enddate) queryParams.append("enddate", params.enddate);
+  
+  // If accountType is "All", only pass page and limit
+  if (params.accountType !== "All") {
+    queryParams.append("accountType", params.accountType);
+    if (params.sportType) queryParams.append("sportType", params.sportType);
+    if (params.gameName) queryParams.append("gameName", params.gameName);
+    if (params.startdate) queryParams.append("startdate", params.startdate);
+    if (params.enddate) queryParams.append("enddate", params.enddate);
+  }
+  
+  // Always include page and limit
   queryParams.append("page", params.page.toString());
   queryParams.append("limit", params.limit.toString());
   
