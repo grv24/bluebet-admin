@@ -142,7 +142,6 @@ const Statement = () => {
                          (row.type === 'settle-bet' && parseFloat(row.balanceAfter) > parseFloat(row.balanceBefore));
         const credit = isCredit ? Number(row.amount).toFixed(2) : '';
         const debit = !isCredit ? Number(row.amount).toFixed(2) : '';
-        const showFromTo = row.type === 'deposit' || row.type === 'withdraw';
         
         return [
           `${row.date} ${row.time}`,
@@ -150,7 +149,7 @@ const Statement = () => {
           debit,
           Number(row.balanceAfter).toFixed(2),
           row.remarks,
-          showFromTo ? `${row.userName} (${row.loginId})` : '',
+          row.fromTo || '',
         ];
       });
       
@@ -215,7 +214,6 @@ const Statement = () => {
                            (row.type === 'settle-bet' && parseFloat(row.balanceAfter) > parseFloat(row.balanceBefore));
           const credit = isCredit ? Number(row.amount).toFixed(2) : '';
           const debit = !isCredit ? Number(row.amount).toFixed(2) : '';
-          const showFromTo = row.type === 'deposit' || row.type === 'withdraw';
           
           return [
             `${row.date} ${row.time}`,
@@ -223,7 +221,7 @@ const Statement = () => {
             debit,
             Number(row.balanceAfter).toFixed(2),
             row.remarks,
-            showFromTo ? `${row.userName} (${row.loginId})` : '',
+            row.fromTo || '',
           ];
         }),
       ];
@@ -556,9 +554,6 @@ const Statement = () => {
                 const credit = isCredit ? row.amount : 0;
                 const debit = !isCredit ? row.amount : 0;
                 
-                // Only show From/To for deposit and withdraw transactions
-                const showFromTo = row.type === 'deposit' || row.type === 'withdraw';
-                
                 return (
                   <tr key={row.id || index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                     <td className="py-2 px-2 text-xs border border-[#e0e0e0]">
@@ -577,7 +572,7 @@ const Statement = () => {
                       {row.remarks}
                     </td>
                     <td className="py-2 px-2 text-xs border border-[#e0e0e0]">
-                      {showFromTo ? `${row.userName} (${row.loginId})` : ''}
+                      {row.fromTo || ''}
                     </td>
                   </tr>
                 );

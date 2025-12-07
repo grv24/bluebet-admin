@@ -24,6 +24,67 @@ export const getAccountStatement = async (cookies: any) => {
   }
 };
 
+export interface Transaction {
+  id: string;
+  srNo: number;
+  date: string;
+  time: string;
+  type: string;
+  amount: number;
+  balanceBefore: string;
+  balanceAfter: string;
+  exposureBefore: string;
+  exposureAfter: string;
+  remarks: string;
+  userId: string;
+  userName: string;
+  loginId: string;
+  userType: string;
+  isOwnTransaction: boolean;
+  fromTo: string | null;
+  userDetails: any;
+  sportType: string | null;
+  casinoType: string | null;
+  gameName: string | null;
+  createdAt: string;
+}
+
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface Summary {
+  totalTransactions: number;
+  totalDeposits: number;
+  totalWithdrawals: number;
+  totalBets: number;
+  totalSettlements: number;
+}
+
+export interface Filters {
+  accountType: string;
+  sportType: string;
+  casinoType: string;
+  gameName: string;
+  startDate: string | null;
+  endDate: string | null;
+  targetUserIds: number;
+}
+
+export interface AccountStatementResponse {
+  success: boolean;
+  message: string;
+  data: {
+    transactions: Transaction[];
+    pagination: Pagination;
+    summary: Summary;
+    filters: Filters;
+  };
+}
+
 export interface AccountStatementParams {
   accountType: string;
   sportType?: string;
