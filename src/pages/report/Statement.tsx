@@ -569,7 +569,9 @@ const Statement = () => {
                       {Number(row.balanceAfter).toFixed(2)}
                     </td>
                     <td className="py-2 px-2 text-xs border border-[#e0e0e0]">
-                      {row.remarks}
+                      <span className="inline-block bg-[#4a4a4a] text-white px-2 py-1 rounded text-xs">
+                        {row.remarks}
+                      </span>
                     </td>
                     <td className="py-2 px-2 text-xs border border-[#e0e0e0]">
                       {row.fromTo || ''}
