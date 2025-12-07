@@ -138,17 +138,12 @@ const Statement = () => {
       
       // Prepare table data
       const tableData = data.map((row) => {
-        const isCredit = row.type === 'deposit' || 
-                         (row.type === 'settle-bet' && parseFloat(row.balanceAfter) > parseFloat(row.balanceBefore));
-        const credit = isCredit ? Number(row.amount).toFixed(2) : '';
-        const debit = !isCredit ? Number(row.amount).toFixed(2) : '';
-        
         return [
-          `${row.date} ${row.time}`,
-          credit,
-          debit,
-          Number(row.balanceAfter).toFixed(2),
-          row.remarks,
+          row.date,
+          row.credit ? Number(row.credit).toFixed(2) : '',
+          row.debit ? Number(row.debit).toFixed(2) : '',
+          Number(row.closing).toFixed(2),
+          row.description,
           row.fromTo || '',
         ];
       });
@@ -210,17 +205,12 @@ const Statement = () => {
         ['Date', 'Credit', 'Debit', 'Closing', 'Description', 'From/To'],
         // Data rows
         ...data.map((row) => {
-          const isCredit = row.type === 'deposit' || 
-                           (row.type === 'settle-bet' && parseFloat(row.balanceAfter) > parseFloat(row.balanceBefore));
-          const credit = isCredit ? Number(row.amount).toFixed(2) : '';
-          const debit = !isCredit ? Number(row.amount).toFixed(2) : '';
-          
           return [
-            `${row.date} ${row.time}`,
-            credit,
-            debit,
-            Number(row.balanceAfter).toFixed(2),
-            row.remarks,
+            row.date,
+            row.credit ? Number(row.credit).toFixed(2) : '',
+            row.debit ? Number(row.debit).toFixed(2) : '',
+            Number(row.closing).toFixed(2),
+            row.description,
             row.fromTo || '',
           ];
         }),
@@ -548,29 +538,23 @@ const Statement = () => {
             </tr>
             ) : (
               statementData.map((row: any, index: number) => {
-                // Determine credit/debit based on transaction type
-                const isCredit = row.type === 'deposit' || 
-                                 (row.type === 'settle-bet' && parseFloat(row.balanceAfter) > parseFloat(row.balanceBefore));
-                const credit = isCredit ? row.amount : 0;
-                const debit = !isCredit ? row.amount : 0;
-                
                 return (
                   <tr key={row.id || index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                     <td className="py-2 px-2 text-xs border border-[#e0e0e0]">
-                      {row.date} {row.time}
+                      {row.date}
                     </td>
                     <td className="py-2 px-2 text-xs text-right border border-[#e0e0e0] text-green-600 font-medium">
-                      {credit > 0 ? Number(credit).toFixed(2) : ''}
+                      {row.credit ? Number(row.credit).toFixed(2) : ''}
                     </td>
                     <td className="py-2 px-2 text-xs text-right border border-[#e0e0e0] text-red-600 font-medium">
-                      {debit > 0 ? Number(debit).toFixed(2) : ''}
+                      {row.debit ? Number(row.debit).toFixed(2) : ''}
                     </td>
                     <td className="py-2 px-2 text-xs text-right border border-[#e0e0e0] font-medium">
-                      {Number(row.balanceAfter).toFixed(2)}
+                      {Number(row.closing).toFixed(2)}
                     </td>
                     <td className="py-2 px-2 text-xs border border-[#e0e0e0]">
                       <span className="inline-block bg-[#4a4a4a] text-white px-2 py-1 rounded text-xs">
-                        {row.remarks}
+                        {row.description}
                       </span>
                     </td>
                     <td className="py-2 px-2 text-xs border border-[#e0e0e0]">

@@ -26,27 +26,12 @@ export const getAccountStatement = async (cookies: any) => {
 
 export interface Transaction {
   id: string;
-  srNo: number;
   date: string;
-  time: string;
-  type: string;
-  amount: number;
-  balanceBefore: string;
-  balanceAfter: string;
-  exposureBefore: string;
-  exposureAfter: string;
-  remarks: string;
-  userId: string;
-  userName: string;
-  loginId: string;
-  userType: string;
-  isOwnTransaction: boolean;
+  credit: number | null;
+  debit: number | null;
+  closing: number;
+  description: string;
   fromTo: string | null;
-  userDetails: any;
-  sportType: string | null;
-  casinoType: string | null;
-  gameName: string | null;
-  createdAt: string;
 }
 
 export interface Pagination {
