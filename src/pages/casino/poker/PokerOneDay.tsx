@@ -10,6 +10,7 @@ type PokerOneDayProps = {
   remainingTime: number;
   results?: any[];
   gameSlug: string;
+  gameCode?: string;
   gameName: string;
 };
 
@@ -54,6 +55,7 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
   remainingTime,
   results = [],
   gameSlug,
+  gameCode,
   gameName,
 }) => {
   const navigate = useNavigate();

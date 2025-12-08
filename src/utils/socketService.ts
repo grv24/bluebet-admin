@@ -233,7 +233,9 @@ class SocketService {
               console.log('🎰 Auto-rejoining casino rooms after connection:', rooms);
               rooms.forEach((room) => {
                 // Use original casing if available, otherwise use lowercase
-                this.socket.emit('joinCasino', room);
+                if (this.socket) {
+                  this.socket.emit('joinCasino', room);
+                }
               });
             }
           }, 100);

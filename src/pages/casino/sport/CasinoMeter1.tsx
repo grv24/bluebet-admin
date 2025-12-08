@@ -1,5 +1,5 @@
-import React, { useMemo, useContext, useState } from "react";
-import { PlaceBetUseContext } from "@/context/placebet";
+import React, { useMemo, useState } from "react";
+// import { PlaceBetUseContext } from "@/context/placebet";
 import { useNavigate } from "react-router-dom";
 import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { RiLockFill } from "react-icons/ri";
@@ -34,8 +34,9 @@ const CasinoMeter1Component: React.FC<CasinoMeter1Props> = ({
   gameName,
 }) => {
   const navigate = useNavigate();
-  const placeBetContext = useContext(PlaceBetUseContext);
-  const { setPlaceBet, setBetData, setLatestBetData } = placeBetContext || {};
+  // Betting context disabled for admin view
+  // const placeBetContext = useContext(PlaceBetUseContext);
+  // const { setPlaceBet, setBetData, setLatestBetData } = placeBetContext || {};
 
   // Modal state for individual result details
   const [isResultModalOpen, setIsResultModalOpen] = useState(false);
@@ -80,12 +81,13 @@ const CasinoMeter1Component: React.FC<CasinoMeter1Props> = ({
     return num.toFixed(2);
   };
 
-  // Handle bet click
+  // Handle bet click - disabled for admin view
   const handleBetClick = (fighter: any, betType: "back" | "lay") => {
-    if (!setPlaceBet || !setBetData || !setLatestBetData) {
-      }
-      return;
-    }
+    // Betting functionality disabled for admin view
+    return;
+    // if (!setPlaceBet || !setBetData || !setLatestBetData) {
+    //   return;
+    // }
 
     const oddsValue = betType === "back" ? fighter.b : fighter.l || 0;
 
@@ -118,9 +120,10 @@ const CasinoMeter1Component: React.FC<CasinoMeter1Props> = ({
       sportType: "cricket",
     };
 
-    setBetData(betData);
-    setLatestBetData(betData);
-    setPlaceBet(true);
+    // Betting functionality disabled for admin view
+    // setBetData(betData);
+    // setLatestBetData(betData);
+    // setPlaceBet(true);
   };
 
   // Keep original gameCode for API calls (e.g., "CASINO_METER_1")

@@ -9,6 +9,7 @@ interface GoalProps {
   remainingTime: number;
   results: any;
   gameSlug?: string;
+  gameCode?: string;
   gameName?: string;
 }
 

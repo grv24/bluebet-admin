@@ -10,12 +10,14 @@ const Poker20Component = ({
   remainingTime,
   results,
   gameSlug,
+  gameCode,
   gameName,
 }: {
   casinoData: any;
   remainingTime: number;
   results: any[];
   gameSlug: string;
+  gameCode?: string;
   gameName: string;
 }) => {
   const navigate = useNavigate();

@@ -27,14 +27,13 @@ const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
 
   const userId = useMemo(() => {
     const id = decodedToken?.user?.PersonalDetails?.loginId || 
-               decodedToken?.user?.userId || 
-               decodedToken?.user?.loginId ||
+               decodedToken?.user?.userId ||
                "";
     console.log("🔌 PrivateLayout - User ID extraction:", {
       hasDecodedToken: !!decodedToken,
       personalDetailsLoginId: decodedToken?.user?.PersonalDetails?.loginId,
       userId: decodedToken?.user?.userId,
-      loginId: decodedToken?.user?.loginId,
+      loginId: decodedToken?.user?.PersonalDetails?.loginId,
       extractedUserId: id,
     });
     return id;

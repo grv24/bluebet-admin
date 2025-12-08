@@ -175,6 +175,7 @@ interface CasinoMatchDetailsDisplayProps {
   setBetFilter: (filter: string) => void;
   getFilteredBets: (bets: any[], filter: string) => any[];
   userBets?: any[];
+  showUserName?: boolean;
 }
 
 const CasinoMatchDetailsDisplay: React.FC<CasinoMatchDetailsDisplayProps> = ({

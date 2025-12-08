@@ -174,97 +174,97 @@ const KBCComponent: React.FC<KBCProps> = ({
     return value % 2 !== 0;
   };
 
-  // Parse cards from result data for modal display
-  const parseResultCards = () => {
-    const cardString =
-      resultData?.card ||
-      resultData?.cards ||
-      resultData?.cardData ||
-      resultData?.lcard ||
-      "";
+  // Parse cards from result data for modal display - disabled for admin view
+  // const parseResultCards = () => {
+  //   const cardString =
+  //     resultData?.card ||
+  //     resultData?.cards ||
+  //     resultData?.cardData ||
+  //     resultData?.lcard ||
+  //     "";
+  //
+  //   if (!cardString) return [];
+  //
+  //   const cards = cardString
+  //     .split(",")
+  //     .filter((c: string) => c && c !== "1" && c.trim());
+  //   return cards;
+  // };
 
-    if (!cardString) return [];
-
-    const cards = cardString
-      .split(",")
-      .filter((c: string) => c && c !== "1" && c.trim());
-    return cards;
-  };
-
-  // Calculate KBC result breakdown
-  const getKBCResultBreakdown = () => {
-    const cards = parseResultCards();
-    if (cards.length < 5) return null;
-
-    // Q1: Red-Black (based on 5th card)
-    const fifthCard = cards[4];
-    const q1Result = isRedCard(fifthCard) ? "Red" : "Black";
-
-    // Q2: Odd-Even (based on 5th card)
-    const q2Result = isCardOdd(fifthCard) ? "Odd" : "Even";
-
-    // Q3: 7 Up-7 Down (based on 5th card value)
-    const fifthCardValue = getCardValue(fifthCard);
-    const q3Result = fifthCardValue >= 7 ? "Up" : "Down";
-
-    // Q4: 3 Card Judgement (based on first 3 cards)
-    const firstThreeCards = cards.slice(0, 3);
-    const firstThreeValues = firstThreeCards.map((card: string) =>
-      getCardValue(card)
-    );
-    const firstThreeRanks = firstThreeCards.map((card: string) =>
-      getCardRank(card)
-    );
-
-    let q4Result = "";
-    // Check for A23 pattern
-    if (
-      firstThreeRanks.includes("A") &&
-      firstThreeRanks.includes("2") &&
-      firstThreeRanks.includes("3")
-    ) {
-      q4Result = "A23";
-    }
-    // Check for 456 pattern
-    else if (
-      firstThreeValues.includes(4) &&
-      firstThreeValues.includes(5) &&
-      firstThreeValues.includes(6)
-    ) {
-      q4Result = "456";
-    }
-    // Check for 8910 pattern
-    else if (
-      firstThreeValues.includes(8) &&
-      firstThreeValues.includes(9) &&
-      firstThreeValues.includes(10)
-    ) {
-      q4Result = "8 9 10";
-    }
-    // Check for JQK pattern
-    else if (
-      firstThreeRanks.includes("J") &&
-      firstThreeRanks.includes("Q") &&
-      firstThreeRanks.includes("K")
-    ) {
-      q4Result = "JQK";
-    } else {
-      // Fallback: show the ranks
-      q4Result = firstThreeRanks.join(" ");
-    }
-
-    // Q5: Suits (based on 5th card)
-    const q5Result = getCardSuit(fifthCard);
-
-    return {
-      cards,
-      q1Result,
-      q2Result,
-      q3Result,
-      q4Result,
-      q5Result,
-    };
-  };
+  // Calculate KBC result breakdown - disabled for admin view
+  // const getKBCResultBreakdown = () => {
+  //   const cards = parseResultCards();
+  //   if (cards.length < 5) return null;
+  //
+  //   // Q1: Red-Black (based on 5th card)
+  //   const fifthCard = cards[4];
+  //   const q1Result = isRedCard(fifthCard) ? "Red" : "Black";
+  //
+  //   // Q2: Odd-Even (based on 5th card)
+  //   const q2Result = isCardOdd(fifthCard) ? "Odd" : "Even";
+  //
+  //   // Q3: 7 Up-7 Down (based on 5th card value)
+  //   const fifthCardValue = getCardValue(fifthCard);
+  //   const q3Result = fifthCardValue >= 7 ? "Up" : "Down";
+  //
+  //   // Q4: 3 Card Judgement (based on first 3 cards)
+  //   const firstThreeCards = cards.slice(0, 3);
+  //   const firstThreeValues = firstThreeCards.map((card: string) =>
+  //     getCardValue(card)
+  //   );
+  //   const firstThreeRanks = firstThreeCards.map((card: string) =>
+  //     getCardRank(card)
+  //   );
+  //
+  //   let q4Result = "";
+  //   // Check for A23 pattern
+  //   if (
+  //     firstThreeRanks.includes("A") &&
+  //     firstThreeRanks.includes("2") &&
+  //     firstThreeRanks.includes("3")
+  //   ) {
+  //     q4Result = "A23";
+  //   }
+  //   // Check for 456 pattern
+  //   else if (
+  //     firstThreeValues.includes(4) &&
+  //     firstThreeValues.includes(5) &&
+  //     firstThreeValues.includes(6)
+  //   ) {
+  //     q4Result = "456";
+  //   }
+  //   // Check for 8910 pattern
+  //   else if (
+  //     firstThreeValues.includes(8) &&
+  //     firstThreeValues.includes(9) &&
+  //     firstThreeValues.includes(10)
+  //   ) {
+  //     q4Result = "8 9 10";
+  //   }
+  //   // Check for JQK pattern
+  //   else if (
+  //     firstThreeRanks.includes("J") &&
+  //     firstThreeRanks.includes("Q") &&
+  //     firstThreeRanks.includes("K")
+  //   ) {
+  //     q4Result = "JQK";
+  //   } else {
+  //     // Fallback: show the ranks
+  //     q4Result = firstThreeRanks.join(" ");
+  //   }
+  //
+  //   // Q5: Suits (based on 5th card)
+  //   const q5Result = getCardSuit(fifthCard);
+  //
+  //   return {
+  //     cards,
+  //     q1Result,
+  //     q2Result,
+  //     q3Result,
+  //     q4Result,
+  //     q5Result,
+  //   };
+  // };
 
   // Map win value to display info
   const getResultDisplay = (win: string) => {

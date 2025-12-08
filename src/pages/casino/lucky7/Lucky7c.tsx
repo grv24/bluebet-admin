@@ -196,8 +196,8 @@ const Lucky7cComponent = ({
    * Close the result details modal
    */
   const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedResult(null);
+    setIsResultModalOpen(false);
+    setSelectedResultId(null);
   };
 
   const getByNat = (name: string) =>

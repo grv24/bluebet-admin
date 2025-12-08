@@ -66,8 +66,10 @@ const ThirtyTwoCardBComponent: React.FC<{
 
 
 
+  // Profit/Loss calculation disabled for admin view
   const getProfitLoss = () => {
-    if (!currentBet?.data || !casinoData?.data?.mid)
+    // if (!currentBet?.data || !casinoData?.data?.mid)
+    if (!casinoData?.data?.mid)
       return { 
         "Player 8": 0, 
         "Player 9": 0, 
@@ -93,10 +95,11 @@ const ThirtyTwoCardBComponent: React.FC<{
       "10 & 11 Total": 0
     };
 
-    // Only bets for this match
-    const bets = currentBet.data.filter(
-      (bet: any) => String(bet.matchId) === String(currentMatchId)
-    );
+    // Only bets for this match - disabled for admin view
+    // const bets = currentBet.data.filter(
+    //   (bet: any) => String(bet.matchId) === String(currentMatchId)
+    // );
+    const bets: any[] = [];
 
     bets.forEach((bet: any) => {
       const { betName, oddCategory, stake, betRate } = bet.betData;
@@ -229,18 +232,21 @@ const ThirtyTwoCardBComponent: React.FC<{
    * @param betType - The type of bet to calculate profit/loss for
    * @returns The profit/loss amount (loss-only display)
    */
+  // Profit/Loss calculation disabled for admin view
   const getBetProfitLoss = (betType: string): number => {
-    if (!currentBet?.data || !casinoData?.data?.mid) return 0;
+    // if (!currentBet?.data || !casinoData?.data?.mid) return 0;
+    if (!casinoData?.data?.mid) return 0;
 
     console.log("🔍 getBetProfitLoss called with betType:", betType);
 
     const currentMatchId = casinoData.data.mid;
     let profitLoss = 0;
 
-    // Only bets for this match
-    const bets = currentBet.data.filter(
-      (bet: any) => String(bet.matchId) === String(currentMatchId)
-    );
+    // Only bets for this match - disabled for admin view
+    // const bets = currentBet.data.filter(
+    //   (bet: any) => String(bet.matchId) === String(currentMatchId)
+    // );
+    const bets: any[] = [];
 
     bets.forEach((bet: any) => {
       const { betName, stake, betRate, oddCategory } = bet.betData;
@@ -285,8 +291,10 @@ const ThirtyTwoCardBComponent: React.FC<{
    * @param betType - The type of bet to calculate profit/loss for
    * @returns The profit/loss amount using book calculation
    */
+  // Profit/Loss calculation disabled for admin view
   const getAnyThreeCardBetProfitLoss = (betType: string): number => {
-    if (!currentBet?.data || !casinoData?.data?.mid) return 0;
+    // if (!currentBet?.data || !casinoData?.data?.mid) return 0;
+    if (!casinoData?.data?.mid) return 0;
 
     const currentMatchId = casinoData.data.mid;
     let book: Record<string, number> = {
@@ -295,9 +303,11 @@ const ThirtyTwoCardBComponent: React.FC<{
       "Two Black Two Red": 0
     };
 
-    const bets = currentBet.data.filter(
-      (bet: any) => String(bet.matchId) === String(currentMatchId)
-    );
+    // Only bets for this match - disabled for admin view
+    // const bets = currentBet.data.filter(
+    //   (bet: any) => String(bet.matchId) === String(currentMatchId)
+    // );
+    const bets: any[] = [];
 
     bets.forEach((bet: any) => {
       const { betName, stake, betRate, oddCategory } = bet.betData;
@@ -332,8 +342,10 @@ const ThirtyTwoCardBComponent: React.FC<{
     return book[betType] || 0;
   };
 
+  // Profit/Loss calculation disabled for admin view
   const getTotalBetProfitLoss = (betType: string): number => {
-    if (!currentBet?.data || !casinoData?.data?.mid) return 0;
+    // if (!currentBet?.data || !casinoData?.data?.mid) return 0;
+    if (!casinoData?.data?.mid) return 0;
 
     const currentMatchId = casinoData.data.mid;
     let book: Record<string, number> = {
@@ -341,9 +353,11 @@ const ThirtyTwoCardBComponent: React.FC<{
       "10 & 11 Total": 0
     };
 
-    const bets = currentBet.data.filter(
-      (bet: any) => String(bet.matchId) === String(currentMatchId)
-    );
+    // Only bets for this match - disabled for admin view
+    // const bets = currentBet.data.filter(
+    //   (bet: any) => String(bet.matchId) === String(currentMatchId)
+    // );
+    const bets: any[] = [];
 
     bets.forEach((bet: any) => {
       const { betName, stake, betRate, oddCategory } = bet.betData;
@@ -386,8 +400,10 @@ const ThirtyTwoCardBComponent: React.FC<{
     return book[betType] || 0;
   };
 
+  // Profit/Loss calculation disabled for admin view
   const getPlayerBetProfitLoss = (playerName: string): number => {
-    if (!currentBet?.data || !casinoData?.data?.mid) return 0;
+    // if (!currentBet?.data || !casinoData?.data?.mid) return 0;
+    if (!casinoData?.data?.mid) return 0;
 
     const currentMatchId = casinoData.data.mid;
     let book: Record<string, number> = {
@@ -397,9 +413,11 @@ const ThirtyTwoCardBComponent: React.FC<{
       "Player 11": 0
     };
 
-    const bets = currentBet.data.filter(
-      (bet: any) => String(bet.matchId) === String(currentMatchId)
-    );
+    // Only bets for this match - disabled for admin view
+    // const bets = currentBet.data.filter(
+    //   (bet: any) => String(bet.matchId) === String(currentMatchId)
+    // );
+    const bets: any[] = [];
 
     bets.forEach((bet: any) => {
       const { betName, stake, betRate, oddCategory } = bet.betData;
@@ -659,10 +677,7 @@ const ThirtyTwoCardBComponent: React.FC<{
                     {label}
                   </td>
                   <td
-                    className="relative text-base text-center border border-gray-300 leading-10 font-semibold bg-[var(--bg-back)] text-[var(--bg-secondary)] cursor-pointer"
-                    onClick={() =>
-                      !backLocked && onBetClick(String(row?.sid), "back")
-                    }
+                    className="relative text-base text-center border border-gray-300 leading-10 font-semibold bg-[var(--bg-back)] text-[var(--bg-secondary)]"
                   >
                     {backLocked && (
                       <div className="absolute inset-0 bg-black/60 flex items-center justify-center">

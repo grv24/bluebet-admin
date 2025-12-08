@@ -11,11 +11,12 @@ type Poker6PlayerProps = {
   remainingTime: number;
   results: any;
   gameSlug: string;
+  gameCode?: string;
   gameName: string;
 };
 
 const Poker6PlayerComponent: React.FC<Poker6PlayerProps> = (_props) => {
-  const { casinoData, remainingTime, results, gameSlug, gameName } =
+  const { casinoData, remainingTime, results, gameSlug, gameCode, gameName } =
     _props;
 
   const navigate = useNavigate();

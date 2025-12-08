@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { RiLockFill } from "react-icons/ri";
 import { getCasinoIndividualResult } from "@/helper/casino";
 import { useCookies } from "react-cookie";
@@ -205,14 +205,13 @@ const CasinoQueenComponent: React.FC<CasinoQueenProps> = ({
     };
 
     return scores;
-  };
+  }; */
 
   // const cardsData = parseCards();
   // const scores = calculateScores(cardsData);
 
   // Determine winner - disabled for admin view
-  /*
-  const winnerTotalNumber = winnerSid ? parseInt(winnerSid) - 1 : null; // sid 1 = Total 0, sid 2 = Total 1, etc.
+  // const winnerTotalNumber = winnerSid ? parseInt(winnerSid) - 1 : null; // sid 1 = Total 0, sid 2 = Total 1, etc.
 
   // Map win value to display info
   // win "1" = Total 0 (sid: 1), "2" = Total 1 (sid: 2), "3" = Total 2 (sid: 3), "4" = Total 3 (sid: 4)
@@ -290,7 +289,6 @@ const CasinoQueenComponent: React.FC<CasinoQueenProps> = ({
             {layOdds}
           </h2>
         </div>
-        
       </div>
     );
   };
@@ -333,138 +331,6 @@ const CasinoQueenComponent: React.FC<CasinoQueenProps> = ({
           )}
         </div>
       </div>
-
-      {/* Result Details Modal - Disabled for admin view */}
-      {/* <CasinoModal
-        isOpen={false}
-        onClose={() => {}}
-        title="Casino Queen Result"
-        size="xl"
-        resultDetails={true}
-      >
-        <div className="flex flex-col px-2">
-          {/* Header Information */}
-          <div className="flex justify-between items-start md:items-center gap-2">
-            <h2 className="text-xs md:text-sm font-semibold leading-8 text-black">
-              Round Id:{" "}
-              <span className="text-black font-normal pl-1">
-                {resultDetails?.data?.matchData?.mid ||
-                  selectedResult?.mid ||
-                  "N/A"}
-              </span>
-            </h2>
-            <h2 className="text-xs md:text-sm font-semibold leading-8 text-black capitalize">
-              Match Time:{" "}
-              <span className="text-black font-normal pl-1">
-                {resultData?.matchTime
-                  ? new Date(resultData.matchTime).toLocaleString()
-                  : resultData?.mtime || resultData?.dateAndTime || "N/A"}
-              </span>
-            </h2>
-          </div>
-
-          {/* Content Display - Only show when not loading and no error */}
-          {!isLoadingResult &&
-            !resultError &&
-            (resultData || selectedResult) && (
-              <>
-                {/* Results for Each Total */}
-                <div className="flex md:flex-row flex-col md:justify-between md:px-6 items-center gap-3 my-4">
-                  {[
-                    {
-                      label: "Total 0",
-                      cards: cardsData.total0,
-                      score: scores.total0,
-                      isWinner: winnerTotalNumber === 0,
-                    },
-                    {
-                      label: "Total 1",
-                      cards: cardsData.total1,
-                      score: scores.total1,
-                      isWinner: winnerTotalNumber === 1,
-                    },
-                    {
-                      label: "Total 2",
-                      cards: cardsData.total2,
-                      score: scores.total2,
-                      isWinner: winnerTotalNumber === 2,
-                    },
-                    {
-                      label: "Total 3",
-                      cards: cardsData.total3,
-                      score: scores.total3,
-                      isWinner: winnerTotalNumber === 3,
-                    },
-                  ].map((total, index) => (
-                    <div
-                      key={index}
-                      className="flex flex-col items-center gap-3 pb-3 "
-                    >
-                      {/* Total Label */}
-                      <div className="min-w-[80px]">
-                        <h3 className="text-sm font-semibold text-gray-800">
-                          {total.label} -{" "}
-                          <span className="bg-green-700 text-white px-2 py-1 rounded text-xs font-semibold min-w-[40px] text-center">
-                            {total.score}
-                          </span>
-                        </h3>
-                      </div>
-
-                      {/* Cards */}
-                      <div className="flex gap-2 items-center flex-1">
-                        {total.cards.length > 0 ? (
-                          total.cards.map((card: string, cardIndex: number) => (
-                            <img
-                              key={cardIndex}
-                              src={getCardByCode(card, gameSlug, "individual")}
-                              alt={`${total.label} card ${cardIndex + 1}`}
-                              className="w-8"
-                            />
-                          ))
-                        ) : (
-                          <span className="text-gray-400 text-sm">
-                            No cards
-                          </span>
-                        )}
-
-                        <div className="flex items-center gap-2">
-                          {total.isWinner && (
-                            <i className="fa-solid fa-trophy text-green-600 text-lg"></i>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Winner Declaration */}
-                {winnerTotalNumber !== null && (
-                  <div className="text-center my-4 py-3 border border-gray-200">
-                    <h2 className="text-sm font-semibold text-gray-800">
-                      Winner {winnerName}
-                    </h2>
-                  </div>
-                )}
-              </>
-            )}
-
-          {/* Loading State */}
-          {isLoadingResult && (
-            <div className="flex justify-center items-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--bg-primary)]"></div>
-            </div>
-          )}
-
-          {/* Error State */}
-          {resultError && (
-            <div className="flex justify-center items-center py-8">
-              <p className="text-red-500 text-sm">
-                Error loading result details. Please try again.
-              </p>
-            </div>
-          )}
-        </div>
-      </CasinoModal> */}
     </div>
   );
 };
