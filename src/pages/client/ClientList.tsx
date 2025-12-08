@@ -177,7 +177,7 @@ const exportToPDF = (data: ClientRow[], totals: any, activeTab: string) => {
       'TOTAL',
       '',
       formatNumber(totals.balance),
-      formatNumber(totals.balance),
+      formatNumber(totals.clientPL),
       '-',
       '-',
       formatNumber(totals.availableBalance),
@@ -289,7 +289,7 @@ const exportToExcel = (data: ClientRow[], totals: any, activeTab: string) => {
         row.accountType
       ]),
       // Totals row
-      ['TOTAL', '', totals.balance, totals.balance, '-', '-', totals.availableBalance, '', '', '-', '-', '']
+      ['TOTAL', '', totals.balance, totals.clientPL, '-', '-', totals.availableBalance, '', '', '-', '-', '']
     ];
     
     // Create workbook and worksheet
@@ -762,12 +762,14 @@ const ClientList: React.FC = () => {
         (acc, row) => {
           acc.creditRef += parseNumericValue(row.creditRef);
           acc.balance += parseNumericValue(row.balance);
+          acc.clientPL += parseNumericValue(row.clientPL);
           acc.availableBalance += parseNumericValue(row.availableBalance);
           return acc;
         },
         {
           creditRef: 0,
           balance: 0,
+          clientPL: 0,
           availableBalance: 0,
         }
       ),
@@ -1360,7 +1362,7 @@ const ClientList: React.FC = () => {
                     {formatNumber(visibleTotals.balance)}
                   </td>
                   <td className="border border-[#e0e0e0] text-center py-2 px-2">
-                    -
+                    {formatNumber(visibleTotals.clientPL)}
                   </td>
                   <td className="border border-[#e0e0e0] text-center py-2 px-2">
                    -
