@@ -589,8 +589,8 @@ const ClientList: React.FC = () => {
         // Client P/L = Balance - Credit Reference
         clientPL: formatNumber(balance - creditRefNum),
         exposure: user.AccountDetails.Exposure || 0,
-        // Available Balance = Balance
-        availableBalance: balance,
+        // Available Balance = Balance - Exposure
+        availableBalance: balance - (user.AccountDetails.Exposure || 0),
         // Interpret as ACTIVE states (true means active)
         ust: user.userLocked === true ? false : true,
         bst: user.bettingLocked === true ? false : true,
@@ -1396,7 +1396,7 @@ const ClientList: React.FC = () => {
                       {row.balance.toLocaleString()}
                     </td>
                     <td className="px-2 py-2 text-center font-medium align-middle border border-[#e0e0e0]">
-                      -
+                      {row.clientPL || '-'}
                     </td>
                     <td className="px-2 py-2 text-center font-medium align-middle border border-[#e0e0e0]">
                       {row.exposure.toLocaleString()}
