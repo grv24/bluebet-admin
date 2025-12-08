@@ -5602,6 +5602,9 @@ const CasinoMatchDetailsDisplay: React.FC<CasinoMatchDetailsDisplayProps> = ({
                   Username
                 </th>
                 <th className="border border-gray-300 px-3 py-2 text-left font-medium">
+                  Nation
+                </th>
+                <th className="border border-gray-300 px-3 py-2 text-left font-medium">
                   Rate
                 </th>
                 <th className="border border-gray-300 px-3 py-2 text-left font-medium">
@@ -5637,7 +5640,10 @@ const CasinoMatchDetailsDisplay: React.FC<CasinoMatchDetailsDisplayProps> = ({
                   }`}
                 >
                   <td className="border text-nowrap border-gray-300 px-3 py-2">
-                    {bet.username || bet.loginId || "N/A"}
+                    {bet.username}
+                  </td>
+                  <td className="border text-nowrap border-gray-300 px-3 py-2">
+                    {bet.betData.betName}
                   </td>
                   <td className="border text-nowrap border-gray-300 px-3 py-2">
                     {bet.betData?.betRate || bet.betData?.matchOdd || "N/A"}
