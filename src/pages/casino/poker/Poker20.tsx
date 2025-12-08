@@ -277,7 +277,7 @@ const Poker20Component = ({
             Last Result
           </h2>
           <h2
-            onClick={() => navigate(`/casino-result?game=POKER_20`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${gameCode || gameSlug || "POKER_20"}`)}
             className="text-sm font-normal leading-8 text-white hover:text-gray-200"
           >
             View All

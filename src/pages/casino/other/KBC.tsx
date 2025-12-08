@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { RiLockFill } from "react-icons/ri";
 import {
   shapeColors,
@@ -6,6 +6,7 @@ import {
   getBlackShapes,
 } from "../../../utils/card";
 import { useNavigate } from "react-router-dom";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { memoizeCasinoComponent } from "@/utils/casinoMemo";
 
 interface KBCProps {
@@ -21,11 +22,29 @@ const KBCComponent: React.FC<KBCProps> = ({
   remainingTime,
   results = [],
   gameCode,
+  gameName,
 }) => {
   const navigate = useNavigate();
 
-  // Get game slug from gameCode
-  const gameSlug = gameCode?.toLowerCase() || "kbc";
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Keep original gameCode for API calls (e.g., "KBC")
+  const apiGameType = React.useMemo(() => {
+    return gameCode || "KBC";
+  }, [gameCode]);
+
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
+  };
 
   // Get odds data from sub array
   // Handle both API format (data.sub) and socket format (data.current.sub)
@@ -640,7 +659,7 @@ const KBCComponent: React.FC<KBCProps> = ({
             Last Result
           </h2>
           <button
-            onClick={() => navigate(`/casino-result?game=${gameSlug}`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${apiGameType}`)}
             className="text-xs text-white hover:underline"
           >
             View All
@@ -650,11 +669,29 @@ const KBCComponent: React.FC<KBCProps> = ({
           {Array.isArray(results) && results.length > 0 ? (
             results.slice(0, 10).map((item: any, index: number) => {
               const resultDisplay = getResultDisplay(item.win || "");
+              const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
               return (
                 <div
                   key={item.mid || `result-${item.win}-${index}`}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} `}
-                  title={`Round ID: ${item.mid || "N/A"} - ${resultDisplay.title} - Click to view details`}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                  }`}
+                  title={`Round ID: ${item.mid || "N/A"} - ${resultDisplay.title}${matchId ? " - Click to view details" : ""}`}
+                  onClick={(e) => {
+                    if (matchId) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={matchId ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (matchId && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleResultClick(item);
+                    }
+                  }}
                 >
                   {resultDisplay.label}
                 </div>
@@ -667,6 +704,19 @@ const KBCComponent: React.FC<KBCProps> = ({
           )}
         </div>
       </div>
+
+      {/* Individual Result Details Modal */}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
+        title={`${gameName || "KBC"} Result Details`}
+        enableBetFiltering={true}
+      />
     </div>
   );
 };

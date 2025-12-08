@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   getBlackShapes,
   getNumberCard,
@@ -7,8 +7,7 @@ import {
 } from "../../../utils/card";
 import { RiLockFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
-// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 const BollywoodtableComponent = ({
@@ -16,23 +15,26 @@ const BollywoodtableComponent = ({
   remainingTime,
   results,
   gameSlug,
+  gameCode,
   gameName,
 }: {
   casinoData: any;
   remainingTime: number;
   results: any;
-  gameSlug: string;
-  gameName: string;
+  gameSlug?: string;
+  gameCode?: string;
+  gameName?: string;
 }) => {
   const navigate = useNavigate();
 
-  // Convert gameSlug to actual game slug format if needed
-  const actualGameSlug = React.useMemo(() => {
-    if (gameSlug) {
-      return gameSlug.toLowerCase().replace(/[^a-z0-9]/g, "");
-    }
-    return "btable2"; // Default fallback
-  }, [gameSlug]);
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Keep original gameCode/gameSlug for API calls (e.g., "BOLLYWOOD_TABLE")
+  const apiGameType = React.useMemo(() => {
+    return gameCode || gameSlug || "BOLLYWOOD_TABLE";
+  }, [gameCode, gameSlug]);
 
 
   // Check if this is btable2 format - fix data source path
@@ -92,6 +94,16 @@ const BollywoodtableComponent = ({
     </div>
   );
 
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
+  };
 
   // Movie titles mapping
   const movieTitles = [
@@ -293,7 +305,7 @@ const BollywoodtableComponent = ({
             Last Result
           </h2>
           <h2
-            onClick={() => navigate(`/casino-result?game=BOLLYWOOD_TABLE`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${gameCode || gameSlug || "BOLLYWOOD_TABLE"}`)}
             className="text-sm font-normal leading-8 text-white cursor-pointer hover:text-gray-200"
           >
             View All
@@ -313,28 +325,49 @@ const BollywoodtableComponent = ({
                 "6": "F", // Ghulam
               };
               const displayText = movieMap[resultValue] || resultValue;
+              const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
               return (
-                <h2
-                  key={index}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold text-yellow-400`}
-                  title={`Movie: ${resultValue}`}
+                <div
+                  key={item?.mid || item?.roundId || index}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold text-yellow-400 ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                  }`}
+                  title={`Movie: ${resultValue}${matchId ? " - Click to view details" : ""}`}
+                  onClick={(e) => {
+                    if (matchId) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={matchId ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (matchId && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleResultClick(item);
+                    }
+                  }}
                 >
                   {displayText}
-                </h2>
+                </div>
               );
             })}
         </div>
       </div>
 
       {/* Individual Result Details Modal */}
-      {/* <IndividualResultModal
-        isOpen={resultModal.isOpen}
-        onClose={resultModal.closeModal}
-        resultId={resultModal.selectedResultId || undefined}
-        gameType={actualGameSlug}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
         title={`${gameName || "Bollywood Table"} Result Details`}
-        customGetFilteredBets={getFilteredBets}
-      /> */}
+        enableBetFiltering={true}
+      />
     </React.Fragment>
   );
 };

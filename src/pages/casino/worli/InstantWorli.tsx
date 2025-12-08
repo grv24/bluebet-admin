@@ -1,8 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { RiLockFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
-// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 const InstantWorliComponent = ({
@@ -18,17 +17,27 @@ const InstantWorliComponent = ({
   gameCode?: string;
   gameName?: string;
 }) => {
-  // const resultModal = useIndividualResultModal();
   const navigate = useNavigate();
 
-  // Convert gameCode to gameSlug if gameCode is provided
-  // gameCode format: "WORLI2" -> gameSlug format: "worli2"
-  const actualGameSlug = React.useMemo(() => {
-    if (gameCode) {
-      return gameCode.toLowerCase();
-    }
-    return "worli2"; // Default fallback
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Keep original gameCode for API calls (e.g., "WORLI2")
+  const apiGameType = React.useMemo(() => {
+    return gameCode || "WORLI2";
   }, [gameCode]);
+
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
+  };
 
   // Get odds data from sub array
   // Handle both new API format (data.sub) and legacy format (data.data.data.sub)
@@ -181,9 +190,7 @@ const InstantWorliComponent = ({
             Last Result
           </h2>
           <h2
-            onClick={() =>
-              navigate(`/casino-result?game=${gameCode || "WORLI2"}`)
-            }
+            onClick={() => navigate(`/reports/casino-result-report?game=${apiGameType}`)}
             className="text-sm font-normal leading-8 text-white cursor-pointer hover:text-gray-200"
           >
             View All
@@ -194,19 +201,50 @@ const InstantWorliComponent = ({
             processedResults.slice(0, 10).map((item: any, index: number) => {
               // Handle different result formats - worli results might have 'result' or 'win' field
               const resultValue = item?.result || item?.win || "";
+              const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
 
               return (
-                <h2
-                  key={index}
-                  className="h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold text-yellow-400"
-                  title={`Round ID: ${item.mid || "N/A"}`}
+                <div
+                  key={item?.mid || index}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold text-yellow-400 ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                  }`}
+                  title={`R${matchId ? " - Click to view details" : ""}`}
+                  onClick={(e) => {
+                    if (matchId) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={matchId ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (matchId && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleResultClick(item);
+                    }
+                  }}
                 >
                   {"R"}
-                </h2>
+                </div>
               );
             })}
         </div>
       </div>
+
+      {/* Individual Result Details Modal */}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
+        title={`${gameName || "Instant Worli"} Result Details`}
+        enableBetFiltering={true}
+      />
     </div>
   );
 };

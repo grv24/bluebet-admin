@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { RiLockFill } from "react-icons/ri";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
-// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { useNavigate } from "react-router-dom";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
@@ -18,24 +17,30 @@ const GoalComponent: React.FC<GoalProps> = ({
   remainingTime,
   results,
   gameSlug = "goal",
+  gameCode,
   gameName = "Goal",
 }) => {
   const navigate = useNavigate();
-  // const resultModal = useIndividualResultModal();
 
-  // Normalize game slug for IndividualResultModal
-  const normalizedGameSlug = useMemo(() => {
-    if (gameSlug) {
-      const lowerCaseSlug = gameSlug.toLowerCase();
-      if (lowerCaseSlug === "goal") {
-        return "goal";
-      }
-      return lowerCaseSlug.replace(/[^a-z0-9]/g, "");
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Keep original gameCode/gameSlug for API calls (e.g., "GOAL")
+  const apiGameType = useMemo(() => {
+    return gameCode || gameSlug?.toUpperCase() || "GOAL";
+  }, [gameCode, gameSlug]);
+
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
     }
-    return "goal"; // Default fallback
-  }, [gameSlug]);
-
-  // Function to filter user bets based on selected filter
+  };
 
 
   const getOddsData = (sid: string) => {
@@ -260,7 +265,7 @@ const GoalComponent: React.FC<GoalProps> = ({
             Last Result
           </h2>
           <h2
-            onClick={() => navigate(`/casino-result?game=GOAL`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${apiGameType}`)}
             className="text-sm font-normal leading-8 text-white"
           >
             View All
@@ -268,26 +273,50 @@ const GoalComponent: React.FC<GoalProps> = ({
         </div>
         <div className="flex justify-end items-center mb-2 gap-1 mx-2">
           {Array.isArray(results) &&
-            results?.slice(0, 10).map((item: any, index: number) => (
-              <h2
-                key={index}
-                className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold text-yellow-400 `}
-                
-              >
-                {/* {getResultDisplay(item?.win)} */}R
-              </h2>
-            ))}
+            results?.slice(0, 10).map((item: any, index: number) => {
+              const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+              return (
+                <div
+                  key={item?.mid || item?.roundId || index}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold text-yellow-400 ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                  }`}
+                  title={`Round ID: ${item?.mid || "N/A"}${matchId ? " - Click to view details" : ""}`}
+                  onClick={(e) => {
+                    if (matchId) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={matchId ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (matchId && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleResultClick(item);
+                    }
+                  }}
+                >
+                  {/* {getResultDisplay(item?.win)} */}R
+                </div>
+              );
+            })}
         </div>
       </div>
 
       {/* Individual Result Details Modal */}
-      {/* <IndividualResultModal
-        isOpen={resultModal.isOpen}
-        onClose={resultModal.closeModal}
-        gameType={normalizedGameSlug}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
         title={`${gameName || "Goal"} Result Details`}
         enableBetFiltering={true}
-      /> */}
+      />
     </div>
   );
 };

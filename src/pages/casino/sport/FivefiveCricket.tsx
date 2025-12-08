@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState, useContext } from 'react';
 // import { PlaceBetUseContext } from '@/context/placebet';
 import { useNavigate } from 'react-router-dom';
-// import IndividualResultModal from '@/components/casino/IndividualResultModal';
-// import { useIndividualResultModal } from '@/hooks/useIndividualResultModal';
+import IndividualResultModal from '@/components/modals/IndividualResultModal';
 import { memoizeCasinoComponent } from '../../../utils/casinoMemo';
 
 interface FivefiveCricketProps {
@@ -214,7 +213,10 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
   const navigate = useNavigate();
   // const placeBetContext = useContext(PlaceBetUseContext);
   // const { setPlaceBet, setBetData, setLatestBetData } = placeBetContext || {};
-  // const resultModal = useIndividualResultModal();
+
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
 
   // Get data from t1 and t2 structure
   const gameInfo = useMemo(() => {
@@ -384,20 +386,21 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
     return num.toString();
   };
 
-  // Get game slug
-  const gameSlug = gameCode?.toLowerCase() || "cricket_v3";
-
-  // Normalize game slug for IndividualResultModal
-  const normalizedGameSlug = useMemo(() => {
-    if (gameCode) {
-      const lowerCaseSlug = gameCode.toLowerCase();
-      if (lowerCaseSlug === "cricket_v3" || lowerCaseSlug === "fivefivecricket") {
-        return "cricket_v3";
-      }
-      return lowerCaseSlug.replace(/[^a-z0-9]/g, "");
-    }
-    return "cricket_v3"; // Default fallback
+  // Keep original gameCode for API calls (e.g., "CRICKET_V3")
+  const apiGameType = useMemo(() => {
+    return gameCode || "CRICKET_V3";
   }, [gameCode]);
+
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
+  };
   return (
     <div className="flex flex-col gap-1">
       {/* Game Info Header */}
@@ -639,7 +642,7 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
               Last Result
             </h2>
             <button
-              onClick={() => navigate(`/casino-result?game=CRICKET_V3`)}
+              onClick={() => navigate(`/reports/casino-result-report?game=${apiGameType}`)}
               className="text-xs text-white hover:underline"
             >
               View All
@@ -648,11 +651,29 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
           <div className="flex justify-end items-center mb-2 gap-2 mx-2 flex-wrap">
             {results.slice(0, 10).map((item: any, index: number) => {
               const resultDisplay = getResultDisplay(item.win || "");
+              const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
               return (
                 <div
                   key={item.mid || `result-${item.win}-${index}`}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} `}
-                  title={`Round ID: ${item.mid || "N/A"} - ${resultDisplay.title}`}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                  }`}
+                  title={`Round ID: ${item.mid || "N/A"} - ${resultDisplay.title}${matchId ? " - Click to view details" : ""}`}
+                  onClick={(e) => {
+                    if (matchId) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={matchId ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (matchId && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleResultClick(item);
+                    }
+                  }}
                 >
                   {resultDisplay.label}
                 </div>
@@ -663,13 +684,17 @@ const FivefiveCricketComponent: React.FC<FivefiveCricketProps> = ({
       )}
 
       {/* Individual Result Details Modal */}
-      {/* <IndividualResultModal
-        isOpen={resultModal.isOpen}
-        onClose={resultModal.closeModal}
-        gameType={normalizedGameSlug}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
         title={`${gameCode || "CRICKET_V3"} Result Details`}
         enableBetFiltering={true}
-      /> */}
+      />
     </div>
   );
 };

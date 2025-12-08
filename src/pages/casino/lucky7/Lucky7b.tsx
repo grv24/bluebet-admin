@@ -5,10 +5,9 @@ import {
   getRedShapes,
   getCardByCode,
 } from "../../../utils/card";
-import React from "react";
+import React, { useState } from "react";
 import { RiLockFill } from "react-icons/ri";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
-// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { useNavigate } from "react-router-dom";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
@@ -17,21 +16,33 @@ const Lucky7bComponent = ({
   remainingTime,
   results,
   gameSlug,
+  gameCode,
   name,
 }: any) => {
-  // const resultModal = useIndividualResultModal();
   const navigate = useNavigate();
 
-  // Normalize game slug
-  const normalizedGameSlug = React.useMemo(() => {
-    if (gameSlug) {
-      return gameSlug.toLowerCase().replace(/[^a-z0-9]/g, "");
-    }
-    return "lucky7eu"; // Default fallback
-  }, [gameSlug]);
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Keep original gameCode/gameSlug for API calls (e.g., "LUCKY7EU")
+  const apiGameType = React.useMemo(() => {
+    return gameCode || gameSlug || "LUCKY7EU";
+  }, [gameCode, gameSlug]);
 
   const t2: any[] =
     casinoData?.data?.sub || casinoData?.data?.data?.data?.t2 || [];
+
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
+  };
 
   /**
    * Universal profit/loss calculation function for all Lucky7EU betting types
@@ -447,7 +458,7 @@ const Lucky7bComponent = ({
             Last Result
           </h2>
           <h2
-            onClick={() => navigate(`/casino-result?game=${normalizedGameSlug.toUpperCase()}`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${gameCode || gameSlug || "LUCKY7EU"}`)}
             className="text-sm font-normal leading-8 text-white hover:text-gray-200"
           >
             View All
@@ -472,27 +483,49 @@ const Lucky7bComponent = ({
               textColor = "text-gray-400";
             }
 
+            const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
             return (
-              <h2
-                key={index}
-                className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor} `}
+              <div
+                key={item?.mid || item?.roundId || index}
+                className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor} ${
+                  matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                }`}
+                title={`${displayText}${matchId ? " - Click to view details" : ""}`}
+                onClick={(e) => {
+                  if (matchId) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleResultClick(item);
+                  }
+                }}
+                role="button"
+                tabIndex={matchId ? 0 : undefined}
+                onKeyDown={(e) => {
+                  if (matchId && (e.key === "Enter" || e.key === " ")) {
+                    e.preventDefault();
+                    handleResultClick(item);
+                  }
+                }}
               >
                 {displayText}
-              </h2>
+              </div>
             );
           })}
         </div>
       </div>
 
       {/* Individual Result Details Modal */}
-      {/* <IndividualResultModal
-        isOpen={resultModal.isOpen}
-        onClose={resultModal.closeModal}
-        resultId={resultModal.selectedResultId || undefined}
-        gameType={normalizedGameSlug}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
         title={`${name || "Lucky7EU"} Result Details`}
-        customGetFilteredBets={getFilteredBets}
-      /> */}
+        enableBetFiltering={true}
+      />
     </div>
   );
 };

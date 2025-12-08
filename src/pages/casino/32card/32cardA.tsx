@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { RiLockFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
-// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 type ThirtyTwoCardAProps = {
@@ -21,6 +20,10 @@ const ThirtyTwoCardAComponent: React.FC<ThirtyTwoCardAProps> = ({
   gameName,
 }) => {
   const navigate = useNavigate();
+  
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
 
   // Normalize gameSlug for display in CasinoMatchDetailsDisplay
   // The API expects the original format (e.g., "CARD_32"), but display needs normalized version
@@ -71,6 +74,18 @@ const ThirtyTwoCardAComponent: React.FC<ThirtyTwoCardAProps> = ({
     if (winNum === 3) return "Player 10";
     if (winNum === 4) return "Player 11";
     return null;
+  };
+
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    // Try different possible fields: mid, result.mid, roundId, etc.
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || null;
+    
+    if (matchId) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
   };
 
   return (
@@ -189,7 +204,7 @@ const ThirtyTwoCardAComponent: React.FC<ThirtyTwoCardAProps> = ({
             Last Result
           </h2>
           <h2
-            onClick={() => navigate(`/casino-result?game=CARD_32`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${gameSlug || "CARD_32"}`)}
             className="text-sm font-normal leading-8 text-white cursor-pointer hover:text-gray-200"
           >
             View All
@@ -200,6 +215,7 @@ const ThirtyTwoCardAComponent: React.FC<ThirtyTwoCardAProps> = ({
             results.slice(0, 10).map((item: any, index: number) => {
               const result = item?.result || item?.win;
               const playerName = getPlayerByWin(result);
+              const matchId = item?.mid || item?.result?.mid || item?.roundId;
               let displayText = "";
               let color = "text-gray-200";
 
@@ -222,9 +238,12 @@ const ThirtyTwoCardAComponent: React.FC<ThirtyTwoCardAProps> = ({
 
               return (
                 <h2
-                  key={index}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${color}`}
-                  title={`${playerName || "Unknown"}`}
+                  key={item?.mid || item?.roundId || index}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${color} ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform" : ""
+                  }`}
+                  title={`${playerName || "Unknown"}${matchId ? " - Click to view details" : ""}`}
+                  onClick={() => matchId && handleResultClick(item)}
                 >
                   {displayText}
                 </h2>
@@ -234,14 +253,17 @@ const ThirtyTwoCardAComponent: React.FC<ThirtyTwoCardAProps> = ({
       </div>
 
       {/* Individual Result Details Modal */}
-      {/* <IndividualResultModal
-        isOpen={resultModal.isOpen}
-        onClose={resultModal.closeModal}
-        resultId={resultModal.selectedResultId || undefined}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
         gameType={apiGameType}
         title={`${gameName || "32 Card A"} Result Details`}
-        customGetFilteredBets={getFilteredBets}
-      /> */}
+        enableBetFiltering={true}
+      />
     </div>
   );
 };

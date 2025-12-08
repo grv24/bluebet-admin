@@ -3,8 +3,7 @@ import React, { useState } from "react";
 import { RiLockFill } from "react-icons/ri";
 import { useCookies } from "react-cookie";
 import { useNavigate } from "react-router-dom";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
-// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 const Teen20Component = ({
@@ -27,10 +26,13 @@ const Teen20Component = ({
   currentBet: any;
 }) => {
   const [cookies] = useCookies(["clientToken"]);
-  // const resultModal = useIndividualResultModal();
   const navigate = useNavigate();
+  
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
 
-  // Convert gameCode to gameSlug if gameSlug is not provided
+  // Convert gameCode to gameSlug if gameSlug is not provided (for display)
   // gameCode format: "TEEN_20" -> gameSlug format: "teen20"
   const actualGameSlug = React.useMemo(() => {
     if (gameSlug) return gameSlug;
@@ -40,6 +42,14 @@ const Teen20Component = ({
     }
     return "teen20"; // Default fallback
   }, [gameSlug, gameCode]);
+
+  // Keep original gameCode for API calls (e.g., "TEEN_20")
+  const apiGameType = React.useMemo(() => {
+    if (gameCode) {
+      return gameCode; // Use original gameCode for API
+    }
+    return "TEEN_20"; // Default fallback
+  }, [gameCode]);
 
   // Check if this is teen20c format (has 'sub' array) or teen20 format (has 't2' array)
   // Handle both new API format (data.sub) and legacy format (data.data.data.sub)
@@ -73,42 +83,13 @@ const Teen20Component = ({
    * Handle clicking on individual result to show details
    */
   const handleResultClick = (result: any) => {
-    console.log("🎰 Teen20: handleResultClick called", { 
-      result, 
-      mid: result?.mid, 
-      roundId: result?.roundId, 
-      id: result?.id,
-      allKeys: Object.keys(result || {}),
-      gameSlug: actualGameSlug 
-    });
+    // Extract matchId from result item
+    const matchId = result?.mid || result?.result?.mid || result?.roundId || result?.id || null;
     
-    // Try to get result ID from different possible fields
-    // Results from top 10 usually have 'mid' field
-    const resultId = result?.mid || result?.roundId || result?.id || result?.matchId;
-    
-    if (!resultId) {
-      console.error("🎰 Teen20: No result ID found in result", result);
-      alert("Unable to open result details: Missing result ID");
-      return;
+    if (matchId) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
     }
-    
-    if (!actualGameSlug) {
-      console.error("🎰 Teen20: No gameSlug available", { gameSlug, gameCode, actualGameSlug });
-      alert("Unable to open result details: Missing game type");
-      return;
-    }
-    
-    console.log("🎰 Teen20: Opening modal with", { resultId: String(resultId), gameSlug: actualGameSlug });
-    // resultModal.openModal(String(resultId), result);
-    
-    // Log modal state after a brief delay to allow state update
-    // setTimeout(() => {
-    //   console.log("🎰 Teen20: Modal state after open", { 
-    //     isOpen: resultModal.isOpen, 
-    //     selectedResultId: resultModal.selectedResultId,
-    //     gameSlug: actualGameSlug 
-    //   });
-    // }, 100);
   };
 
   // Custom bet handling for teen20/teen20c
@@ -705,7 +686,7 @@ const Teen20Component = ({
             Last Result
           </h2>
           <h2
-            onClick={() => navigate(`/casino-result?game=TEEN_20`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${gameCode || "TEEN_20"}`)}
             className="text-sm font-normal leading-8 text-white cursor-pointer hover:text-gray-200"
           >
             View All
@@ -738,15 +719,17 @@ const Teen20Component = ({
       </div>
 
       {/* Individual Result Details Modal - Using centralized component */}
-      {/* <IndividualResultModal
-        isOpen={resultModal.isOpen}
-        onClose={resultModal.closeModal}
-        resultId={resultModal.selectedResultId || undefined}
-        gameType={actualGameSlug}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
         title="Result Details"
         enableBetFiltering={true}
-        customGetFilteredBets={getFilteredBets}
-      /> */}
+      />
     </div>
   );
 };

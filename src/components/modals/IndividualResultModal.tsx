@@ -34,7 +34,7 @@ const IndividualResultModal: React.FC<IndividualResultModalProps> = ({
   hideUserBets = false,
   showUserName = false,
 }) => {
-  const [cookies] = useCookies(["clientToken", "token"]);
+  const [cookies] = useCookies(["Admin", "TechAdmin", "token", "clientToken"]);
   const [betFilter, setBetFilter] = useState("all");
 
   // Default bet filtering function
@@ -67,7 +67,7 @@ const IndividualResultModal: React.FC<IndividualResultModalProps> = ({
   } = useQuery<any>({
     queryKey: ["casinoIndividualResult", resultId, gameType],
     queryFn: () => getCasinoIndividualResult(resultId || undefined, cookies, gameType || ""),
-    enabled: !!resultId && !!gameType && isOpen && !!(cookies.clientToken || cookies.token),
+    enabled: !!resultId && !!gameType && isOpen && !!(cookies.Admin || cookies.TechAdmin || cookies.token || cookies.clientToken),
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 10, // 10 minutes
     retry: 2,

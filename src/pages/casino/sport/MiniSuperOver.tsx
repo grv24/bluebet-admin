@@ -1,6 +1,7 @@
 import React, { useMemo, useEffect, useRef, useState, useContext } from "react";
 // import { PlaceBetUseContext } from "@/context/placebet";
 import { useNavigate } from "react-router-dom";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 
 interface MiniSuperOverProps {
   casinoData: any;
@@ -171,6 +172,26 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
   const navigate = useNavigate();
   // const placeBetContext = useContext(PlaceBetUseContext);
   // const { setPlaceBet, setBetData, setLatestBetData } = placeBetContext || {};
+
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Keep original gameCode for API calls (e.g., "SUPEROVER_3")
+  const apiGameType = useMemo(() => {
+    return gameCode || "SUPEROVER_3";
+  }, [gameCode]);
+
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
+  };
 
   const gameInfo = useMemo(() => {
     return casinoData?.data?.t1 || casinoData?.data?.current?.t1 || {};
@@ -583,7 +604,7 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
             <h2 className="text-sm font-normal text-white">Last Result</h2>
 
             <button
-              onClick={() => navigate(`/casino-result?game=SUPEROVER_3`)}
+              onClick={() => navigate(`/reports/casino-result-report?game=${apiGameType}`)}
               className="text-xs text-white hover:underline"
             >
               View All
@@ -593,11 +614,29 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
           <div className="flex justify-end items-center mb-2 gap-2 mx-2 flex-wrap">
             {results.slice(0, 10).map((item: any, index: number) => {
               const data = getResultDisplay(item.win);
+              const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
               return (
                 <div
-                  key={index}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${data.color}`}
-                  title={`Round: ${item.mid ?? "N/A"}`}
+                  key={item?.mid || index}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${data.color} ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                  }`}
+                  title={`Round: ${item.mid ?? "N/A"}${matchId ? " - Click to view details" : ""}`}
+                  onClick={(e) => {
+                    if (matchId) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={matchId ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (matchId && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleResultClick(item);
+                    }
+                  }}
                 >
                   {data.label}
                 </div>
@@ -607,7 +646,18 @@ const MiniSuperOverComponent: React.FC<MiniSuperOverProps> = ({
         </div>
       )}
 
-      {/* ⛔ REMOVED — IndividualResultModal */}
+      {/* Individual Result Details Modal */}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
+        title={`${gameCode || "SUPEROVER_3"} Result Details`}
+        enableBetFiltering={true}
+      />
     </div>
   );
 };

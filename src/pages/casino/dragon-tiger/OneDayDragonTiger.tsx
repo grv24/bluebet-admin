@@ -3,16 +3,16 @@ import { RiLockFill } from "react-icons/ri";
 import { cardType } from "../../../utils/card";
 import { useNavigate } from "react-router-dom";
 import { getCardByCode } from "../../../utils/card";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
-// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 interface DT6Props {
   casinoData: any;
   remainingTime: number;
   results?: any[];
-  gameSlug: string;
-  gameName: string;
+  gameSlug?: string;
+  gameCode?: string;
+  gameName?: string;
 }
 
 // helpers
@@ -80,9 +80,30 @@ const OneDayDragonTigerComponent: React.FC<DT6Props> = ({
   remainingTime,
   results = [],
   gameSlug,
+  gameCode,
   gameName,
 }) => {
   const navigate = useNavigate();
+
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Keep original gameCode/gameSlug for API calls (e.g., "DRAGON_TIGER_6")
+  const apiGameType = React.useMemo(() => {
+    return gameCode || gameSlug || "DRAGON_TIGER_6";
+  }, [gameCode, gameSlug]);
+
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
+  };
 
   // Debug: Log data
   // console.log("🎰 DT6 component debug:", {
@@ -640,7 +661,7 @@ const OneDayDragonTigerComponent: React.FC<DT6Props> = ({
             Last Result
           </h2>
           <h2
-            onClick={() => navigate(`/casino-result?game=DRAGON_TIGER_6`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${gameCode || gameSlug || "DRAGON_TIGER_6"}`)}
             className="text-sm font-normal leading-8 text-white hover:text-gray-200"
           >
             View All
@@ -648,37 +669,82 @@ const OneDayDragonTigerComponent: React.FC<DT6Props> = ({
         </div>
         <div className="flex justify-end items-center mb-2 gap-1 mx-2">
           {Array.isArray(results) && results.length > 0
-            ? results.slice(0, 10).map((item: any, index: number) => (
-                <h2
-                  key={index}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${item.win === "1" ? "text-red-500" : "text-yellow-400"}`}
-                >
-                  {item.win === "1" ? "D" : "T"}
-                </h2>
-              ))
+            ? results.slice(0, 10).map((item: any, index: number) => {
+                const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+                return (
+                  <div
+                    key={item?.mid || item?.roundId || index}
+                    className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${item.win === "1" ? "text-red-500" : "text-yellow-400"} ${
+                      matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                    }`}
+                    title={`${item.win === "1" ? "D" : "T"}${matchId ? " - Click to view details" : ""}`}
+                    onClick={(e) => {
+                      if (matchId) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleResultClick(item);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={matchId ? 0 : undefined}
+                    onKeyDown={(e) => {
+                      if (matchId && (e.key === "Enter" || e.key === " ")) {
+                        e.preventDefault();
+                        handleResultClick(item);
+                      }
+                    }}
+                  >
+                    {item.win === "1" ? "D" : "T"}
+                  </div>
+                );
+              })
             : // Fallback to old data structure if results prop is not available
               (casinoData as any)?.data?.data?.result
                 ?.slice(0, 10)
-                .map((item: any, index: number) => (
-                  <h2
-                    key={index}
-                    className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${item.result === "1" ? "text-red-500" : "text-yellow-400"}`}
-                  >
-                    {item.win === "1" ? "D" : "T"}
-                  </h2>
-                ))}
+                .map((item: any, index: number) => {
+                  const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+                  return (
+                    <div
+                      key={item?.mid || item?.roundId || index}
+                      className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${item.result === "1" ? "text-red-500" : "text-yellow-400"} ${
+                        matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                      }`}
+                      title={`${item.win === "1" ? "D" : "T"}${matchId ? " - Click to view details" : ""}`}
+                      onClick={(e) => {
+                        if (matchId) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleResultClick(item);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={matchId ? 0 : undefined}
+                      onKeyDown={(e) => {
+                        if (matchId && (e.key === "Enter" || e.key === " ")) {
+                          e.preventDefault();
+                          handleResultClick(item);
+                        }
+                      }}
+                    >
+                      {item.win === "1" ? "D" : "T"}
+                    </div>
+                  );
+                })}
         </div>
       </div>
 
       {/* Individual Result Details Modal */}
-      {/* <IndividualResultModal
-        isOpen={resultModal.isOpen}
-        onClose={resultModal.closeModal}
-        resultId={resultModal.selectedResultId || undefined}
-        gameType={actualGameSlug}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
         title={`${gameName || "One Day Dragon Tiger"} Result Details`}
-        customGetFilteredBets={getFilteredBets}
-      /> */}
+        enableBetFiltering={true}
+      />
     </div>
   );
 };

@@ -1,7 +1,6 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { RiLockFill } from "react-icons/ri";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
-// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { getCardByCode } from "../../../utils/card";
 import KSS from "../../../assets/card/other/KSS.webp";
 import KHH from "../../../assets/card/other/KHH.webp";
@@ -31,21 +30,14 @@ const Race20Component: React.FC<Race20Props> = ({
   gameCode,
 }) => {
   const navigate = useNavigate();
-  // const resultModal = useIndividualResultModal();
-  
-  // Get game slug from gameCode for navigation
-  const gameSlug = gameCode || "";
-  
-  // Normalize game slug for IndividualResultModal
-  const normalizedGameSlug = useMemo(() => {
-    if (gameCode) {
-      const lowerCaseCode = gameCode.toLowerCase();
-      if (lowerCaseCode === "race_20" || lowerCaseCode === "race20") {
-        return "race20";
-      }
-      return lowerCaseCode.replace(/[^a-z0-9]/g, "");
-    }
-    return "race20"; // Default fallback
+
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Keep original gameCode for API calls (e.g., "RACE20")
+  const apiGameType = useMemo(() => {
+    return gameCode || "RACE20";
   }, [gameCode]);
 
   // Get odds data from sub array
@@ -155,10 +147,16 @@ const Race20Component: React.FC<Race20Props> = ({
   // Win with 17 - sid: 12
   const winWith17 = getOddsBySid(12);
 
-  // Handle clicking on individual result to show details
-
-
-  // Function to filter user bets based on selected filter
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
+  };
 
 
   // Map win value to display info
@@ -388,7 +386,7 @@ const Race20Component: React.FC<Race20Props> = ({
             Last Result
           </h2>
         
-          <h2 onClick={() => navigate(`/casino-result?game=${gameSlug}`)} className="text-sm font-normal leading-8 text-white hover:text-gray-200">
+          <h2 onClick={() => navigate(`/reports/casino-result-report?game=${apiGameType}`)} className="text-sm font-normal leading-8 text-white hover:text-gray-200">
             View All
           </h2>
         </div>
@@ -396,11 +394,29 @@ const Race20Component: React.FC<Race20Props> = ({
           {Array.isArray(results) && results.length > 0 ? (
             results.slice(0, 10).map((item: any, index: number) => {
               const resultDisplay = getResultDisplay(item.win || "");
+              const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
               return (
                 <div
                   key={item.mid || `result-${item.win}-${index}`}
-                  className={`h-7 w-7 bg-gray-50 inner-shadow rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} hover:scale-110 transition-transform`}
-                  
+                  className={`h-7 w-7 bg-gray-50 inner-shadow rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                  }`}
+                  title={`Round ID: ${item.mid || "N/A"} - ${resultDisplay.title}${matchId ? " - Click to view details" : ""}`}
+                  onClick={(e) => {
+                    if (matchId) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={matchId ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (matchId && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleResultClick(item);
+                    }
+                  }}
                 >
                  <img src={resultDisplay.label} className="w-4" alt="" />
                 </div>
@@ -415,15 +431,17 @@ const Race20Component: React.FC<Race20Props> = ({
       </div>
 
       {/* Individual Result Details Modal */}
-      {/* <IndividualResultModal
-        isOpen={resultModal.isOpen}
-        onClose={resultModal.closeModal}
-        resultId={resultModal.selectedResultId || undefined}
-        gameType={normalizedGameSlug}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
         title="Race 20 Result Details"
         enableBetFiltering={true}
-        customGetFilteredBets={getFilteredBets}
-      /> */}
+      />
     </div>
   );
 };

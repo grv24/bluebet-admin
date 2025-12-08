@@ -1,7 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { RiLockFill } from "react-icons/ri";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
-// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { useNavigate } from "react-router-dom";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
@@ -20,14 +19,15 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
   gameCode,
   gameName,
 }) => {
-  // const resultModal = useIndividualResultModal();
   const navigate = useNavigate();
-  // Get game slug from gameCode for navigation
-  const gameSlug = React.useMemo(() => {
-    if (gameCode) {
-      return gameCode.toLowerCase().replace(/[^a-z0-9]/g, "");
-    }
-    return "lucky15"; // Default fallback
+
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Keep original gameCode for API calls (e.g., "LUCKY15")
+  const apiGameType = React.useMemo(() => {
+    return gameCode || "LUCKY15";
   }, [gameCode]);
   // Get odds data from sub array
   // Handle both API format (data.sub) and socket format (data.current.sub)
@@ -39,6 +39,17 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
       casinoData?.data?.current?.data?.sub ||
       [];
     return subArray;
+  };
+
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
   };
 
   // Check if betting is suspended
@@ -337,7 +348,7 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
             Last Result
           </h2>
           <h2
-            onClick={() => navigate(`/casino-result?game=LUCKY15`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${apiGameType}`)}
             className="text-sm font-normal leading-8 text-white"
           >
             View All
@@ -347,11 +358,29 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
           {Array.isArray(results) && results.length > 0 ? (
             results.slice(0, 10).map((item: any, index: number) => {
               const resultDisplay = getResultDisplay(item.win || "");
+              const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
               return (
                 <div
                   key={item.mid || `result-${item.win}-${index}`}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold text-white `}
-                  title={`Round ID: ${item.mid || "N/A"} - Winner: ${resultDisplay.title} - Click to view details`}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold text-white ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                  }`}
+                  title={`Round ID: ${item.mid || "N/A"} - Winner: ${resultDisplay.title}${matchId ? " - Click to view details" : ""}`}
+                  onClick={(e) => {
+                    if (matchId) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={matchId ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (matchId && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleResultClick(item);
+                    }
+                  }}
                 >
                   {resultDisplay.label}
                 </div>
@@ -366,13 +395,17 @@ const Lucky715Component: React.FC<Lucky715Props> = ({
       </div>
 
       {/* Individual Result Details Modal */}
-      {/* <IndividualResultModal
-        isOpen={resultModal.isOpen}
-        onClose={resultModal.closeModal}
-        resultId={resultModal.selectedResultId || undefined}
-        gameType={gameSlug}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
         title={`${gameName || "Lucky15"} Result Details`}
-      /> */}
+        enableBetFiltering={true}
+      />
     </div>
   );
 };

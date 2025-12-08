@@ -1,8 +1,7 @@
 import { cardImage, cardType, getBlackShapes, getNumberCard, getRedShapes } from "../../../utils/card";
 import { RiLockFill } from "react-icons/ri";
-import React from "react";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
-// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import React, { useState } from "react";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { useNavigate } from "react-router-dom";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
@@ -11,21 +10,19 @@ const AmarakbaranthonyComponent = ({
   remainingTime,
   results,
   gameSlug,
+  gameCode,
   gameName,
 }: any) => {
   const navigate = useNavigate();
 
-  // Normalize game slug for IndividualResultModal
-  const normalizedGameSlug = React.useMemo(() => {
-    if (gameSlug) {
-      const lowerCaseSlug = gameSlug.toLowerCase();
-      if (lowerCaseSlug === "aaa" || lowerCaseSlug === "aaa_2") {
-        return "aaa";
-      }
-      return lowerCaseSlug.replace(/[^a-z0-9]/g, "");
-    }
-    return "aaa"; // Default fallback
-  }, [gameSlug]);
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Keep original gameCode/gameSlug for API calls (e.g., "AAA", "AAA_2")
+  const apiGameType = React.useMemo(() => {
+    return gameCode || gameSlug || "AAA";
+  }, [gameCode, gameSlug]);
 
   // Handle both new API format (casinoData?.data?.sub) and legacy format (casinoData?.data?.data?.data?.t2)
   const t2: any[] = casinoData?.data?.sub || casinoData?.data?.data?.data?.t2 || [];
@@ -63,6 +60,17 @@ const AmarakbaranthonyComponent = ({
     return `Card ${key}`;
   };
 
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-1 bg-[var(--bg-table-row)] mt-1.5">
       {/* first row */}
@@ -98,22 +106,11 @@ const AmarakbaranthonyComponent = ({
                     </div>
                   )}
                   {(row?.l || row?.l1) ?? "-"}
-                        </div>
-      </div>
-
-      {/* Individual Result Details Modal */}
-      {/* <IndividualResultModal
-        isOpen={resultModal.isOpen}
-        onClose={resultModal.closeModal}
-        resultId={resultModal.selectedResultId || undefined}
-        gameType={normalizedGameSlug}
-        title={`${gameName || "Amar Akbar Anthony"} Result Details`}
-        enableBetFiltering={true}
-        customGetFilteredBets={getFilteredBets}
-      /> */}
-    </div>
-  );
-        })}
+                </div>
+              </div>
+            </div>
+            );
+          })}
       </div>
       {/* second row */}
       <div className="grid grid-cols-3 gap-1  w-full">
@@ -274,7 +271,7 @@ const AmarakbaranthonyComponent = ({
             Last Result
           </h2>
           <h2 
-            onClick={() => navigate(`/casino-result?game=AAA`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${gameCode || gameSlug || "AAA"}`)}
             className="text-sm font-normal leading-8 text-white cursor-pointer hover:text-gray-200"
           >
             View All
@@ -301,29 +298,49 @@ const AmarakbaranthonyComponent = ({
                 color = "text-gray-400";
               }
               
+              const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
               return (
-                <h2
-                  key={index}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${color}`}
-                  title="Click to view details"
+                <div
+                  key={item?.mid || item?.roundId || index}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${color} ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                  }`}
+                  title={`${displayText}${matchId ? " - Click to view details" : ""}`}
+                  onClick={(e) => {
+                    if (matchId) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={matchId ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (matchId && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleResultClick(item);
+                    }
+                  }}
                 >
                   {displayText}
-                </h2>
+                </div>
               );
             })}
         </div>
       </div>
 
       {/* Individual Result Details Modal */}
-      {/* <IndividualResultModal
-        isOpen={resultModal.isOpen}
-        onClose={resultModal.closeModal}
-        resultId={resultModal.selectedResultId || undefined}
-        gameType={normalizedGameSlug}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
         title={`${gameName || "Amar Akbar Anthony"} Result Details`}
         enableBetFiltering={true}
-        customGetFilteredBets={getFilteredBets}
-      /> */}
+      />
     </div>
   );
 };

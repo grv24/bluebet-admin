@@ -332,7 +332,7 @@ const PokerOneDayComponent: React.FC<PokerOneDayProps> = ({
             Last Result
           </h2>
           <h2
-            onClick={() => navigate(`/casino-result?game=POKER_1_DAY`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${gameCode || gameSlug || "POKER_1_DAY"}`)}
             className="text-sm font-normal leading-8 text-white"
           >
             View All

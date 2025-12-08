@@ -7,8 +7,7 @@ import {
 import React, { useState } from "react";
 import { RiLockFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
-// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 const DragonTiger20Component = ({
@@ -16,15 +15,26 @@ const DragonTiger20Component = ({
   remainingTime,
   results,
   gameSlug,
+  gameCode,
   gameName,
 }: {
   casinoData: any;
   remainingTime: number;
   results: any[];
-  gameSlug: string;
-  gameName: string;
+  gameSlug?: string;
+  gameCode?: string;
+  gameName?: string;
 }) => {
   const navigate = useNavigate();
+
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Keep original gameCode/gameSlug for API calls (e.g., "DRAGON_TIGER_20")
+  const apiGameType = React.useMemo(() => {
+    return gameCode || gameSlug || "DRAGON_TIGER_20";
+  }, [gameCode, gameSlug]);
 
   // Debug: Log data
   console.log("🎰 DT20 casino data:", casinoData);
@@ -75,6 +85,17 @@ const DragonTiger20Component = ({
       s === "0" ||
       (remainingTime ?? 0) <= 3
     );
+  };
+
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
   };
 
   // Helper function to map card display names to API names
@@ -483,7 +504,7 @@ const DragonTiger20Component = ({
           <h2 className="text-sm font-normal leading-8 text-white">
             Last Result
           </h2>
-          <h2 onClick={() => navigate(`/casino-result?game=${gameSlug}`)} className="text-sm font-normal leading-8 text-white cursor-pointer hover:text-gray-200">View All</h2>
+          <h2 onClick={() => navigate(`/reports/casino-result-report?game=${gameSlug || gameCode || "DRAGON_TIGER_20"}`)} className="text-sm font-normal leading-8 text-white cursor-pointer hover:text-gray-200">View All</h2>
         </div>
         <div className="flex justify-end items-center mb-2 gap-1 mx-2">
           {Array.isArray(results) &&
@@ -516,27 +537,49 @@ const DragonTiger20Component = ({
                 });
               }
 
+              const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
               return (
-                <h2
-                  key={index}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${color}`}
+                <div
+                  key={item?.mid || item?.roundId || index}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${color} ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                  }`}
+                  title={`${displayText}${matchId ? " - Click to view details" : ""}`}
+                  onClick={(e) => {
+                    if (matchId) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={matchId ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (matchId && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleResultClick(item);
+                    }
+                  }}
                 >
                   {displayText}
-                </h2>
+                </div>
               );
             })}
         </div>
       </div>
 
       {/* Individual Result Details Modal */}
-      {/* <IndividualResultModal
-        isOpen={resultModal.isOpen}
-        onClose={resultModal.closeModal}
-        resultId={resultModal.selectedResultId || undefined}
-        gameType={actualGameSlug}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
         title={`${gameName || "Dragon Tiger 20"} Result Details`}
-        customGetFilteredBets={getFilteredBets}
-      /> */}
+        enableBetFiltering={true}
+      />
     </div>
   );
 };

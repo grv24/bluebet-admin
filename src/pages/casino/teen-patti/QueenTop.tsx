@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { RiLockFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 interface QueenTopProps {
@@ -23,18 +23,27 @@ const QueenTopComponent: React.FC<QueenTopProps> = ({
   gameName,
   currentBet,
 }) => {
-  const [selectedResult, setSelectedResult] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Get game slug from gameCode and normalize it
-  const normalizedGameType = React.useMemo(() => {
-    if (gameCode) {
-      // Convert "TEEN_41" -> "teen41"
-      return gameCode.toLowerCase().replace(/_/g, "");
-    }
-    return "teen41"; // Default fallback
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Keep original gameCode for API calls (e.g., "TEEN_41")
+  const apiGameType = React.useMemo(() => {
+    return gameCode || "TEEN_41";
   }, [gameCode]);
+
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
+  };
   // Get odds data from sub array
   // Handle both API format (data.sub) and socket format (data.current.sub)
   const getOddsData = (sid: number) => {
@@ -208,18 +217,6 @@ const QueenTopComponent: React.FC<QueenTopProps> = ({
     return totalProfitLoss;
   };
 
-  // Handle clicking on individual result to show details
-  const handleResultClick = (result: any) => {
-    if (!result?.mid) return;
-    setSelectedResult(result);
-    setIsModalOpen(true);
-  };
-
-  // Close the result details modal
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedResult(null);
-  };
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -465,7 +462,7 @@ const QueenTopComponent: React.FC<QueenTopProps> = ({
             Last Result
           </h2>
           <h2
-            onClick={() => navigate(`/casino-result?game=TEEN_41`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${apiGameType}`)}
             className="text-sm font-normal leading-8 text-white cursor-pointer hover:underline"
           >
             View All
@@ -476,14 +473,31 @@ const QueenTopComponent: React.FC<QueenTopProps> = ({
             results.slice(0, 10).map((item: any) => {
               // Handle win field: "1" = Player A, "2" = Player B
               const isPlayerA = item.win === "1" || item.win === "A";
+              const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
               return (
                 <div
                   key={item.mid || `result-${item.win}-${Math.random()}`}
                   className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${
                     isPlayerA ? "text-red-500" : "text-yellow-500"
-                  } cursor-pointer hover:scale-110 transition-transform`}
-                  onClick={() => handleResultClick(item)}
-                  title={`Round ID: ${item.mid || "N/A"} - Click to view details`}
+                  } ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                  }`}
+                  title={`Round ID: ${item.mid || "N/A"}${matchId ? " - Click to view details" : ""}`}
+                  onClick={(e) => {
+                    if (matchId) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={matchId ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (matchId && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleResultClick(item);
+                    }
+                  }}
                 >
                   {isPlayerA ? "A" : "B"}
                 </div>
@@ -496,14 +510,17 @@ const QueenTopComponent: React.FC<QueenTopProps> = ({
       </div>
 
       {/* Individual Result Details Modal */}
-      {/* <IndividualResultModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        resultId={selectedResult?.mid}
-        gameType={normalizedGameType}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
         title={`${gameName || "Queen Top Teenpatti"} Result Details`}
-        enableBetFiltering={false}
-      /> */}
+        enableBetFiltering={true}
+      />
     </div>
   );
 };

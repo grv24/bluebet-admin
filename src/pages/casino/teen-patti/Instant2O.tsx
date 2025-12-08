@@ -1,11 +1,8 @@
 import React, { useState } from "react";
 import { RiLockFill } from "react-icons/ri";
-import { getCasinoIndividualResult } from "@/helper/casino";
-import { useCookies } from "react-cookie";
-import { useQuery } from "@tanstack/react-query";
-import CasinoModal from "@/components/common/CasinoModal";
 import { getCardByCode } from "@/utils/card";
 import { useNavigate } from "react-router-dom";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { memoizeCasinoComponent } from "@/utils/casinoMemo";
 
 interface Instant2OProps {
@@ -25,13 +22,16 @@ const Instant2OComponent: React.FC<Instant2OProps> = ({
   results = [],
   gameCode,
 }) => {
-  const [cookies] = useCookies(["clientToken"]);
-  const [selectedResult, setSelectedResult] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Get game slug from gameCode
-  const gameSlug = gameCode?.toLowerCase() || "teen32";
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Keep original gameCode for API calls (e.g., "TEEN_32")
+  const apiGameType = React.useMemo(() => {
+    return gameCode || "TEEN_32";
+  }, [gameCode]);
   // Get odds data from sub array
   // Handle both API format (data.sub) and socket format (data.current.sub)
   const getOddsData = (sid: number) => {
@@ -101,41 +101,16 @@ const Instant2OComponent: React.FC<Instant2OProps> = ({
     return { winner, description: desc };
   };
 
-  // Handle clicking on individual result to show details
-  const handleResultClick = (result: any) => {
-    if (!result?.mid) return;
-    setSelectedResult(result);
-    setIsModalOpen(true);
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
   };
-
-  // Close the result details modal
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedResult(null);
-  };
-
-  // React Query for individual result details
-  const {
-    data: resultDetails,
-    isLoading: isLoadingResult,
-    error: resultError,
-  } = useQuery<any>({
-    queryKey: ["casinoIndividualResult", selectedResult?.mid, gameSlug],
-    queryFn: () =>
-      getCasinoIndividualResult(selectedResult?.mid, cookies, gameSlug),
-    enabled: !!selectedResult?.mid && isModalOpen,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 10, // 10 minutes
-    retry: 2,
-  });
-
-  // Parse cards and winner info from result details
-  const resultData = resultDetails?.data?.matchData;
-  const cards = parseCards(resultData?.cards || "");
-  // For TEEN_32: cards are distributed as Player A (1st, 3rd, 5th) and Player B (2nd, 4th, 6th)
-  const playerACards = [cards[0], cards[2], cards[4]].filter((card) => card);
-  const playerBCards = [cards[1], cards[3], cards[5]].filter((card) => card);
-  const { winner, description } = getWinnerInfo(resultData);
 
   return (
     <div>
@@ -262,7 +237,7 @@ const Instant2OComponent: React.FC<Instant2OProps> = ({
             Last Result
           </h2>
           <h2
-            onClick={() => navigate(`/casino-result?game=${gameSlug}`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${apiGameType}`)}
             className="text-sm font-normal leading-8 text-white cursor-pointer hover:underline"
           >
             View All
@@ -273,14 +248,31 @@ const Instant2OComponent: React.FC<Instant2OProps> = ({
             results.slice(0, 10).map((item: any) => {
               // Handle win field: "1" = Player A, "2" = Player B
               const isPlayerA = item.win === "1" || item.win === "A";
+              const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
               return (
                 <div
                   key={item.mid || `result-${item.win}-${Math.random()}`}
                   className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${
                     isPlayerA ? "text-red-500" : "text-yellow-500"
-                  } cursor-pointer hover:scale-110 transition-transform`}
-                  onClick={() => handleResultClick(item)}
-                  title={`Round ID: ${item.mid || "N/A"} - Click to view details`}
+                  } ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                  }`}
+                  title={`Round ID: ${item.mid || "N/A"}${matchId ? " - Click to view details" : ""}`}
+                  onClick={(e) => {
+                    if (matchId) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={matchId ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (matchId && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleResultClick(item);
+                    }
+                  }}
                 >
                   {isPlayerA ? "A" : "B"}
                 </div>
@@ -292,122 +284,18 @@ const Instant2OComponent: React.FC<Instant2OProps> = ({
         </div>
       </div>
 
-      {/* Result Details Modal */}
-      <CasinoModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        title="Instant 2O Teenpatti Result"
-        size="xl"
-        resultDetails={true}
-      >
-        <div className="flex flex-col px-2">
-          {/* Header Information */}
-          <div className="flex justify-between items-center">
-            <h2 className="text-xs md:text-sm font-semibold leading-8 text-black">
-              Round Id:{" "}
-              <span className="text-black font-normal pl-1">
-                {resultDetails?.data?.matchData?.mid || selectedResult?.mid}
-              </span>
-            </h2>
-            <h2 className="text-xs md:text-sm font-semibold leading-8 text-black capitalize">
-              Match Time:{" "}
-              <span className="text-black font-normal pl-1">
-                {resultDetails?.data?.matchData?.matchTime
-                  ? new Date(
-                      resultDetails.data.matchData.matchTime
-                    ).toLocaleString()
-                  : resultDetails?.data?.matchData?.mtime || "N/A"}
-              </span>
-            </h2>
-          </div>
-
-          {/* Content Display - Only show when not loading and no error */}
-          {!isLoadingResult && !resultError && resultData && (
-            <>
-              <div className="flex flex-col gap-1 justify-center items-center py-2">
-                <div className="flex md:flex-row flex-col w-full py-4 md:max-w-lg mx-auto justify-between items-center">
-                  <div className="flex flex-col gap-1">
-                    <h2 className="text-base font-normal text-center leading-8 text-black">
-                      Player A
-                    </h2>
-                    <div className="flex gap-2 items-center">
-                      {winner === "Player A" && (
-                        <i className="fa-solid fa-trophy text-green-600"></i>
-                      )}
-                      {playerACards.length > 0 ? (
-                        playerACards.map((card: string, index: number) => (
-                          <img
-                            key={index}
-                            src={getCardByCode(card, gameCode || "teen32", "individual")}
-                            alt={`Player A card ${index + 1}`}
-                            className="w-8"
-                          />
-                        ))
-                      ) : (
-                        <span className="text-gray-400 text-sm">No cards</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1 justify-center items-center">
-                    <h2 className="text-base font-normal leading-8 text-black">
-                      Player B
-                    </h2>
-                    <div className="flex gap-2 items-center">
-                      {playerBCards.length > 0 ? (
-                        playerBCards.map((card: string, index: number) => (
-                          <img
-                            key={index + 3}
-                            src={getCardByCode(card, gameCode || "teen32", "individual")}
-                            alt={`Player B card ${index + 1}`}
-                            className="w-8"
-                          />
-                        ))
-                      ) : (
-                        <span className="text-gray-400 text-sm">No cards</span>
-                      )}
-                      {winner === "Player B" && (
-                        <i className="fa-solid fa-trophy text-green-600"></i>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Winner Information */}
-              <div
-                className="max-w-lg my-2 mx-auto w-full mb-2 box-shadow-lg border border-gray-100"
-                style={{ boxShadow: "0 0 4px -1px rgba(0, 0, 0, 0.5)" }}
-              >
-                <div className="flex flex-col gap-0 justify-center items-center py-2">
-                  <h2 className="text-sm font-normal leading-8 text-[var(--bg-secondary)]">
-                    Winner:{" "}
-                    <span className="text-black font-normal pl-1">
-                      {winner || "N/A"}
-                    </span>
-                  </h2>
-                 
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Loading State */}
-          {isLoadingResult && (
-            <div className="flex justify-center items-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--bg-primary)]"></div>
-            </div>
-          )}
-
-          {/* Error State */}
-          {resultError && (
-            <div className="flex justify-center items-center py-8">
-              <p className="text-red-500 text-sm">
-                Error loading result details. Please try again.
-              </p>
-            </div>
-          )}
-        </div>
-      </CasinoModal>
+      {/* Individual Result Details Modal */}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
+        title="Instant 2O Teenpatti Result Details"
+        enableBetFiltering={true}
+      />
     </div>
   );
 };

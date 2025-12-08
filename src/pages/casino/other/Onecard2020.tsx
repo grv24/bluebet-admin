@@ -1,8 +1,7 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { RiLockFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
-// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 interface Onecard2020Props {
@@ -18,24 +17,29 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
   remainingTime,
   results = [],
   gameCode,
+  gameName,
 }) => {
   const navigate = useNavigate();
-  // const resultModal = useIndividualResultModal();
 
-  // Get game slug from gameCode for navigation
-  const gameSlug = gameCode?.toLowerCase() || "teen120";
-  
-  // Normalize game slug for IndividualResultModal
-  const normalizedGameSlug = useMemo(() => {
-    if (gameCode) {
-      const lowerCaseCode = gameCode.toLowerCase();
-      if (lowerCaseCode === "teen_120" || lowerCaseCode === "teen120" || lowerCaseCode === "onecard2020") {
-        return "teen120";
-      }
-      return lowerCaseCode.replace(/[^a-z0-9]/g, "");
-    }
-    return "teen120"; // Default fallback
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Keep original gameCode for API calls (e.g., "TEEN_120")
+  const apiGameType = useMemo(() => {
+    return gameCode || "TEEN_120";
   }, [gameCode]);
+
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
+  };
   // Get odds data from sub array
   // Handle both API format (data.sub) and socket format (data.current.sub)
   const getOddsData = (sid: number) => {
@@ -228,7 +232,7 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
             Last Result
           </h2>
           <h2
-            onClick={() => navigate(`/casino-result?game=TEEN_120`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${apiGameType}`)}
             className="text-sm font-normal leading-8 text-white hover:underline"
           >
             View All
@@ -238,11 +242,29 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
           {Array.isArray(results) && results.length > 0 ? (
             results.slice(0, 10).map((item: any, index: number) => {
               const resultDisplay = getResultDisplay(item.win || "");
+              const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
               return (
                 <div
                   key={item.mid || `result-${item.win}-${index}`}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} `}
-                  title={`Round ID: ${item.mid || "N/A"} - Winner: ${resultDisplay.title} - Click to view details`}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                  }`}
+                  title={`Round ID: ${item.mid || "N/A"} - Winner: ${resultDisplay.title}${matchId ? " - Click to view details" : ""}`}
+                  onClick={(e) => {
+                    if (matchId) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={matchId ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (matchId && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleResultClick(item);
+                    }
+                  }}
                 >
                   {resultDisplay.label}
                 </div>
@@ -253,6 +275,19 @@ const Onecard2020Component: React.FC<Onecard2020Props> = ({
           )}
         </div>
       </div>
+
+      {/* Individual Result Details Modal */}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
+        title={`${gameName || "1 Card 20-20"} Result Details`}
+        enableBetFiltering={true}
+      />
     </div>
   );
 };

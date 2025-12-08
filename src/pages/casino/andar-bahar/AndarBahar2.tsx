@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 import {
   getBlackShapes,
@@ -7,6 +7,7 @@ import {
 } from "../../../utils/card";
 import { RiLockFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 
 const AndarBahar2Component = ({
   casinoData,
@@ -14,8 +15,19 @@ const AndarBahar2Component = ({
   results,
   gameSlug,
   gameName,
+  gameCode,
 }: any) => {
   const navigate = useNavigate();
+  
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Use gameCode or gameSlug for API calls (default to "ABJ")
+  const apiGameType = React.useMemo(() => {
+    return gameCode || gameSlug || "ABJ";
+  }, [gameCode, gameSlug]);
+
   // Handle both new and legacy data structures for ABJ
   const t2: any[] =
     casinoData?.data?.sub || casinoData?.data?.data?.data?.t2 || [];
@@ -64,6 +76,17 @@ const AndarBahar2Component = ({
     const found = t2.find((x) => String(x?.sid) === String(sid));
     console.log(`🎰 ABJ getBySid(${sid}):`, found);
     return found;
+  };
+
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || null;
+    
+    if (matchId) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
   };
 
 
@@ -358,37 +381,62 @@ const AndarBahar2Component = ({
             Last Result
           </h2>
           <h2
-            onClick={() => navigate(`/casino-result?game=${gameSlug}`)}
-            className="text-sm font-normal leading-8 text-white"
+            onClick={() => navigate(`/reports/casino-result-report?game=ABJ`)}
+            className="text-sm font-normal leading-8 text-white cursor-pointer hover:text-gray-200"
           >
             View All
           </h2>
         </div>
         <div className="flex justify-end items-center mb-2 gap-1 mx-2">
           {Array.isArray(results) && results.length > 0
-            ? results.slice(0, 10).map((item: any, index: number) => (
-                <h2
-                  key={index}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${item.win === "2" ? "text-red-500" : "text-yellow-400"}`}
-                >
-                  {item.win === "1" ? "A" : "B"}
-                </h2>
-              ))
-            : // Fallback to old data structure if results prop is not available
-              (casinoData as any)?.data?.data?.result
-                ?.slice(0, 10)
-                .map((item: any, index: number) => (
+            ? results.slice(0, 10).map((item: any, index: number) => {
+                const matchId = item?.mid || item?.result?.mid || item?.roundId;
+                return (
                   <h2
-                    key={index}
-                    className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${item.win === "1" ? "text-red-500" : "text-yellow-400"}`}
+                    key={item?.mid || item?.roundId || index}
+                    className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${item.win === "2" ? "text-red-500" : "text-yellow-400"} ${
+                      matchId ? "cursor-pointer hover:scale-110 transition-transform" : ""
+                    }`}
+                    title={`${item.win === "1" ? "A" : "B"}${matchId ? " - Click to view details" : ""}`}
+                    onClick={() => matchId && handleResultClick(item)}
                   >
                     {item.win === "1" ? "A" : "B"}
                   </h2>
-                ))}
+                );
+              })
+            : // Fallback to old data structure if results prop is not available
+              (casinoData as any)?.data?.data?.result
+                ?.slice(0, 10)
+                .map((item: any, index: number) => {
+                  const matchId = item?.mid || item?.result?.mid || item?.roundId;
+                  return (
+                    <h2
+                      key={item?.mid || item?.roundId || index}
+                      className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${item.win === "1" ? "text-red-500" : "text-yellow-400"} ${
+                        matchId ? "cursor-pointer hover:scale-110 transition-transform" : ""
+                      }`}
+                      title={`${item.win === "1" ? "A" : "B"}${matchId ? " - Click to view details" : ""}`}
+                      onClick={() => matchId && handleResultClick(item)}
+                    >
+                      {item.win === "1" ? "A" : "B"}
+                    </h2>
+                  );
+                })}
         </div>
       </div>
 
-    
+      {/* Individual Result Details Modal */}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
+        title={`${gameName || "Andar Bahar 2"} Result Details`}
+        enableBetFiltering={true}
+      />
     </div>
   );
 };

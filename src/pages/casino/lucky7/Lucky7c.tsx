@@ -7,10 +7,7 @@ import {
 } from "../../../utils/card";
 import React, { useState } from "react";
 import { RiLockFill } from "react-icons/ri";
-// import { getCasinoIndividualResult } from "../../../helper/casino";
-import { useCookies } from "react-cookie";
-import { useQuery } from "@tanstack/react-query";
-// import CasinoModal from "../../../components/common/CasinoModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { useNavigate } from "react-router-dom";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
@@ -50,16 +47,33 @@ const Lucky7cComponent = ({
   remainingTime,
   results,
   gameSlug,
+  gameCode,
   name,
 }: any) => {
-  const [cookies] = useCookies(["clientToken"]);
-  const [selectedResult, setSelectedResult] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [betFilter, setBetFilter] = useState("all");
   const navigate = useNavigate();
+
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Keep original gameCode/gameSlug for API calls (e.g., "LUCKY7EU_2")
+  const apiGameType = React.useMemo(() => {
+    return gameCode || gameSlug || "LUCKY7EU_2";
+  }, [gameCode, gameSlug]);
 
   const t2: any[] =
     casinoData?.data?.sub || casinoData?.data?.data?.data?.t2 || [];
+
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
+  };
 
   /**
    * Universal profit/loss calculation function for all Lucky7EU betting types
@@ -158,23 +172,6 @@ const Lucky7cComponent = ({
       }
     });
   };
-
-
-
-  // React Query for individual result details
-  // const {
-  //   data: resultDetails,
-  //   isLoading,
-  //   error,
-  // } = useQuery<any>({
-  //   queryKey: ["casinoIndividualResult", selectedResult?.mid],
-  //   queryFn: () =>
-  //     getCasinoIndividualResult(selectedResult?.mid, cookies, gameSlug),
-  //   enabled: !!selectedResult?.mid && isModalOpen,
-  //   staleTime: 1000 * 60 * 5, // 5 minutes
-  //   gcTime: 1000 * 60 * 10, // 10 minutes
-  //   retry: 2,
-  // });
 
   // Parse cards and winner info from result details
   // const resultData = resultDetails?.data?.matchData;
@@ -584,7 +581,7 @@ const Lucky7cComponent = ({
             Last Result
           </h2>
           <h2
-            onClick={() => navigate(`/casino-result?game=${gameSlug}`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${gameSlug || gameCode || "LUCKY7EU_2"}`)}
             className="text-sm font-normal leading-8 text-white"
           >
             View All
@@ -609,19 +606,49 @@ const Lucky7cComponent = ({
               textColor = "text-gray-400";
             }
 
+            const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
             return (
-              <h2
-                key={index}
-                className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor} `}
+              <div
+                key={item?.mid || item?.roundId || index}
+                className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor} ${
+                  matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                }`}
+                title={`${displayText}${matchId ? " - Click to view details" : ""}`}
+                onClick={(e) => {
+                  if (matchId) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleResultClick(item);
+                  }
+                }}
+                role="button"
+                tabIndex={matchId ? 0 : undefined}
+                onKeyDown={(e) => {
+                  if (matchId && (e.key === "Enter" || e.key === " ")) {
+                    e.preventDefault();
+                    handleResultClick(item);
+                  }
+                }}
               >
                 {displayText}
-              </h2>
+              </div>
             );
           })}
         </div>
       </div>
 
-      
+      {/* Individual Result Details Modal */}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
+        title={`${name || "Lucky7EU"} Result Details`}
+        enableBetFiltering={true}
+      />
     </div>
   );
 };

@@ -175,7 +175,6 @@ interface CasinoMatchDetailsDisplayProps {
   setBetFilter: (filter: string) => void;
   getFilteredBets: (bets: any[], filter: string) => any[];
   userBets?: any[];
-  showUserName?: boolean;
 }
 
 const CasinoMatchDetailsDisplay: React.FC<CasinoMatchDetailsDisplayProps> = ({
@@ -185,16 +184,21 @@ const CasinoMatchDetailsDisplay: React.FC<CasinoMatchDetailsDisplayProps> = ({
   setBetFilter,
   getFilteredBets,
   userBets = [],
-  showUserName = false,
 }) => {
   // State for Duskadum card slider
   const [dum10CardIndex, setDum10CardIndex] = useState(0);
+
+  // State for AB20 card sliders
+  const [firstRowIndex, setFirstRowIndex] = useState(0);
+  const [secondRowIndex, setSecondRowIndex] = useState(0);
 
   console.log(gameType, "gameType---");
 
   // Reset card index when matchData changes
   React.useEffect(() => {
     setDum10CardIndex(0);
+    setFirstRowIndex(0);
+    setSecondRowIndex(0);
   }, [matchData?.mid]);
 
   // Guard against undefined, null, or empty gameType
@@ -229,6 +233,93 @@ const CasinoMatchDetailsDisplay: React.FC<CasinoMatchDetailsDisplayProps> = ({
     normalizedGameType === "dtl20"
   ) {
     normalizedGameType = "dtl20";
+  }
+
+  // Handle Dragon Tiger variations - normalize to dt6, dt20, or dt202
+  // "DRAGON_TIGER_20_2" -> "dragontiger202" -> "dt202"
+  // "DRAGON_TIGER_20" -> "dragontiger20" -> "dt20"
+  // "DRAGON_TIGER_6" -> "dragontiger6" -> "dt6"
+  if (normalizedGameType.includes("dragontiger") || normalizedGameType.startsWith("dt")) {
+    // Check for dt202 first (before dt20) to avoid false matches
+    if (
+      normalizedGameType.includes("202") ||
+      normalizedGameType.includes("20_2") ||
+      normalizedGameType === "dragontiger202" ||
+      normalizedGameType === "dt202"
+    ) {
+      normalizedGameType = "dt202";
+    } else if (
+      (normalizedGameType.includes("20") && !normalizedGameType.includes("202")) ||
+      normalizedGameType === "dragontiger20" ||
+      normalizedGameType === "dt20"
+    ) {
+      normalizedGameType = "dt20";
+    } else if (
+      normalizedGameType.includes("6") ||
+      normalizedGameType === "dragontiger6" ||
+      normalizedGameType === "dt6"
+    ) {
+      normalizedGameType = "dt6";
+    }
+  }
+
+  // Handle Casino War variations - normalize to "war"
+  if (
+    normalizedGameType === "casinowar" ||
+    normalizedGameType === "war" ||
+    normalizedGameType.includes("war")
+  ) {
+    normalizedGameType = "war";
+  }
+
+  // Handle Lucky15 variations first (before Lucky7, since "lucky15" contains "lucky7")
+  if (
+    normalizedGameType.includes("lucky15") ||
+    normalizedGameType === "lucky15" ||
+    normalizedGameType === "lucky715"
+  ) {
+    normalizedGameType = "lucky15";
+  }
+
+  // Handle Lucky7 variations - normalize all Lucky7 variants to "lucky7eu"
+  // "LUCKY7" -> "lucky7" -> "lucky7eu"
+  // "LUCKY7EU" -> "lucky7eu" -> "lucky7eu"
+  // "LUCKY7EU_2" -> "lucky7eu2" -> "lucky7eu"
+  // "LUCKY7B" -> "lucky7b" -> "lucky7eu"
+  // "LUCKY7C" -> "lucky7c" -> "lucky7eu"
+  else if (normalizedGameType.includes("lucky7")) {
+    // All Lucky7 variants map to "lucky7eu"
+    normalizedGameType = "lucky7eu";
+  }
+
+  // Handle SuperOver variations - normalize all SuperOver variants to "superover"
+  // "SUPEROVER" -> "superover" -> "superover"
+  // "SUPEROVER_3" -> "superover3" -> "superover"
+  // "SUPEROVER3" -> "superover3" -> "superover"
+  if (normalizedGameType.includes("superover") || normalizedGameType === "superover3") {
+    normalizedGameType = "superover";
+  }
+
+  // Handle Cricket variations - normalize all Cricket variants to "cricket_v3"
+  // "CRICKET_V3" -> "cricketv3" -> "cricket_v3"
+  // "FivefiveCricket" -> "fivefivecricket" -> "cricket_v3"
+  if (normalizedGameType.includes("cricket")) {
+    normalizedGameType = "cricket_v3";
+  }
+
+  // Handle Goal variations - normalize to "goal"
+  if (normalizedGameType.includes("goal") || normalizedGameType === "goal") {
+    normalizedGameType = "goal";
+  }
+
+  // Handle Casino Meter 1 variations - normalize to "cmeter1"
+  if (
+    normalizedGameType.includes("cmeter") ||
+    normalizedGameType.includes("casinometer") ||
+    normalizedGameType === "cmeter1" ||
+    normalizedGameType === "casinometer1"
+  ) {
+    normalizedGameType = "cmeter1";
   }
 
   // Handle poker variations - normalize all poker variants to "poker"
@@ -364,21 +455,24 @@ const CasinoMatchDetailsDisplay: React.FC<CasinoMatchDetailsDisplayProps> = ({
       case "note_num":
       case "note number":
       case "notenum":
-        case "note num":
-      {
+      case "note num": {
         const cards = matchData?.cards || "";
         const parsedCards = parseCards(cards);
-        return(
+        return (
           <div className="flex justify-center items-center gap-2 py-4">
             {parsedCards.map((card: string) => (
-              <img className="w-8 object-cover" key={card} src={getCardByCode(card, "note_num", "individual")} alt={card} />
+              <img
+                className="w-8 object-cover"
+                key={card}
+                src={getCardByCode(card, "note_num", "individual")}
+                alt={card}
+              />
             ))}
           </div>
         );
       }
       case "cricketv3":
       case "cricket_v3":
-      case "SUPEROVER":
       case "superover":
       case "fivefivecricket": {
         // Parse innings data from matchData.score array
@@ -1237,7 +1331,8 @@ const CasinoMatchDetailsDisplay: React.FC<CasinoMatchDetailsDisplayProps> = ({
         );
       }
 
-      case "war": {
+      case "war":
+      case "casinowar": {
         // War - Dealer (first card) and 6 Player positions
         const dealerCard = cards[0];
         const playerCards = cards.slice(1, 7);
@@ -1549,22 +1644,66 @@ const CasinoMatchDetailsDisplay: React.FC<CasinoMatchDetailsDisplayProps> = ({
         );
       }
 
-      case "ab4": {
-        // Andar Bahar 4 - Joker card and distribution
+      case "ab20":
+      case "ab_20": {
+        // Andar Bahar 4/20 - Joker card and distribution with sliders
+        // Card distribution: cards[0] = joker, then cards alternate between Andar and Bahar
+        // Andar: indices 1, 3, 5, 7... (positions 2, 4, 6, 8...)
+        // Bahar: indices 2, 4, 6, 8... (positions 3, 5, 7, 9...)
         const jokerCard = cards[0];
-        const andarCards = cards.filter((_, i) => i > 0 && i % 2 === 0);
-        const baharCards = cards.filter((_, i) => i > 0 && i % 2 === 1);
-        const winner =
-          win === "1" || win === "Andar"
-            ? "Andar"
-            : win === "2" || win === "Bahar"
-              ? "Bahar"
-              : "N/A";
+        const firstRowCards = cards.filter((_, i) => i > 0 && i % 2 === 1); // Andar (odd indices: 1, 3, 5...)
+        const secondRowCards = cards.filter((_, i) => i > 0 && i % 2 === 0); // Bahar (even indices: 2, 4, 6...)
+
+        const maxVisible = 10; // Show more cards at once to match the image
+        const visibleFirstRow = firstRowCards.slice(
+          firstRowIndex,
+          firstRowIndex + maxVisible
+        );
+        const visibleSecondRow = secondRowCards.slice(
+          secondRowIndex,
+          secondRowIndex + maxVisible
+        );
+
+        const nextFirstRow = () => {
+          if (firstRowIndex + maxVisible < firstRowCards.length) {
+            setFirstRowIndex(firstRowIndex + 1);
+          }
+        };
+
+        const prevFirstRow = () => {
+          if (firstRowIndex > 0) {
+            setFirstRowIndex(firstRowIndex - 1);
+          }
+        };
+
+        const nextSecondRow = () => {
+          if (secondRowIndex + maxVisible < secondRowCards.length) {
+            setSecondRowIndex(secondRowIndex + 1);
+          }
+        };
+
+        const prevSecondRow = () => {
+          if (secondRowIndex > 0) {
+            setSecondRowIndex(secondRowIndex - 1);
+          }
+        };
+
+        // Calculate positions: Andar positions are 2, 4, 6, 8... (index 1 = position 2, index 3 = position 4)
+        // Bahar positions are 3, 5, 7, 9... (index 2 = position 3, index 4 = position 5)
+        const getAndarPosition = (cardIndex: number) => {
+          const actualIndex = firstRowIndex + cardIndex;
+          return actualIndex * 2 + 2; // positions 2, 4, 6, 8...
+        };
+
+        const getBaharPosition = (cardIndex: number) => {
+          const actualIndex = secondRowIndex + cardIndex;
+          return actualIndex * 2 + 3; // positions 3, 5, 7, 9...
+        };
 
         return (
-          <div className="flex flex-col gap-1 justify-center items-center py-2">
-            <div className="flex md:flex-row flex-col w-full py-4 max-w-md mx-auto justify-between items-center">
-              <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-4 justify-center items-center py-2">
+            {/* Joker Card - Centered at top */}
+            {/* <div className="flex flex-col gap-1 items-center">
                 <h2 className="text-base font-normal text-center leading-8 text-black">
                   Joker
                 </h2>
@@ -1577,55 +1716,237 @@ const CasinoMatchDetailsDisplay: React.FC<CasinoMatchDetailsDisplayProps> = ({
                         "individual"
                       )}
                       alt="Joker card"
-                      className="w-8"
+                    className="w-8 h-12"
                     />
                   )}
                 </div>
+            </div> */}
+
+            {/* Andar Row - Horizontal with navigation arrows */}
+            <div className="flex flex-col gap-2 w-full">
+              <div className="flex gap-2 items-center justify-center flex-wrap">
+                {visibleFirstRow.map((card: string, cardIndex: number) => {
+                  const originalPosition = getAndarPosition(cardIndex);
+                  return (
+                    <div
+                      key={cardIndex}
+                      className="flex flex-col items-center gap-1"
+                    >
+                      <img
+                        src={getCardByCode(
+                          card,
+                          normalizedGameType,
+                          "individual"
+                        )}
+                        alt={`Card ${originalPosition}`}
+                        className="w-8 h-12"
+                      />
+                    </div>
+                  );
+                })}
               </div>
-              <div className="flex flex-col gap-1 justify-center items-center">
+            </div>
+
+            {/* Bahar Row - Horizontal with navigation arrows */}
+            <div className="flex flex-col gap-2 w-full">
+              <div className="flex gap-2 items-center justify-center flex-wrap">
+                {jokerCard && (
+                  <img
+                    src={getCardByCode(
+                      jokerCard,
+                      normalizedGameType,
+                      "individual"
+                    )}
+                    alt="Joker card"
+                    className="w-8 h-12"
+                  />
+                )}
+                {visibleSecondRow.map((card: string, cardIndex: number) => {
+                  const originalPosition = getBaharPosition(cardIndex);
+                  return (
+                    <div
+                      key={cardIndex}
+                      className="flex flex-col items-center gap-1"
+                    >
+                      <img
+                        src={getCardByCode(
+                          card,
+                          normalizedGameType,
+                          "individual"
+                        )}
+                        alt={`Card ${originalPosition}`}
+                        className="w-8 h-12"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      case "ab4":
+      case "ab_4":
+      case "AB_4": {
+        // Andar Bahar 3 - No joker, cards alternate between Andar and Bahar
+        // Even indices (0, 2, 4...) -> Bahar (second row), positions 1, 3, 5, 7...
+        // Odd indices (1, 3, 5...) -> Andar (first row), positions 2, 4, 6, 8...
+        const firstRowCards = cards.filter((_, i) => i % 2 === 1); // Andar (odd indices: 1, 3, 5...)
+        const secondRowCards = cards.filter((_, i) => i % 2 === 0); // Bahar (even indices: 0, 2, 4...)
+
+        // Determine winner from win field
+        let winnerText: string | null = null;
+        if (win === "1") winnerText = "Andar";
+        else if (win === "2") winnerText = "Bahar";
+        else if (win === "0") winnerText = "Tie";
+
+        const maxVisible = 5; // Show 5 cards at once
+        const visibleFirstRow = firstRowCards.slice(
+          firstRowIndex,
+          firstRowIndex + maxVisible
+        );
+        const visibleSecondRow = secondRowCards.slice(
+          secondRowIndex,
+          secondRowIndex + maxVisible
+        );
+
+        const nextFirstRow = () => {
+          if (firstRowIndex + maxVisible < firstRowCards.length) {
+            setFirstRowIndex(firstRowIndex + 1);
+          }
+        };
+
+        const prevFirstRow = () => {
+          if (firstRowIndex > 0) {
+            setFirstRowIndex(firstRowIndex - 1);
+          }
+        };
+
+        const nextSecondRow = () => {
+          if (secondRowIndex + maxVisible < secondRowCards.length) {
+            setSecondRowIndex(secondRowIndex + 1);
+          }
+        };
+
+        const prevSecondRow = () => {
+          if (secondRowIndex > 0) {
+            setSecondRowIndex(secondRowIndex - 1);
+          }
+        };
+
+        // Calculate positions: Andar positions are 2, 4, 6, 8... (index 1 = position 2, index 3 = position 4)
+        // Bahar positions are 1, 3, 5, 7... (index 0 = position 1, index 2 = position 3)
+        const getAndarPosition = (cardIndex: number) => {
+          const actualIndex = firstRowIndex + cardIndex;
+          return actualIndex * 2 + 2; // positions 2, 4, 6, 8...
+        };
+
+        const getBaharPosition = (cardIndex: number) => {
+          const actualIndex = secondRowIndex + cardIndex;
+          return actualIndex * 2 + 1; // positions 1, 3, 5, 7...
+        };
+
+        return (
+          <div className="flex flex-col gap-4 justify-center items-center py-2">
+            {/* First Row (Andar) */}
+            <div className="flex items-center justify-center gap-2">
+              <button
+                onClick={prevFirstRow}
+                disabled={firstRowIndex === 0}
+                className="p-1 bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
+              >
+                <FaChevronLeft className="w-3 h-3" />
+              </button>
+              <div className="flex flex-col gap-2 items-center">
                 <h2 className="text-base font-normal leading-8 text-black">
                   Andar
                 </h2>
-                <div className="flex gap-2 items-center flex-wrap justify-center">
-                  {andarCards.map((card: string, index: number) => (
-                    <img
-                      key={index}
-                      src={getCardByCode(
-                        card,
-                        normalizedGameType,
-                        "individual"
-                      )}
-                      alt={`Andar card ${index + 1}`}
-                      className="w-8"
-                    />
-                  ))}
-                  {winner === "Andar" && (
+                <div className="flex gap-2 items-center justify-center flex-wrap">
+                  {visibleFirstRow.map((card: string, cardIndex: number) => {
+                    const originalPosition = getAndarPosition(cardIndex);
+                    return (
+                      <div
+                        key={cardIndex}
+                        className="flex flex-col items-center gap-1"
+                      >
+                        <img
+                          src={getCardByCode(
+                            card,
+                            normalizedGameType,
+                            "individual"
+                          )}
+                          alt={`Card ${originalPosition}`}
+                          className="w-8 h-12"
+                        />
+                        <h2 className="text-xs font-normal text-gray-600">
+                          {originalPosition}
+                        </h2>
+                      </div>
+                    );
+                  })}
+                  {winnerText === "Andar" && (
                     <i className="fa-solid fa-trophy text-green-600"></i>
                   )}
                 </div>
               </div>
-              <div className="flex flex-col gap-1 justify-center items-center">
+              <button
+                onClick={nextFirstRow}
+                disabled={firstRowIndex + maxVisible >= firstRowCards.length}
+                className="p-1 bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
+              >
+                <FaChevronRight className="w-3 h-3" />
+              </button>
+            </div>
+
+            {/* Second Row (Bahar) */}
+            <div className="flex items-center justify-center gap-2">
+              <button
+                onClick={prevSecondRow}
+                disabled={secondRowIndex === 0}
+                className="p-1 bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
+              >
+                <FaChevronLeft className="w-3 h-3" />
+              </button>
+              <div className="flex flex-col gap-2 items-center">
                 <h2 className="text-base font-normal leading-8 text-black">
                   Bahar
                 </h2>
-                <div className="flex gap-2 items-center flex-wrap justify-center">
-                  {baharCards.map((card: string, index: number) => (
-                    <img
-                      key={index}
-                      src={getCardByCode(
-                        card,
-                        normalizedGameType,
-                        "individual"
-                      )}
-                      alt={`Bahar card ${index + 1}`}
-                      className="w-8"
-                    />
-                  ))}
-                  {winner === "Bahar" && (
+                <div className="flex gap-2 items-center justify-center flex-wrap">
+                  {visibleSecondRow.map((card: string, cardIndex: number) => {
+                    const originalPosition = getBaharPosition(cardIndex);
+                    return (
+                      <div
+                        key={cardIndex}
+                        className="flex flex-col items-center gap-1"
+                      >
+                        <img
+                          src={getCardByCode(
+                            card,
+                            normalizedGameType,
+                            "individual"
+                          )}
+                          alt={`Card ${originalPosition}`}
+                          className="w-8 h-12"
+                        />
+                        <h2 className="text-xs font-normal text-gray-600">
+                          {originalPosition}
+                        </h2>
+                      </div>
+                    );
+                  })}
+                  {winnerText === "Bahar" && (
                     <i className="fa-solid fa-trophy text-green-600"></i>
                   )}
                 </div>
               </div>
+              <button
+                onClick={nextSecondRow}
+                disabled={secondRowIndex + maxVisible >= secondRowCards.length}
+                className="p-1 bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
+              >
+                <FaChevronRight className="w-3 h-3" />
+              </button>
             </div>
           </div>
         );
@@ -1750,7 +2071,8 @@ const CasinoMatchDetailsDisplay: React.FC<CasinoMatchDetailsDisplayProps> = ({
         );
       }
 
-      case "btable2": {
+      case "bollywoodtable":
+      case "BOLLYWOOD_TABLE": {
         // BTable2 - Bollywood Casino - Single card display (matches individual modal)
         // Cards format: single card or comma-separated
         const card = cardsString
@@ -2049,8 +2371,9 @@ const CasinoMatchDetailsDisplay: React.FC<CasinoMatchDetailsDisplayProps> = ({
         );
       }
 
+      case "lucky7":
       case "lucky7eu": {
-        // Lucky7EU - single result card with trophy if applicable
+        // Lucky7/Lucky7EU - single result card with trophy if applicable
         const resultCard = cardsString
           ? cardsString.includes(",")
             ? cards[0]
@@ -2177,7 +2500,12 @@ const CasinoMatchDetailsDisplay: React.FC<CasinoMatchDetailsDisplayProps> = ({
                     className="flex flex-col gap-1 items-center"
                   >
                     <h3 className="text-base font-semibold text-black">
-                      Player {playerNumber} - <span className={` ${winningPlayer === playerNumber ? "text-green-600" : "text-yellow-600"}`}>{playerScore}</span>
+                      Player {playerNumber} -{" "}
+                      <span
+                        className={` ${winningPlayer === playerNumber ? "text-green-600" : "text-yellow-600"}`}
+                      >
+                        {playerScore}
+                      </span>
                     </h3>
                     <div className="flex gap-2 items-center flex-wrap justify-center">
                       {winningPlayer === playerNumber && (
@@ -3742,7 +4070,8 @@ const CasinoMatchDetailsDisplay: React.FC<CasinoMatchDetailsDisplayProps> = ({
         );
       }
 
-      case "war": {
+      case "war":
+      case "casinowar": {
         const winnerSections = descSections[0]?.replace(/\s+/g, " ").trim();
         const winnerPositions = winnerSections
           ? winnerSections.split(" ").filter(Boolean)
@@ -3984,25 +4313,92 @@ const CasinoMatchDetailsDisplay: React.FC<CasinoMatchDetailsDisplayProps> = ({
         }
       }
 
-      case "ab4": {
+      case "ab3":
+      case "ab_3":
+      case "AB_3": {
+        // Parse winner from description or win field
+        const desc = matchData?.desc || matchData?.newdesc || "";
+        let winnerText = "";
+
+        if (desc) {
+          const descValues = desc
+            .split(",")
+            .map((v: string) => v.trim())
+            .filter(Boolean);
+          if (descValues.length > 0) {
+            winnerText = descValues.join(", ");
+          }
+        }
+
+        // Fallback to win field
+        if (!winnerText) {
+          if (win === "1") winnerText = "Andar";
+          else if (win === "2") winnerText = "Bahar";
+          else if (win === "0") winnerText = "Tie";
+          else winnerText = win || "N/A";
+        }
+
         return (
           <div
             className="max-w-lg py-2 my-2 mx-auto w-full mb-2 box-shadow-lg border border-gray-100"
             style={{ boxShadow: "0 0 4px -1px rgba(0, 0, 0, 0.5)" }}
           >
             <div className="flex flex-col gap-1 justify-center items-center">
-              <h2 className="text-sm font-normal leading-8 text-[var(--bg-secondary)]">
+              <p className="text-sm font-normal leading-8 text-black">
                 Winner:{" "}
-                <span className="text-black font-normal pl-1">
-                  {descSections[0] ||
-                    (win === "1" ? "Andar" : win === "2" ? "Bahar" : "N/A")}
+                <span className="text-[var(--bg-secondary)] font-normal pl-1">
+                  {winnerText}
                 </span>
-              </h2>
+              </p>
             </div>
           </div>
         );
       }
 
+      case "ab20":
+      case "ab_20": {
+        // Parse winner from description or win field
+        // Description format: "3,12,11,1,1026,28,22,27,33,25,29" (winning positions)
+        const desc = matchData?.desc || "";
+        let winnerText = "";
+
+        if (desc) {
+          // The desc field contains comma-separated winning positions
+          const descValues = desc
+            .split(",")
+            .map((v: string) => v.trim())
+            .filter(Boolean);
+          if (descValues.length > 0) {
+            winnerText = descValues.join(",");
+          }
+        }
+
+        // Fallback to win field
+        if (!winnerText) {
+          if (win === "1") winnerText = "Andar";
+          else if (win === "2") winnerText = "Bahar";
+          else if (win === "0") winnerText = "Tie";
+          else winnerText = win || "N/A";
+        }
+
+        return (
+          <div
+            className="max-w-lg py-2 my-2 mx-auto w-full mb-2 box-shadow-lg border border-gray-100"
+            style={{ boxShadow: "0 0 4px -1px rgba(0, 0, 0, 0.5)" }}
+          >
+            <div className="flex flex-col gap-1 justify-center items-center py-2">
+              <p className="text-sm font-normal leading-8 text-black">
+                Winner{" "}
+                <span className="text-[var(--bg-secondary)] font-normal pl-1">
+                  {winnerText}
+                </span>
+              </p>
+            </div>
+          </div>
+        );
+      }
+      case "aaa2":
+      case "aaa_2":
       case "aaa": {
         // Amar Akbar Anthony - Description format: "Winner#3 Baccarat#Total#Pair Plus#Red Black"
         // Also handle win field: win === "1" = Amar, win === "2" = Akbar, win === "3" = Anthony
@@ -4055,7 +4451,8 @@ const CasinoMatchDetailsDisplay: React.FC<CasinoMatchDetailsDisplayProps> = ({
         );
       }
 
-      case "btable2": {
+      case "btable2":
+      case "bollywoodtable": {
         // BTable2 description format: "Movie#OddEven#Game#Color#Card"
         // Example: "Sahib Bibi Aur Ghulam#Yes#Barati#Black#J"
         // Display format: Winner, Odd, Dulha Dulhan/Barati, Color, Card
@@ -4231,6 +4628,8 @@ const CasinoMatchDetailsDisplay: React.FC<CasinoMatchDetailsDisplayProps> = ({
         );
       }
 
+      case "lucky7":
+      case "lucky7":
       case "lucky7eu": {
         const [result, oddEven, color, cardValue, line] = descSections;
 
@@ -4993,23 +5392,23 @@ const CasinoMatchDetailsDisplay: React.FC<CasinoMatchDetailsDisplayProps> = ({
           >
             <div className="flex flex-col gap-1 justify-center items-center py-1 px-4">
               <h2 className="text-sm font-normal leading-8 text-[var(--bg-secondary)]">
-              Odd/Even:{" "}
+                Odd/Even:{" "}
                 <span className="text-black font-normal pl-1">{winner}</span>
               </h2>
               <h2 className="text-sm font-normal leading-8 text-[var(--bg-secondary)]">
-              Red/Black:{" "}
+                Red/Black:{" "}
                 <span className="text-black font-normal pl-1">{baccarat3}</span>
               </h2>
               <h2 className="text-sm font-normal leading-8 text-[var(--bg-secondary)]">
-              Low/High:{" "}
+                Low/High:{" "}
                 <span className="text-black font-normal pl-1">{total}</span>
               </h2>
               <h2 className="text-sm font-normal leading-8 text-[var(--bg-secondary)]">
-              Cards:{" "}
+                Cards:{" "}
                 <span className="text-black font-normal pl-1">{pairPlus}</span>
               </h2>
               <h2 className="text-sm font-normal leading-8 text-[var(--bg-secondary)]">
-              Baccarat:{" "}
+                Baccarat:{" "}
                 <span className="text-black font-normal pl-1">{redBlack}</span>
               </h2>
             </div>
@@ -5087,6 +5486,48 @@ const CasinoMatchDetailsDisplay: React.FC<CasinoMatchDetailsDisplayProps> = ({
           </div>
         );
       }
+
+      case "cricketv3":
+      case "cricket_v3":
+      case "superover":
+      case "fivefivecricket": {
+        // Sport games (Cricket/SuperOver) - display match details
+        const scoreArray = matchData?.score || [];
+        const winner = matchData?.win || matchData?.winnat || "N/A";
+        const desc = matchData?.desc || matchData?.newdesc || "";
+
+        return (
+          <div
+            className="max-w-lg py-2 my-2 mx-auto w-full mb-2 box-shadow-lg border border-gray-100"
+            style={{ boxShadow: "0 0 4px -1px rgba(0, 0, 0, 0.5)" }}
+          >
+            <div className="flex flex-col gap-1 justify-center items-center">
+              {winner && winner !== "N/A" && (
+                <h2 className="text-sm font-normal leading-8 text-[var(--bg-secondary)]">
+                  Winner:{" "}
+                  <span className="text-black font-normal pl-1">{winner}</span>
+                </h2>
+              )}
+              {desc && (
+                <h2 className="text-sm font-normal leading-8 text-[var(--bg-secondary)]">
+                  Description:{" "}
+                  <span className="text-black font-normal pl-1">{desc}</span>
+                </h2>
+              )}
+              {scoreArray && Array.isArray(scoreArray) && scoreArray.length > 0 && (
+                <div className="w-full">
+                  <h2 className="text-sm font-semibold text-black mb-2">Score:</h2>
+                  {scoreArray.map((score: any, index: number) => (
+                    <div key={index} className="text-sm text-black">
+                      {score.team || score.name || `Team ${index + 1}`}: {score.score || score.runs || "0"}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      }
     }
   };
 
@@ -5156,11 +5597,6 @@ const CasinoMatchDetailsDisplay: React.FC<CasinoMatchDetailsDisplayProps> = ({
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="bg-gray-100 text-gray-700">
-                {showUserName && (
-                  <th className="border border-gray-300 text-nowrap px-3 py-2 text-left font-medium">
-                    User Name
-                  </th>
-                )}
                 <th className="border border-gray-300 px-3 py-2 text-left font-medium">
                   Nation
                 </th>
@@ -5199,11 +5635,6 @@ const CasinoMatchDetailsDisplay: React.FC<CasinoMatchDetailsDisplayProps> = ({
                         : "bg-white"
                   }`}
                 >
-                  {showUserName && (
-                    <td className="border text-nowrap border-gray-300 px-3 py-2">
-                      {bet.username || bet.loginId || "N/A"}
-                    </td>
-                  )}
                   <td className="border text-nowrap border-gray-300 px-3 py-2">
                     {bet.betData?.name || bet.betData?.betName || "N/A"}
                   </td>
@@ -5229,7 +5660,7 @@ const CasinoMatchDetailsDisplay: React.FC<CasinoMatchDetailsDisplayProps> = ({
                       : "N/A"}
                   </td>
                   <td className="border text-nowrap border-gray-300 px-3 py-2 text-xs">
-                    {bet.ipAddress || "N/A"}
+                    N/A
                   </td>
                   <td className="border border-gray-300 px-3 py-2">
                     <button className="text-blue-600 hover:text-blue-800 text-sm">

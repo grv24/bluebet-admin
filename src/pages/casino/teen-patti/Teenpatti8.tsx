@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { RiLockFill } from "react-icons/ri";
 import { getCardByCode } from "../../../utils/card";
 import { useNavigate } from "react-router-dom";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 
@@ -23,9 +23,27 @@ const Teenpatti8Component = ({
   gameName: string;
   currentBet: any;
 }) => {
-  const [selectedResult, setSelectedResult] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
+
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Keep original gameCode for API calls (e.g., "TEEN_8")
+  const apiGameType = React.useMemo(() => {
+    return gameCode || "TEEN_8";
+  }, [gameCode]);
+
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
+  };
 
   // Function to filter user bets based on selected filter
   const getFilteredBets = (bets: any[], filter: string) => {
@@ -125,20 +143,7 @@ const Teenpatti8Component = ({
   /**
    * Handle clicking on individual result to show details
    */
-  const handleResultClick = (result: any) => {
-    if (!result?.mid) return;
 
-    setSelectedResult(result);
-    setIsModalOpen(true);
-  };
-
-  /**
-   * Close the result details modal
-   */
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedResult(null);
-  };
   // helpers
   const byNation = (n: string) => {
     const found = (casinoData?.data?.sub || []).find(
@@ -277,7 +282,7 @@ const Teenpatti8Component = ({
             Last Result
           </h2>
           <h2 
-            onClick={() => navigate(`/casino-result?game=${gameCode}`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${apiGameType}`)}
             className="text-sm font-normal leading-8 text-white cursor-pointer hover:text-gray-200"
           >
             View All
@@ -286,51 +291,49 @@ const Teenpatti8Component = ({
         <div className="flex justify-end items-center mb-2 gap-1 mx-2">
           {Array.isArray(results) &&
             results.slice(0, 10).map((item: any, index: number) => {
-              // const result = item?.result;
-              // let displayText = "";
-              // let color = "text-gray-200";
-
-              // if (result === 0 || result === "0") {
-              //   displayText = "0";
-              //   color = "text-red-500";
-              // } else if (typeof result === "string" && result.includes(",")) {
-              //   // Multiple winners - show count
-              //   const winners = result.split(",").filter(w => w.trim() !== "");
-              //   displayText = winners.length.toString();
-              //   color = "text-green-500";
-              // } else if (typeof result === "string" && result.trim() !== "") {
-              //   // Single winner
-              //   displayText = result;
-              //   color = "text-yellow-500";
-              // } else {
-              //   displayText = "?";
-              //   color = "text-gray-400";
-              // }
-
+              const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
               return (
-                <h2
-                  key={index}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold text-yellow-400 cursor-pointer hover:scale-110 transition-transform`}
-                  onClick={() => handleResultClick(item)}
-                  title="Click to view details"
+                <div
+                  key={item?.mid || index}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold text-yellow-400 ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                  }`}
+                  title={`R${matchId ? " - Click to view details" : ""}`}
+                  onClick={(e) => {
+                    if (matchId) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={matchId ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (matchId && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleResultClick(item);
+                    }
+                  }}
                 >
                   {"R"}
-                </h2>
+                </div>
               );
             })}
         </div>
       </div>
 
       {/* Individual Result Details Modal */}
-      {/* <IndividualResultModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        resultId={selectedResult?.mid}
-        gameType={gameCode}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
         title={`${gameName || "Teen Patti 8"} Result Details`}
         enableBetFiltering={true}
-        customGetFilteredBets={getFilteredBets}
-      /> */}
+      />
     </div>
   );
 };

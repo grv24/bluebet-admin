@@ -2,8 +2,7 @@ import React, { useState } from "react";
 import { RiLockFill } from "react-icons/ri";
 import { getCardByCode } from "../../../utils/card";
 import { useNavigate } from "react-router-dom";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
-// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 interface InstantProps {
@@ -25,9 +24,12 @@ const InstantComponent: React.FC<InstantProps> = ({
   currentBet,
 }) => {
   const navigate = useNavigate();
-  // const resultModal = useIndividualResultModal();
+  
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
 
-  // Convert gameCode to gameSlug if gameCode is provided
+  // Convert gameCode to gameSlug if gameCode is provided (for display)
   // gameCode format: "TEEN_3" -> gameSlug format: "teen3"
   const actualGameSlug = React.useMemo(() => {
     if (gameCode) {
@@ -35,6 +37,14 @@ const InstantComponent: React.FC<InstantProps> = ({
       return gameCode.toLowerCase().replace(/_/g, "");
     }
     return "teen3"; // Default fallback
+  }, [gameCode]);
+
+  // Keep original gameCode for API calls (e.g., "TEEN_3")
+  const apiGameType = React.useMemo(() => {
+    if (gameCode) {
+      return gameCode; // Use original gameCode for API
+    }
+    return "TEEN_3"; // Default fallback
   }, [gameCode]);
   // Get odds data from sub array
   // Handle both API format (data.sub) and socket format (data.current.sub)
@@ -112,19 +122,15 @@ const InstantComponent: React.FC<InstantProps> = ({
 
   // Handle clicking on individual result to show details
   const handleResultClick = (result: any) => {
-    const resultId = result?.mid || result?.roundId || result?.id || result?.matchId;
+    const resultId = result?.mid || result?.roundId || result?.id || result?.matchId || result?.result?.mid;
     
     if (!resultId) {
       console.error("🎰 Instant: No result ID found in result", result);
       return;
     }
     
-    if (!actualGameSlug) {
-      console.error("🎰 Instant: No gameSlug available", { gameCode, actualGameSlug });
-      return;
-    }
-    
-    // resultModal.openModal(String(resultId), result);
+    setSelectedResultId(String(resultId));
+    setIsResultModalOpen(true);
   };
 
   return (
@@ -252,7 +258,7 @@ const InstantComponent: React.FC<InstantProps> = ({
             Last Result
           </h2>
           <button
-            onClick={() => navigate(`/casino-result?game=TEEN_3`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${gameCode || "TEEN_3"}`)}
             className="text-xs text-white hover:underline"
           >
             View All
@@ -283,15 +289,17 @@ const InstantComponent: React.FC<InstantProps> = ({
       </div>
 
       {/* Individual Result Modal */}
-      {/* <IndividualResultModal
-        isOpen={resultModal.isOpen}
-        onClose={resultModal.closeModal}
-        resultId={resultModal.selectedResultId || undefined}
-        gameType={actualGameSlug}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
         title="Result Details"
         enableBetFiltering={true}
-        customGetFilteredBets={getFilteredBets}
-      /> */}
+      />
     </div>
   );
 };

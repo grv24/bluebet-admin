@@ -22,6 +22,14 @@
   --bg-lay: #faa9ba;
   --bg-back: #72bbef;
   --bg-casino-result: #355e3b;
+  --back: #72bbef;
+  --back-hover: #4fa1dc;
+  --back1: #72bbefcc;
+  --back2: #72bbefa3;
+  --lay: #f994ba;
+  --lay-hover: #e16f9a;
+  --lay1: #f994bacc;
+  --lay2: #f994baa3;
 }
 body {
   font-family: "Roboto Condensed", sans-serif;

@@ -2,7 +2,7 @@ import { cardImage, getCardByCode } from "../../../utils/card";
 import React, { useState, useMemo } from "react";
 import { RiLockFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 interface BaccaratProps {
@@ -23,14 +23,23 @@ const BaccaratComponent: React.FC<BaccaratProps> = ({
   gameName,
 }) => {
   const navigate = useNavigate();
+  
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
 
   // Normalize gameSlug/gameCode to lowercase format (e.g., "BACCARAT" -> "baccarat", "BACCARAT2" -> "baccarat2")
-  // Use gameCode as fallback if gameSlug is not provided
+  // Use gameCode as fallback if gameSlug is not provided (for display)
   const normalizedGameType = useMemo(() => {
     const gameType = gameSlug || gameCode;
     if (!gameType) return "baccarat"; // Default fallback for Baccarat
     return gameType.toLowerCase().replace(/_/g, "");
   }, [gameSlug, gameCode]);
+
+  // Keep original gameCode/gameSlug for API calls (e.g., "BACCARAT", "BACCARAT2")
+  const apiGameType = useMemo(() => {
+    return gameCode || gameSlug || "BACCARAT";
+  }, [gameCode, gameSlug]);
 
   // Extract data for cards and odds
   const t1 = casinoData?.data?.data?.t1 || [];
@@ -72,6 +81,18 @@ const BaccaratComponent: React.FC<BaccaratProps> = ({
   const getCardImage = (cardCode: string) => {
     if (!cardCode || cardCode === "1") return cardImage.back;
     return getCardByCode(cardCode, "baccarat2") || cardImage.back;
+  };
+
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item - socket results have mid directly
+    // Socket response format: {"mid":137251208070411,"win":"1"}
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
   };
 
 
@@ -409,8 +430,8 @@ const BaccaratComponent: React.FC<BaccaratProps> = ({
             Last Result
           </h2>
           <h2
-            onClick={() => navigate(`/casino-result?game=${gameSlug || gameCode || "baccarat"}`)}
-            className="text-sm font-normal leading-8 text-white"
+            onClick={() => navigate(`/reports/casino-result-report?game=${gameCode || gameSlug || "BACCARAT"}`)}
+            className="text-sm font-normal leading-8 text-white cursor-pointer hover:text-gray-200"
           >
             View All
           </h2>
@@ -419,6 +440,7 @@ const BaccaratComponent: React.FC<BaccaratProps> = ({
           {Array.isArray(results) && results.length > 0
             ? results.slice(0, 10).map((item: any, index: number) => {
                 const resultType = item.win;
+                const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
                 let textColor = "text-gray-400";
                 let resultText = "?";
 
@@ -434,12 +456,25 @@ const BaccaratComponent: React.FC<BaccaratProps> = ({
                 }
 
                 return (
-                  <h2
-                    key={index}
-                    className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor}`}
+                  <div
+                    key={item?.mid || item?.roundId || item?.id || index}
+                    className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor} cursor-pointer hover:scale-110 transition-transform select-none`}
+                    title={`${resultText} - Click to view details (ID: ${matchId || 'N/A'})`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleResultClick(item);
+                      }
+                    }}
                   >
                     {resultText}
-                  </h2>
+                  </div>
                 );
               })
             : // Fallback to old data structure if results prop is not available
@@ -447,6 +482,7 @@ const BaccaratComponent: React.FC<BaccaratProps> = ({
                 ?.slice(0, 10)
                 .map((item: any, index: number) => {
                   const resultType = item.win || item.result;
+                  const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
                   let textColor = "text-gray-400";
                   let resultText = "?";
 
@@ -462,25 +498,39 @@ const BaccaratComponent: React.FC<BaccaratProps> = ({
                   }
 
                   return (
-                    <h2
-                      key={index}
-                      className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor}`}
+                    <div
+                      key={item?.mid || item?.roundId || item?.id || index}
+                      className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor} cursor-pointer hover:scale-110 transition-transform select-none`}
+                      title={`${resultText} - Click to view details`}
+                      onClick={() => handleResultClick(item)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleResultClick(item);
+                        }
+                      }}
                     >
                       {resultText}
-                    </h2>
+                    </div>
                   );
                 })}
         </div>
       </div>
 
       {/* Individual Result Details Modal */}
-      {/* <IndividualResultModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        resultId={selectedResult?.mid}
-        gameType={normalizedGameType}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
         title={`${gameName || "Baccarat"} Result Details`}
-      /> */}
+        enableBetFiltering={true}
+      />
     </div>
   );
 };

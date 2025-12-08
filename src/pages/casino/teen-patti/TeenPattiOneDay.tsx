@@ -1,9 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { RiLockFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-// import { getCardByCode } from "@/utils/card";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
-// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 interface TeenBetClickOptions {
@@ -37,16 +35,14 @@ const TeenPattiOneDayComponent: React.FC<TeenPattiOneDayProps> = ({
   currentBet,
 }) => {
   const navigate = useNavigate();
-  // const resultModal = useIndividualResultModal();
 
-  // Convert gameCode to gameSlug if gameCode is provided
-  // gameCode format: "POKER_1_DAY" -> gameSlug format: "poker1day"
-  const actualGameSlug = React.useMemo(() => {
-    if (gameCode) {
-      // Convert "POKER_1_DAY" to "poker1day"
-      return gameCode.toLowerCase().replace(/_/g, "");
-    }
-    return "poker1day"; // Default fallback
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Keep original gameCode for API calls (e.g., "TEEN")
+  const apiGameType = React.useMemo(() => {
+    return gameCode || "TEEN";
   }, [gameCode]);
 
   // Debug: Log results data
@@ -201,20 +197,14 @@ const TeenPattiOneDayComponent: React.FC<TeenPattiOneDayProps> = ({
   /**
    * Handle clicking on individual result to show details
    */
-  const handleResultClick = (result: any) => {
-    const resultId = result?.mid || result?.roundId || result?.id || result?.matchId;
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.roundId || item?.id || item?.matchId || item?.result?.mid;
     
-    if (!resultId) {
-      console.error("🎰 TeenPattiOneDay: No result ID found in result", result);
-      return;
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
     }
-    
-    if (!actualGameSlug) {
-      console.error("🎰 TeenPattiOneDay: No gameSlug available", { gameCode, actualGameSlug });
-      return;
-    }
-    
-    // resultModal.openModal(String(resultId), result); 
   };
 
   const isSuspended = (sid: string) => {
@@ -706,7 +696,7 @@ const TeenPattiOneDayComponent: React.FC<TeenPattiOneDayProps> = ({
             Last Result
           </h2>
           <h2
-            onClick={() => navigate(`/casino-result?game=${gameCode}`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${apiGameType}`)}
             className="text-sm font-normal leading-8 text-white cursor-pointer hover:text-gray-200"
           >
             View All
@@ -727,29 +717,49 @@ const TeenPattiOneDayComponent: React.FC<TeenPattiOneDayProps> = ({
                 color = "text-yellow-500";
               }
 
+              const matchId = item?.mid || item?.roundId || item?.id || item?.matchId || item?.result?.mid;
               return (
-                <h2
-                  key={index}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${color} cursor-pointer hover:scale-110 transition-transform`}
-                  onClick={() => handleResultClick(item)}
-                  title="Click to view details"
+                <div
+                  key={item?.mid || index}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${color} ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                  }`}
+                  title={`${label}${matchId ? " - Click to view details" : ""}`}
+                  onClick={(e) => {
+                    if (matchId) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={matchId ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (matchId && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleResultClick(item);
+                    }
+                  }}
                 >
                   {label}
-                </h2>
+                </div>
               );
             })}
         </div>
       </div>
 
       {/* Individual Result Modal */}
-      {/* <IndividualResultModal
-        isOpen={resultModal.isOpen}
-        onClose={resultModal.closeModal}
-        resultId={resultModal.selectedResultId || undefined}
-        gameType={actualGameSlug}
-        title={`${gameName || 'Teen'} Result Details`}
-        customGetFilteredBets={getFilteredBets}
-      /> */}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
+        title={`${gameName || "Teen"} Result Details`}
+        enableBetFiltering={true}
+      />
     </div>
   );
 };

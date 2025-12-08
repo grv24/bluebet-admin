@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { RiLockFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
-// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 const ThirtyTwoCardBComponent: React.FC<{
@@ -19,13 +18,25 @@ const ThirtyTwoCardBComponent: React.FC<{
   gameSlug,
 }) => {
   const navigate = useNavigate();
+  
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
 
-  // Convert gameSlug to actual game slug format if needed
+  // Convert gameSlug to actual game slug format if needed (for display)
   const actualGameSlug = React.useMemo(() => {
     if (gameSlug) {
       return gameSlug.toLowerCase().replace(/[^a-z0-9]/g, "");
     }
     return "card32"; // Default fallback
+  }, [gameSlug]);
+
+  // Keep original gameSlug for API calls (e.g., "CARD_32")
+  const apiGameType = React.useMemo(() => {
+    if (gameSlug) {
+      return gameSlug; // Use original gameSlug for API
+    }
+    return "CARD_32"; // Default fallback
   }, [gameSlug]);
 
   // Handle both new API format (casinoData?.data?.sub) and legacy format (casinoData?.data?.data?.data?.t2)
@@ -422,6 +433,18 @@ const ThirtyTwoCardBComponent: React.FC<{
 
     return book[playerName] || 0;
   };
+
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || null;
+    
+    if (matchId) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-1">
       {/* first row */}
@@ -691,42 +714,51 @@ const ThirtyTwoCardBComponent: React.FC<{
             Last Result
           </h2>
           <h2
-            onClick={() => navigate(`/casino-result?game=${gameSlug}`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${gameSlug || "CARD32EU"}`)}
             className="text-sm font-normal leading-8 text-white cursor-pointer hover:text-gray-200"
           >
             View All
           </h2>
         </div>
         <div className="flex justify-end items-center mb-2 gap-1 mx-2">
-          {results?.slice(0, 10).map((item: any, index: number) => (
-            <h2
-              key={index}
-              className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${item.win === "1" ? "text-red-500" : "text-yellow-400"}`}
-              title="View details"
-            >
-              {item.win == "1"
-                ? "8"
-                : item.win == "2"
-                  ? "9"
-                  : item.win == "3"
-                    ? "10"
-                    : item.win == "4"
-                      ? "11"
-                      : "NA"}
-            </h2>
-          ))}
+          {results?.slice(0, 10).map((item: any, index: number) => {
+            const matchId = item?.mid || item?.result?.mid || item?.roundId;
+            return (
+              <h2
+                key={item?.mid || item?.roundId || index}
+                className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${item.win === "1" ? "text-red-500" : "text-yellow-400"} ${
+                  matchId ? "cursor-pointer hover:scale-110 transition-transform" : ""
+                }`}
+                title={`${matchId ? "Click to view details" : "View details"}`}
+                onClick={() => matchId && handleResultClick(item)}
+              >
+                {item.win == "1"
+                  ? "8"
+                  : item.win == "2"
+                    ? "9"
+                    : item.win == "3"
+                      ? "10"
+                      : item.win == "4"
+                        ? "11"
+                        : "NA"}
+              </h2>
+            );
+          })}
         </div>
       </div>
 
       {/* Individual Result Details Modal */}
-      {/* <IndividualResultModal
-        isOpen={resultModal.isOpen}
-        onClose={resultModal.closeModal}
-        resultId={resultModal.selectedResultId || undefined}
-        gameType={actualGameSlug}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
         title={`${gameName || "32 Card B"} Result Details`}
-        customGetFilteredBets={getFilteredBets}
-      /> */}
+        enableBetFiltering={true}
+      />
     </div>
   );
 };

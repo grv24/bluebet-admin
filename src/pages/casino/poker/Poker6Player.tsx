@@ -322,7 +322,7 @@ const Poker6PlayerComponent: React.FC<Poker6PlayerProps> = (_props) => {
             Last Result
           </h2>
           <h2
-            onClick={() => navigate(`/casino-result?game=POKER_9`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${gameCode || gameSlug || "POKER_9"}`)}
             className="text-sm font-normal leading-8 text-white hover:text-gray-200"
           >
             View All

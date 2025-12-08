@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { RiLockFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 interface Baccarat29Props {
@@ -21,10 +21,19 @@ const Baccarat29Component: React.FC<Baccarat29Props> = ({
 }) => {
   const navigate = useNavigate();
 
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
   // Normalize gameCode to lowercase format (e.g., "TEENS_IN" -> "teensin")
   const normalizedGameType = useMemo(() => {
     if (!gameCode) return "teensin"; // Default fallback for Baccarat29
     return gameCode.toLowerCase().replace(/_/g, "");
+  }, [gameCode]);
+
+  // Keep original gameCode for API calls (e.g., "TEENS_IN")
+  const apiGameType = useMemo(() => {
+    return gameCode || "TEENS_IN";
   }, [gameCode]);
 
   // Get odds data from sub array
@@ -176,13 +185,16 @@ const Baccarat29Component: React.FC<Baccarat29Props> = ({
     );
   };
 
-  // Close modal
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedResult(null);
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
   };
-
-
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -282,22 +294,12 @@ const Baccarat29Component: React.FC<Baccarat29Props> = ({
         />
         <div className="flex items-center relative">
           <h2
-            className={`min-w-20 bg-[var(--bg-back)] text-black text-center font-semibold leading-10 cursor-pointer relative `}
-            onClick={() =>
-              !isSuspended(lucky9) &&
-              lucky9?.sid &&
-              onBetClick(lucky9.sid.toString(), "back")
-            }
+            className={`min-w-20 bg-[var(--bg-back)] text-black text-center font-semibold leading-10 relative `}
           >
             {formatOdds(lucky9?.b)}
           </h2>
           <h2
-            className={`min-w-20 bg-[var(--bg-lay)] text-black text-center font-semibold leading-10 cursor-pointer relative `}
-            onClick={() =>
-              !isSuspended(lucky9) &&
-              lucky9?.sid &&
-              onBetClick(lucky9.sid.toString(), "lay")
-            }
+            className={`min-w-20 bg-[var(--bg-lay)] text-black text-center font-semibold leading-10 relative `}
           >
             {formatOdds(lucky9?.l)}
           </h2>
@@ -315,7 +317,7 @@ const Baccarat29Component: React.FC<Baccarat29Props> = ({
             Last Result
           </h2>
           <h2
-            onClick={() => navigate(`/casino-result?game=${gameCode || "TEENS_IN"}`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${gameCode || "TEENS_IN"}`)}
             className="text-sm font-normal leading-8 text-white cursor-pointer hover:underline"
           >
             View All
@@ -325,11 +327,29 @@ const Baccarat29Component: React.FC<Baccarat29Props> = ({
           {Array.isArray(results) && results.length > 0 ? (
             results.slice(0, 10).map((item: any, index: number) => {
               const display = getResultDisplay(item.win);
+              const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
               return (
                 <div
                   key={item.mid || `result-${item.win}-${index}`}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${display.color}`}
-                  title={`Round ID: ${item.mid || "N/A"} - ${display.title}`}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${display.color} ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                  }`}
+                  title={`${display.title}${matchId ? " - Click to view details" : ""}`}
+                  onClick={(e) => {
+                    if (matchId) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={matchId ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (matchId && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleResultClick(item);
+                    }
+                  }}
                 >
                   {display.label}
                 </div>
@@ -343,14 +363,17 @@ const Baccarat29Component: React.FC<Baccarat29Props> = ({
         </div>
       </div>
       {/* Individual Result Details Modal */}
-      {/* <IndividualResultModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        resultId={selectedResult?.mid}
-        gameType={normalizedGameType}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
         title={`${gameName || "Baccarat 29"} Result Details`}
         enableBetFiltering={true}
-      /> */}
+      />
     </div>
   );
 };

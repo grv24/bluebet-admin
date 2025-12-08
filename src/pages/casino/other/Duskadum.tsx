@@ -7,8 +7,7 @@ import {
   getBlackShapes,
 } from "../../../utils/card";
 import { useNavigate } from "react-router-dom";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
-// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 interface DuskadumProps {
@@ -24,20 +23,30 @@ const DuskadumComponent: React.FC<DuskadumProps> = ({
   remainingTime,
   results = [],
   gameCode,
+  gameName,
 }) => {
   const navigate = useNavigate();
-  // const resultModal = useIndividualResultModal();
   const [cardScrollIndex, setCardScrollIndex] = useState(0);
 
-  // Convert gameCode to gameSlug if gameCode is provided
-  // gameCode format: "DUM_10" -> gameSlug format: "dum10"
-  const actualGameSlug = React.useMemo(() => {
-    if (gameCode) {
-      // Convert "DUM_10" to "dum10"
-      return gameCode.toLowerCase().replace(/_/g, "");
-    }
-    return "dum10"; // Default fallback
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Keep original gameCode for API calls (e.g., "DUM_10")
+  const apiGameType = React.useMemo(() => {
+    return gameCode || "DUM_10";
   }, [gameCode]);
+
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
+  };
 
   // Get odds data from sub array
   // Handle both API format (data.sub) and socket format (data.current.sub)
@@ -347,7 +356,7 @@ const DuskadumComponent: React.FC<DuskadumProps> = ({
             Last Result
           </h2>
           <button
-            onClick={() => navigate(`/casino-result?game=DUM_10`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${apiGameType}`)}
             className="text-xs text-white hover:underline"
           >
             View All
@@ -357,11 +366,29 @@ const DuskadumComponent: React.FC<DuskadumProps> = ({
           {Array.isArray(results) && results.length > 0 ? (
             results.slice(0, 10).map((item: any, index: number) => {
               const resultDisplay = getResultDisplay(item.win || "");
+              const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
               return (
                 <div
                   key={item.mid || `result-${item.win}-${index}`}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} `}
-                  title={`Round ID: ${item.mid || "N/A"} - ${resultDisplay.title} - Click to view details`}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                  }`}
+                  title={`Round ID: ${item.mid || "N/A"} - ${resultDisplay.title}${matchId ? " - Click to view details" : ""}`}
+                  onClick={(e) => {
+                    if (matchId) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={matchId ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (matchId && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleResultClick(item);
+                    }
+                  }}
                 >
                   {resultDisplay.label}
                 </div>
@@ -375,7 +402,19 @@ const DuskadumComponent: React.FC<DuskadumProps> = ({
         </div>
       </div>
 
-      {/* Individual Result Details Modal - Using centralized component */}</div>
+      {/* Individual Result Details Modal */}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
+        title={`${gameName || "Dus Ka Dum"} Result Details`}
+        enableBetFiltering={true}
+      />
+    </div>
   );
 };
 

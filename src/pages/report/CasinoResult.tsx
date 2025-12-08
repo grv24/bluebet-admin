@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useCookies } from "react-cookie";
+import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import useCasinoGames from "@/hooks/useCasinoGames";
 import { SERVER_URL } from "@/helper/auth";
@@ -63,6 +64,7 @@ const fetchCasinoHistory = async (
 const CasinoResult = () => {
   const [cookies] = useCookies(["Admin", "TechAdmin", "token"]);
   const { data: casinoGamesData } = useCasinoGames();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [date, setDate] = useState("");
   const [casino, setCasino] = useState("All");
   const [pageSize, setPageSize] = useState(25);
@@ -76,6 +78,24 @@ const CasinoResult = () => {
 
   // Get token from cookies
   const token = cookies.Admin || cookies.TechAdmin || cookies.token;
+
+  // Read game parameter from URL and auto-select casino
+  useEffect(() => {
+    const gameParam = searchParams.get("game");
+    if (gameParam && casinoGamesData?.data && casino !== gameParam) {
+      // Check if the game exists in the casino games list
+      const gameExists = casinoGamesData.data.some(
+        (casinoGame: any) => casinoGame.casinoGameCode === gameParam && casinoGame.isActive === true
+      );
+      
+      if (gameExists) {
+        setCasino(gameParam);
+        setPage(1); // Reset to first page
+        setShouldFetch(true);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, casinoGamesData]);
 
   // Fetch casino history data
   const { data: historyResponse, isLoading, error, refetch } = useQuery({

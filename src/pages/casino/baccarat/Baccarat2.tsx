@@ -2,7 +2,7 @@ import { cardImage, getCardByCode } from "../../../utils/card";
 import React, { useState, useMemo } from "react";
 import { RiLockFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 interface Baccarat2Props {
@@ -24,6 +24,10 @@ const Baccarat2Component: React.FC<Baccarat2Props> = ({
 }) => {
   const navigate = useNavigate();
 
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
   // Normalize gameSlug/gameCode to lowercase format (e.g., "BACCARAT2" -> "baccarat2")
   // Use gameCode as fallback if gameSlug is not provided
   const normalizedGameType = useMemo(() => {
@@ -31,6 +35,11 @@ const Baccarat2Component: React.FC<Baccarat2Props> = ({
     if (!gameType) return "baccarat2"; // Default fallback for Baccarat2
     return gameType.toLowerCase().replace(/_/g, "");
   }, [gameSlug, gameCode]);
+
+  // Keep original gameCode/gameSlug for API calls (e.g., "BACCARAT2")
+  const apiGameType = useMemo(() => {
+    return gameCode || gameSlug || "BACCARAT2";
+  }, [gameCode, gameSlug]);
 
   // Extract data for cards and odds
   const t1 = casinoData?.data?.data?.t1 || [];
@@ -74,7 +83,16 @@ const Baccarat2Component: React.FC<Baccarat2Props> = ({
     return getCardByCode(cardCode, "baccarat2") || cardImage.back;
   };
 
-
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item - socket results have mid directly
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
+  };
 
   return (
     <div className="flex mt-1 flex-col gap-1">
@@ -410,8 +428,8 @@ const Baccarat2Component: React.FC<Baccarat2Props> = ({
             Last Result
           </h2>
           <h2
-            onClick={() => navigate(`/casino-result?game=${gameSlug || gameCode || "baccarat2"}`)}
-            className="text-sm font-normal leading-8 text-white"
+            onClick={() => navigate(`/reports/casino-result-report?game=${gameCode || gameSlug || "BACCARAT2"}`)}
+            className="text-sm font-normal leading-8 text-white cursor-pointer hover:text-gray-200"
           >
             View All
           </h2>
@@ -434,13 +452,32 @@ const Baccarat2Component: React.FC<Baccarat2Props> = ({
                   resultText = "T";
                 }
 
+                const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
                 return (
-                  <h2
-                    key={index}
-                    className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor}`}
+                  <div
+                    key={item?.mid || item?.roundId || index}
+                    className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor} ${
+                      matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                    }`}
+                    title={`${resultText}${matchId ? " - Click to view details" : ""}`}
+                    onClick={(e) => {
+                      if (matchId) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleResultClick(item);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={matchId ? 0 : undefined}
+                    onKeyDown={(e) => {
+                      if (matchId && (e.key === "Enter" || e.key === " ")) {
+                        e.preventDefault();
+                        handleResultClick(item);
+                      }
+                    }}
                   >
                     {resultText}
-                  </h2>
+                  </div>
                 );
               })
             : // Fallback to old data structure if results prop is not available
@@ -462,26 +499,49 @@ const Baccarat2Component: React.FC<Baccarat2Props> = ({
                     resultText = "T";
                   }
 
+                  const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
                   return (
-                    <h2
-                      key={index}
-                      className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor}`}
+                    <div
+                      key={item?.mid || item?.roundId || index}
+                      className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor} ${
+                        matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                      }`}
+                      title={`${resultText}${matchId ? " - Click to view details" : ""}`}
+                      onClick={(e) => {
+                        if (matchId) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleResultClick(item);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={matchId ? 0 : undefined}
+                      onKeyDown={(e) => {
+                        if (matchId && (e.key === "Enter" || e.key === " ")) {
+                          e.preventDefault();
+                          handleResultClick(item);
+                        }
+                      }}
                     >
                       {resultText}
-                    </h2>
+                    </div>
                   );
                 })}
         </div>
       </div>
 
       {/* Individual Result Details Modal */}
-      {/* <IndividualResultModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        resultId={selectedResult?.mid}
-        gameType={normalizedGameType}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
         title={`${gameName || "Baccarat 2"} Result Details`}
-      /> */}
+        enableBetFiltering={true}
+      />
     </div>
   );
 };

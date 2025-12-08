@@ -1,16 +1,35 @@
-import React from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { cardImage, getNumberCard } from "../../../utils/card";
-  import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
+import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 const AndarBahar50Component = ({
   casinoData,
   remainingTime,
   results,
+  gameSlug,
+  gameCode,
+  gameName,
 }: {
   casinoData: any;
   remainingTime: number;
   results: any;
+  gameSlug?: string;
+  gameCode?: string;
+  gameName?: string;
 }) => {
+  const navigate = useNavigate();
+  
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Use gameCode or gameSlug for API calls (default to "AB_3")
+  const apiGameType = React.useMemo(() => {
+    return gameCode || gameSlug || "AB_3";
+  }, [gameCode, gameSlug]);
+
   const cardSequence =
     casinoData?.data?.card || casinoData?.data?.data?.data?.card || "";
 
@@ -137,6 +156,17 @@ const AndarBahar50Component = ({
   const getCardOrder = (rank: string) => {
     const index = cardOrder.indexOf(rank);
     return index >= 0 ? index : 99; // Put unknown cards at the end
+  };
+
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || null;
+    
+    if (matchId) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
   };
 
 
@@ -281,13 +311,19 @@ const AndarBahar50Component = ({
           <h2 className="text-sm font-normal leading-8 text-white">
             Last Result
           </h2>
-          <h2 className="text-sm font-normal leading-8 text-white">View All</h2>
+          <h2
+            onClick={() => navigate(`/reports/casino-result-report?game=${gameCode || gameSlug || "AB_3"}`)}
+            className="text-sm font-normal leading-8 text-white cursor-pointer hover:text-gray-200"
+          >
+            View All
+          </h2>
         </div>
         <div className="flex justify-end items-center mb-2 gap-1 mx-2">
           {results && Array.isArray(results)
             ? results.slice(0, 10).map((item: any, index: number) => {
                 // Parse the result to determine Andar/Bahar and card
                 const resultValue = item?.win || item?.result || "?";
+                const matchId = item?.mid || item?.result?.mid || item?.roundId;
 
                 // Map result to display text
                 let displayText = "?";
@@ -306,11 +342,14 @@ const AndarBahar50Component = ({
 
                 return (
                   <h2
-                    key={index}
-                    className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor}`}
-                    title={`Result: ${resultValue}`}
+                    key={item?.mid || item?.roundId || index}
+                    className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor} ${
+                      matchId ? "cursor-pointer hover:scale-110 transition-transform" : ""
+                    }`}
+                    title={`Result: ${resultValue}${matchId ? " - Click to view details" : ""}`}
+                    onClick={() => matchId && handleResultClick(item)}
                   >
-                    {displayText}
+                  R
                   </h2>
                 );
               })
@@ -318,8 +357,18 @@ const AndarBahar50Component = ({
         </div>
       </div>
 
-    
-
+      {/* Individual Result Details Modal */}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
+        title={`${gameName || "Andar Bahar 50"} Result Details`}
+        enableBetFiltering={true}
+      />
     </div>
   );
 };

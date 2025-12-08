@@ -2,8 +2,8 @@ import React from "react";
 import { RiLockFill } from "react-icons/ri";
 import { getCardByCode } from "../../../utils/card";
 import { useNavigate } from "react-router-dom";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
-// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import { useState } from "react";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 interface TeenMufProps {
@@ -26,15 +26,14 @@ const TeenMufComponent: React.FC<TeenMufProps> = ({
   currentBet,
 }) => {
   const navigate = useNavigate();
-  // const resultModal = useIndividualResultModal();
 
-  // Convert gameSlug to actual game slug format if needed
-  // gameSlug might be "teenmuf" or "TEEN_MUF", normalize it
-  const actualGameSlug = React.useMemo(() => {
-    if (gameSlug) {
-      return gameSlug.toLowerCase().replace(/[^a-z0-9]/g, "");
-    }
-    return "teenmuf"; // Default fallback
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Keep original gameSlug/gameCode for API calls (e.g., "TEEN_MUF")
+  const apiGameType = React.useMemo(() => {
+    return gameSlug || "TEEN_MUF";
   }, [gameSlug]);
 
   // Function to parse cards from API response
@@ -135,20 +134,14 @@ const TeenMufComponent: React.FC<TeenMufProps> = ({
   /**
    * Handle clicking on individual result to show details
    */
-  const handleResultClick = (result: any) => {
-    const resultId = result?.mid || result?.roundId || result?.id || result?.matchId;
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.roundId || item?.id || item?.matchId || item?.result?.mid;
     
-    if (!resultId) {
-      console.error("🎰 TeenMuf: No result ID found in result", result);
-      return;
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
     }
-    
-    if (!actualGameSlug) {
-      console.error("🎰 TeenMuf: No gameSlug available", { gameSlug, actualGameSlug });
-      return;
-    }
-    
-    // resultModal.openModal(String(resultId), result);
   };
 
   const isSuspended = (sid: string) => {
@@ -595,36 +588,58 @@ const TeenMufComponent: React.FC<TeenMufProps> = ({
             Last Result
           </h2>
           <h2
-            onClick={() => navigate(`/casino-result?game=TEEN_MUF`)}
-            className="text-sm font-normal leading-8 text-white"
+            onClick={() => navigate(`/reports/casino-result-report?game=${apiGameType}`)}
+            className="text-sm font-normal leading-8 text-white cursor-pointer hover:text-gray-200"
           >
             View All
           </h2>
         </div>
         <div className="flex justify-end items-center mb-2 gap-2 mx-2">
           {Array.isArray(results) &&
-            results?.map((item: any, index: number) => (
-              <h2
-                key={index}
-                className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${item.win === "1" ? "text-red-500" : "text-yellow-500"} cursor-pointer hover:scale-110 transition-transform`}
-                onClick={() => handleResultClick(item)}
-                title="Click to view details"
-              >
-                {item.win === "1" ? "A" : "B"}
-              </h2>
-            ))}
+            results?.map((item: any, index: number) => {
+              const matchId = item?.mid || item?.roundId || item?.id || item?.matchId || item?.result?.mid;
+              return (
+                <div
+                  key={item?.mid || index}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${item.win === "1" ? "text-red-500" : "text-yellow-500"} ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                  }`}
+                  title={`${item.win === "1" ? "A" : "B"}${matchId ? " - Click to view details" : ""}`}
+                  onClick={(e) => {
+                    if (matchId) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={matchId ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (matchId && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleResultClick(item);
+                    }
+                  }}
+                >
+                  {item.win === "1" ? "A" : "B"}
+                </div>
+              );
+            })}
         </div>
       </div>
 
       {/* Individual Result Modal */}
-      {/* <IndividualResultModal
-        isOpen={resultModal.isOpen}
-        onClose={resultModal.closeModal}
-        resultId={resultModal.selectedResultId || undefined}
-        gameType={actualGameSlug}
-        title="Teen Muf Result"
-        customGetFilteredBets={getFilteredBets}
-      /> */}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
+        title={`${gameName || "Teen Muf"} Result Details`}
+        enableBetFiltering={true}
+      />
     </div>
   );
 };

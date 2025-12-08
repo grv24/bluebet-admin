@@ -1,17 +1,35 @@
-import React from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { cardImage, getNumberCard } from "../../../utils/card";
 import { RiLockFill } from "react-icons/ri";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 const AndarBahar150Component = ({
   casinoData,
   remainingTime,
   results,
+  gameSlug,
+  gameCode,
+  gameName,
 }: {
   casinoData: any;
   remainingTime: number;
   results: any;
+  gameSlug?: string;
+  gameCode?: string;
+  gameName?: string;
 }) => {
+  const navigate = useNavigate();
+  
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Use gameCode or gameSlug for API calls (default to "AB_4")
+  const apiGameType = React.useMemo(() => {
+    return gameCode || gameSlug || "AB_4";
+  }, [gameCode, gameSlug]);
 
   // Debug logging for AndarBahar150 component
   console.log("🎰 AndarBahar150 component debug:", {
@@ -52,7 +70,7 @@ const AndarBahar150Component = ({
     "Q",
     "K",
   ];
-  
+
   // Create a map of existing odds by nat name for quick lookup
   const oddsMap = new Map<string, any>();
   oddsDataRaw.forEach((item: any) => {
@@ -63,7 +81,7 @@ const AndarBahar150Component = ({
 
   // Generate complete odds data structure for all cards
   const oddsData: any[] = [];
-  
+
   // Generate Andar odds (sid: 1-13)
   cardRanksList.forEach((rank, index) => {
     const nat = `Andar ${rank}`;
@@ -93,7 +111,7 @@ const AndarBahar150Component = ({
       }
     );
   });
-  
+
   // Also include any other odds that don't match the standard pattern
   oddsDataRaw.forEach((item: any) => {
     if (
@@ -104,7 +122,6 @@ const AndarBahar150Component = ({
       oddsData.push(item);
     }
   });
-
 
   // Calculate next card side (Andar or Bahar) based on next card count
   // Extract next card count from sub array
@@ -163,6 +180,16 @@ const AndarBahar150Component = ({
     return index >= 0 ? index : 99; // Put unknown cards at the end
   };
 
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || null;
+    
+    if (matchId) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
+  };
 
   return (
     <div className="flex flex-col mt-1">
@@ -188,7 +215,7 @@ const AndarBahar150Component = ({
             </div>
           )}
           <div className="flex justify-center">
-          <div className="grid grid-cols-8 place-content-center justify-center lg:grid-cols-13 gap-2 p-2">
+            <div className="grid grid-cols-8 place-content-center justify-center lg:grid-cols-13 gap-2 p-2">
               {oddsData
                 ?.filter((item: any) => item?.nat?.includes("Andar"))
                 ?.sort((a: any, b: any) => {
@@ -209,17 +236,20 @@ const AndarBahar150Component = ({
                   const backRate = Number(item?.b || 0);
                   const layRate = Number(item?.l || 0);
                   const isSideLocked = nextCardSide !== "Andar";
-                  
+
                   // For unlocked side: show back odds if available, otherwise lay odds
                   // For locked side: show lay odds
-                  const displayRate = isSideLocked 
+                  const displayRate = isSideLocked
                     ? layRate
-                    : (backRate > 0 ? backRate : layRate);
-                  
+                    : backRate > 0
+                      ? backRate
+                      : layRate;
+
                   // Get the open "Card X" item from oddsDataRaw (not oddsData, since oddsData filters out Card X items)
                   const openCardItem = oddsDataRaw.find(
                     (cardItem: any) =>
-                      cardItem?.nat?.startsWith("Card ") && cardItem?.gstatus === "OPEN"
+                      cardItem?.nat?.startsWith("Card ") &&
+                      cardItem?.gstatus === "OPEN"
                   );
 
                   return (
@@ -297,19 +327,22 @@ const AndarBahar150Component = ({
                   const backRate = Number(item?.b || 0);
                   const layRate = Number(item?.l || 0);
                   const isSideLocked = nextCardSide !== "Bahar";
-                  
+
                   // For unlocked side: show back odds if available, otherwise lay odds
                   // For locked side: show lay odds
-                  const displayRate = isSideLocked 
+                  const displayRate = isSideLocked
                     ? layRate
-                    : (backRate > 0 ? backRate : layRate);
-                  
+                    : backRate > 0
+                      ? backRate
+                      : layRate;
+
                   // Get the open "Card X" item from oddsDataRaw (not oddsData, since oddsData filters out Card X items)
                   const openCardItem = oddsDataRaw.find(
                     (cardItem: any) =>
-                      cardItem?.nat?.startsWith("Card ") && cardItem?.gstatus === "OPEN"
+                      cardItem?.nat?.startsWith("Card ") &&
+                      cardItem?.gstatus === "OPEN"
                   );
-                  
+
                   return (
                     <div
                       key={item.sid}
@@ -348,13 +381,23 @@ const AndarBahar150Component = ({
           <h2 className="text-sm font-normal leading-8 text-white">
             Last Result
           </h2>
-          <h2 className="text-sm font-normal leading-8 text-white">View All</h2>
+          <h2
+            onClick={() =>
+              navigate(
+                `/reports/casino-result-report?game=${gameCode || gameSlug || "AB_4"}`
+              )
+            }
+            className="text-sm font-normal leading-8 text-white cursor-pointer hover:text-gray-200"
+          >
+            View All
+          </h2>
         </div>
         <div className="flex justify-end items-center mb-2 gap-1 mx-2">
           {results && Array.isArray(results)
             ? results.slice(0, 10).map((item: any, index: number) => {
                 // Parse the result to determine Andar/Bahar and card
                 const resultValue = item?.win || item?.result || "?";
+                const matchId = item?.mid || item?.result?.mid || item?.roundId;
 
                 // Map result to display text
                 let displayText = "?";
@@ -373,11 +416,14 @@ const AndarBahar150Component = ({
 
                 return (
                   <h2
-                    key={index}
-                    className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor}`}
-                    title={`Result: ${resultValue}`}
+                    key={item?.mid || item?.roundId || index}
+                    className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${textColor} ${
+                      matchId ? "cursor-pointer hover:scale-110 transition-transform" : ""
+                    }`}
+                    title={`Result: ${resultValue}${matchId ? " - Click to view details" : ""}`}
+                    onClick={() => matchId && handleResultClick(item)}
                   >
-                    {displayText}
+                  R
                   </h2>
                 );
               })
@@ -385,7 +431,18 @@ const AndarBahar150Component = ({
         </div>
       </div>
 
- 
+      {/* Individual Result Details Modal */}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
+        title={`${gameName || "Andar Bahar 150"} Result Details`}
+        enableBetFiltering={true}
+      />
     </div>
   );
 };

@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { RiLockFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
-// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 interface TrioProps {
@@ -21,16 +20,26 @@ const TrioComponent: React.FC<TrioProps> = ({
   gameName,
 }) => {
   const navigate = useNavigate();
-  // const resultModal = useIndividualResultModal();
 
-  // Get game slug from gameCode and normalize it
-  const gameSlug = gameCode || "";
-  const actualGameSlug = React.useMemo(() => {
-    if (gameSlug) {
-      return gameSlug.toLowerCase().replace(/[^a-z0-9]/g, "");
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Keep original gameCode for API calls (e.g., "TRIO")
+  const apiGameType = React.useMemo(() => {
+    return gameCode || "TRIO";
+  }, [gameCode]);
+
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
     }
-    return "trio"; // Default fallback
-  }, [gameSlug]);
+  };
 
   // Get odds data from sub array
   // Handle both API format (data.sub) and socket format (data.current.sub)
@@ -204,7 +213,7 @@ const TrioComponent: React.FC<TrioProps> = ({
             Last Result
           </h2>
           <button
-            onClick={() => navigate(`/casino-result?game=${gameSlug}`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${apiGameType}`)}
             className="text-xs text-white hover:underline"
           >
             View All
@@ -214,11 +223,29 @@ const TrioComponent: React.FC<TrioProps> = ({
           {Array.isArray(results) && results.length > 0 ? (
             results.slice(0, 10).map((item: any, index: number) => {
               const resultDisplay = getResultDisplay(item.win || "");
+              const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
               return (
                 <div
                   key={item.mid || `result-${item.win}-${index}`}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} `}
-                  title={`Round ID: ${item.mid || "N/A"} - ${resultDisplay.title} - Click to view details`}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                  }`}
+                  title={`Round ID: ${item.mid || "N/A"} - ${resultDisplay.title}${matchId ? " - Click to view details" : ""}`}
+                  onClick={(e) => {
+                    if (matchId) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={matchId ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (matchId && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleResultClick(item);
+                    }
+                  }}
                 >
                   {resultDisplay.label}
                 </div>
@@ -231,6 +258,19 @@ const TrioComponent: React.FC<TrioProps> = ({
           )}
         </div>
       </div>
+
+      {/* Individual Result Details Modal */}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
+        title={`${gameName || "Trio"} Result Details`}
+        enableBetFiltering={true}
+      />
     </div>
   );
 };

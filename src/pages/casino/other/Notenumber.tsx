@@ -1,9 +1,8 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { RiLockFill } from "react-icons/ri";
 import { numberCards, shapeColors, individualCards, cardImage, getCardByCode } from "../../../utils/card";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
-// import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 
@@ -38,19 +37,29 @@ const NotenumberComponent: React.FC<NotenumberProps> = ({
   remainingTime,
   results = [],
   gameCode,
+  gameName,
 }) => {
   const navigate = useNavigate();
-  // const resultModal = useIndividualResultModal();
 
-  // Convert gameCode to gameSlug if gameCode is provided
-  // gameCode format: "NOTE_NUM" -> gameSlug format: "note_num"
-  const actualGameSlug = React.useMemo(() => {
-    if (gameCode) {
-      // Convert "NOTE_NUM" to "note_num"
-      return gameCode.toLowerCase();
-    }
-    return "note_num"; // Default fallback
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Keep original gameCode for API calls (e.g., "NOTE_NUM")
+  const apiGameType = React.useMemo(() => {
+    return gameCode || "NOTE_NUM";
   }, [gameCode]);
+
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
+  };
 
 
   // Get odds data from sub array (API format) or current.sub (socket format)
@@ -565,7 +574,7 @@ const NotenumberComponent: React.FC<NotenumberProps> = ({
               Last Result
             </h2>
             <button
-              onClick={() => navigate(`/casino-result?game=${gameCode || "NOTE_NUM"}`)}
+              onClick={() => navigate(`/reports/casino-result-report?game=${apiGameType}`)}
               className="text-xs text-white hover:underline"
             >
               View All
@@ -574,11 +583,29 @@ const NotenumberComponent: React.FC<NotenumberProps> = ({
           <div className="flex justify-end items-center mb-2 gap-2 mx-2 flex-wrap">
             {results.slice(0, 10).map((item: any, index: number) => {
               const resultDisplay = getResultDisplay(item.win || "");
+              const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
               return (
                 <div
                   key={item.mid || `result-${item.win}-${index}`}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold text-yellow-500 `}
-                  title={`Round ID: ${item.mid || "N/A"} - ${resultDisplay.title}`}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold text-yellow-500 ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                  }`}
+                  title={`Round ID: ${item.mid || "N/A"} - ${resultDisplay.title}${matchId ? " - Click to view details" : ""}`}
+                  onClick={(e) => {
+                    if (matchId) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={matchId ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (matchId && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleResultClick(item);
+                    }
+                  }}
                 >
                   R
                 </div>
@@ -588,7 +615,19 @@ const NotenumberComponent: React.FC<NotenumberProps> = ({
         </div>
       {/* )} */}
 
-      {/* Individual Result Modal */}</div>
+      {/* Individual Result Details Modal */}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
+        title={`${gameName || "Note Number"} Result Details`}
+        enableBetFiltering={true}
+      />
+    </div>
   );
 };
 

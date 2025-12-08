@@ -8,8 +8,7 @@ import {
   } from "../../../utils/card";
   import React, { useState } from "react";
   import { RiLockFill } from "react-icons/ri";
-  // import IndividualResultModal from "@/components/casino/IndividualResultModal";
-  // import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+  import IndividualResultModal from "@/components/modals/IndividualResultModal";
   import { useNavigate } from "react-router-dom";
   import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
   
@@ -18,6 +17,7 @@ import {
     remainingTime,
     results,
     gameSlug,
+    gameCode,
     gameName,
   }: any) => {
     const navigate = useNavigate();
@@ -25,34 +25,15 @@ import {
     const t2: any[] =
       casinoData?.data?.sub || casinoData?.data?.data?.data?.t2 || [];
     const [activeTab, setActiveTab] = useState(1);
-  
-    // Normalize game slug to match what CasinoMatchDetailsDisplay expects
-    const normalizedGameSlug = React.useMemo(() => {
-      if (!gameSlug) return "war";
-      
-      const slugLower = gameSlug.toLowerCase();
-      
-      // Map specific slugs to expected game types
-      const slugMap: { [key: string]: string } = {
-        "casino_war": "war",
-        "casinowar": "war",
-        "war": "war",
-      };
-  
-      // Check exact match first
-      if (slugMap[slugLower]) {
-        return slugMap[slugLower];
-      }
-      
-      // Check normalized version (without underscores)
-      const normalized = slugLower.replace(/_/g, "");
-      if (slugMap[normalized]) {
-        return slugMap[normalized];
-      }
-  
-      // Return normalized version as fallback
-      return normalized || "war";
-    }, [gameSlug]);
+
+    // Modal state for individual result details
+    const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+    const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+    // Keep original gameCode/gameSlug for API calls (e.g., "CASINO_WAR")
+    const apiGameType = React.useMemo(() => {
+      return gameCode || gameSlug || "CASINO_WAR";
+    }, [gameCode, gameSlug]);
   
   
     // Debug logging for War component
@@ -84,6 +65,17 @@ import {
         (x) =>
           String(x?.nat || x?.nation || "").toLowerCase() === nat.toLowerCase()
       );
+
+    // Handle result click to open modal
+    const handleResultClick = (item: any) => {
+      // Extract matchId from result item
+      const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+      
+      if (matchId && apiGameType) {
+        setSelectedResultId(String(matchId));
+        setIsResultModalOpen(true);
+      }
+    };
   
     const renderRow = (baseLabel: string) => (
       <tr className="w-full border border-gray-300">
@@ -359,7 +351,7 @@ import {
               Last Result
             </h2>
             <h2
-              onClick={() => navigate(`/casino-result?game=CASINO_WAR`)}
+              onClick={() => navigate(`/reports/casino-result-report?game=${gameCode || gameSlug || "CASINO_WAR"}`)}
               className="text-sm font-normal leading-8 text-white cursor-pointer hover:text-gray-200"
             >
               View All
@@ -390,28 +382,49 @@ import {
                 textColor = "text-red-500";
               }
   
+              const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
               return (
-                <h2
-                  key={index}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold text-yellow-400`}
-                  title={`Result: ${item.result}`}
+                <div
+                  key={item?.mid || item?.roundId || index}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold text-yellow-400 ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                  }`}
+                  title={`Result: ${item.result}${matchId ? " - Click to view details" : ""}`}
+                  onClick={(e) => {
+                    if (matchId) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={matchId ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (matchId && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleResultClick(item);
+                    }
+                  }}
                 >
                   {"R"}
-                </h2>
+                </div>
               );
             })}
-          </div>
         </div>
+      </div>
   
-        {/* Individual Result Details Modal */}
-        {/* <IndividualResultModal
-          isOpen={resultModal.isOpen}
-          onClose={resultModal.closeModal}
-          resultId={resultModal.selectedResultId || undefined}
-          gameType={normalizedGameSlug}
-          title={`${gameName || "Casino War"} Result Details`}
-          customGetFilteredBets={getFilteredBets}
-        /> */}
+      {/* Individual Result Details Modal */}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
+        title={`${gameName || "Casino War"} Result Details`}
+        enableBetFiltering={true}
+      />
       </div>
     );
   };

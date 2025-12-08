@@ -2,7 +2,7 @@ import { cardType, getCardByCode } from "../../../utils/card";
 import React, { useState } from "react";
 import { RiLockFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { memoizeCasinoComponent } from "../../../utils/casinoMemo";
 
 
@@ -23,19 +23,15 @@ const Teen20bComponent = ({
   gameName: string;
   currentBet: any;
 }) => {
-  const [selectedResult, setSelectedResult] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Normalize gameSlug to ensure it's in the correct format for the API
-  // Convert "TEEN_20_B" -> "teen20b" or use provided gameSlug
-  const normalizedGameType = React.useMemo(() => {
-    if (gameSlug) {
-      // Convert to lowercase and remove underscores
-      return gameSlug.toLowerCase().replace(/_/g, "");
-    }
-    // Default fallback for Teen20b
-    return "teen20b";
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Keep original gameSlug/gameCode for API calls (e.g., "TEEN_20_B")
+  const apiGameType = React.useMemo(() => {
+    return gameSlug || "TEEN_20_B";
   }, [gameSlug]);
 
   // Check if this is teen20c format (has 'sub' array) or teen20 format (has 't2' array)
@@ -67,22 +63,15 @@ const Teen20bComponent = ({
   };
 
 
-  /**
-   * Handle clicking on individual result to show details
-   */
-  const handleResultClick = (result: any) => {
-    if (!result?.mid) return;
-
-    setSelectedResult(result);
-    setIsModalOpen(true);
-  };
-
-  /**
-   * Close the result details modal
-   */
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedResult(null);
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
   };
 
   // Custom bet handling for teen20/teen20c
@@ -678,7 +667,7 @@ const Teen20bComponent = ({
             Last Result
           </h2>
           <h2
-            onClick={() => navigate(`/casino-result?game=${gameSlug}`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${apiGameType}`)}
             className="text-sm font-normal leading-8 text-white cursor-pointer hover:text-gray-200"
           >
             View All
@@ -696,30 +685,49 @@ const Teen20bComponent = ({
               }
 
               const isA = String(resultValue) === "1"; // 1 => A, 2 => B
+              const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
               return (
-                <h2
-                  key={index}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${isA ? "text-red-500" : "text-yellow-500"} cursor-pointer hover:scale-110 transition-transform`}
-                  onClick={() => handleResultClick(item)}
-                  title="Click to view details"
+                <div
+                  key={item?.mid || index}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${isA ? "text-red-500" : "text-yellow-500"} ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                  }`}
+                  title={`${isA ? "A" : "B"}${matchId ? " - Click to view details" : ""}`}
+                  onClick={(e) => {
+                    if (matchId) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={matchId ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (matchId && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleResultClick(item);
+                    }
+                  }}
                 >
                   {isA ? "A" : "B"}
-                </h2>
+                </div>
               );
             })}
         </div>
       </div>
 
       {/* Individual Result Details Modal */}
-      {/* <IndividualResultModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        resultId={selectedResult?.mid}
-        gameType={normalizedGameType}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
         title={`${gameName || "Teen 20B"} Result Details`}
         enableBetFiltering={true}
-        customGetFilteredBets={getFilteredBets}
-      /> */}
+      />
     </div>
   );
 };

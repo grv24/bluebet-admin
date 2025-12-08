@@ -173,7 +173,7 @@ const OddEvenBox = ({
   );
 };
 
-const ResultSection = ({ results, onClick, navigate }: any) => {
+const ResultSection = ({ results, onClick, navigate, apiGameType }: any) => {
   const shown = Array.isArray(results) ? results.slice(0, 10) : [];
 
   return (
@@ -183,7 +183,7 @@ const ResultSection = ({ results, onClick, navigate }: any) => {
           Last Result
         </h2>
         <h2
-          onClick={() => navigate(`/casino-result?game=TEEN_6`)}
+          onClick={() => navigate(`/reports/casino-result-report?game=${apiGameType}`)}
           className="text-sm font-normal leading-8 text-white cursor-pointer hover:underline"
         >
           View All
@@ -194,13 +194,31 @@ const ResultSection = ({ results, onClick, navigate }: any) => {
         {shown.length > 0 ? (
           shown.map((item: any, idx: number) => {
             const isA = item.win === "1" || item.win === "A";
+            const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
             return (
               <div
                 key={item.mid ?? idx}
                 className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${
                   isA ? "text-red-500" : "text-yellow-500"
-                } cursor-pointer hover:scale-110 transition-transform`}
-                onClick={() => onClick(item)}
+                } ${
+                  matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                }`}
+                title={`${isA ? "A" : "B"}${matchId ? " - Click to view details" : ""}`}
+                onClick={(e) => {
+                  if (matchId) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onClick(item);
+                  }
+                }}
+                role="button"
+                tabIndex={matchId ? 0 : undefined}
+                onKeyDown={(e) => {
+                  if (matchId && (e.key === "Enter" || e.key === " ")) {
+                    e.preventDefault();
+                    onClick(item);
+                  }
+                }}
               >
                 {isA ? "A" : "B"}
               </div>
@@ -223,7 +241,7 @@ const LockOverlay = () => (
 import React, { useMemo, useState } from "react";
 import { RiLockFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-// import IndividualResultModal from "@/components/casino/IndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 
 import CCImage from "../../../assets/card/shapes/CC.webp";
 import SSImage from "../../../assets/card/shapes/SS.webp";
@@ -253,15 +271,26 @@ const Teenpatti2OComponent: React.FC<Teenpatti2OProps> = ({
   currentBet,
 }) => {
   const navigate = useNavigate();
-  const [modalData, setModalData] = useState<any>(null);
-  const [showModal, setShowModal] = useState(false);
 
-  /* ------------------- NORMALIZE GAME TYPE ------------------- */
-  // Normalize gameCode to lowercase format (e.g., "TEEN_6" -> "teen6")
-  const normalizedGameType = useMemo(() => {
-    if (!gameCode) return undefined;
-    return gameCode.toLowerCase().replace(/_/g, "");
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  // Keep original gameCode for API calls (e.g., "TEEN_6")
+  const apiGameType = useMemo(() => {
+    return gameCode || "TEEN_6";
   }, [gameCode]);
+
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
+  };
 
   /* ------------------- SAFE SUB ARRAY ACCESS ------------------- */
   const subArray = useMemo(() => {
@@ -393,11 +422,6 @@ const Teenpatti2OComponent: React.FC<Teenpatti2OProps> = ({
     return isRowLocked(cardOddsItem);
   };
 
-  /* ------------------- OPEN MODAL ------------------- */
-  const openModal = (data: any) => {
-    setModalData(data);
-    setShowModal(true);
-  };
 
   /* ===========================================================
      =======================    UI    ===========================
@@ -579,17 +603,23 @@ const Teenpatti2OComponent: React.FC<Teenpatti2OProps> = ({
       {/* ================= RESULTS ================= */}
       <ResultSection
         results={results}
-        onClick={(r: any) => openModal(r)}
+        onClick={handleResultClick}
         navigate={navigate}
+        apiGameType={apiGameType}
       />
 
-      {/* ================= MODAL ================= */}
-      {/* <IndividualResultModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        resultId={modalData?.mid}
-        gameType={normalizedGameType}
-      /> */}
+      {/* Individual Result Details Modal */}
+      <IndividualResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
+        title={`${gameName || "Teenpatti 2O"} Result Details`}
+        enableBetFiltering={true}
+      />
     </div>
   );
 };

@@ -1,8 +1,7 @@
-import React, { useMemo, useContext } from "react";
+import React, { useMemo, useContext, useState } from "react";
 import { PlaceBetUseContext } from "@/context/placebet";
 import { useNavigate } from "react-router-dom";
-import IndividualResultModal from "@/components/casino/IndividualResultModal";
-import { useIndividualResultModal } from "@/hooks/useIndividualResultModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 import { RiLockFill } from "react-icons/ri";
 import { memoizeCasinoComponent } from "@/utils/casinoMemo";
 
@@ -37,7 +36,10 @@ const CasinoMeter1Component: React.FC<CasinoMeter1Props> = ({
   const navigate = useNavigate();
   const placeBetContext = useContext(PlaceBetUseContext);
   const { setPlaceBet, setBetData, setLatestBetData } = placeBetContext || {};
-  const resultModal = useIndividualResultModal();
+
+  // Modal state for individual result details
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
 
   // Get odds data from sub array (API format) or current.sub (socket format)
   const oddsData = useMemo(() => {
@@ -121,17 +123,21 @@ const CasinoMeter1Component: React.FC<CasinoMeter1Props> = ({
     setPlaceBet(true);
   };
 
-  // Normalize game slug for IndividualResultModal
-  const normalizedGameSlug = React.useMemo(() => {
-    if (gameCode) {
-      const lowerCaseSlug = gameCode.toLowerCase();
-      if (lowerCaseSlug === "casino_meter_1" || lowerCaseSlug === "casinometer1") {
-        return "cmeter1";
-      }
-      return lowerCaseSlug.replace(/[^a-z0-9]/g, "");
-    }
-    return "cmeter1"; // Default fallback
+  // Keep original gameCode for API calls (e.g., "CASINO_METER_1")
+  const apiGameType = React.useMemo(() => {
+    return gameCode || "CASINO_METER_1";
   }, [gameCode]);
+
+  // Handle result click to open modal
+  const handleResultClick = (item: any) => {
+    // Extract matchId from result item
+    const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
+    
+    if (matchId && apiGameType) {
+      setSelectedResultId(String(matchId));
+      setIsResultModalOpen(true);
+    }
+  };
 
 
   // Map win value to display info
@@ -261,7 +267,7 @@ const CasinoMeter1Component: React.FC<CasinoMeter1Props> = ({
             Last Result
           </h2>
           <button
-            onClick={() => navigate(`/casino-result?game=CASINO_METER_1`)}
+            onClick={() => navigate(`/reports/casino-result-report?game=${apiGameType}`)}
             className="text-xs text-white hover:underline"
           >
             View All
@@ -271,11 +277,29 @@ const CasinoMeter1Component: React.FC<CasinoMeter1Props> = ({
           {results && results.length > 0 ? (
             results.slice(0, 10).map((item: any, index: number) => {
               const resultDisplay = getResultDisplay(item.win || "");
+              const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
               return (
                 <div
                   key={item.mid || `result-${item.win}-${index}`}
-                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} `}
-                  title={`Round ID: ${item.mid || "N/A"} - ${resultDisplay.title}`}
+                  className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-xs font-semibold ${resultDisplay.color} ${
+                    matchId ? "cursor-pointer hover:scale-110 transition-transform select-none" : ""
+                  }`}
+                  title={`Round ID: ${item.mid || "N/A"} - ${resultDisplay.title}${matchId ? " - Click to view details" : ""}`}
+                  onClick={(e) => {
+                    if (matchId) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={matchId ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (matchId && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleResultClick(item);
+                    }
+                  }}
                 >
                   {resultDisplay.label}
                 </div>
@@ -289,9 +313,13 @@ const CasinoMeter1Component: React.FC<CasinoMeter1Props> = ({
 
       {/* Individual Result Details Modal */}
       <IndividualResultModal
-        isOpen={resultModal.isOpen}
-        onClose={resultModal.closeModal}
-        gameType={normalizedGameSlug}
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResultId(null);
+        }}
+        resultId={selectedResultId}
+        gameType={apiGameType}
         title={`${gameName || "1 Card Meter"} Result Details`}
         enableBetFiltering={true}
       />
