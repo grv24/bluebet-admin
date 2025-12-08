@@ -28,13 +28,14 @@ const casinoColumns = [
 
 interface BetData {
   eventType: string;
-    eventName: string;
-    userName: string;
+  eventName: string;
+  userName: string;
   mName: string;
   nation: string;
   userRate: string;
   amount: string;
   placeDate: string;
+  betType?: string;
 }
 
 interface CurrentBetResponse {
@@ -342,8 +343,20 @@ const CurrentBet = () => {
                 </td>
               </tr>
               ) : (
-                paginatedData.map((bet: BetData, index: number) => (
-                  <tr key={`${bet.eventName}-${index}`} className={`text-xs ${index % 2 === 0 ? "bg-white" : "bg-[#f9f9f9]"}`}>
+                paginatedData.map((bet: BetData, index: number) => {
+                  // Determine background color based on betType
+                  const getRowBackground = () => {
+                    if (bet.betType?.toLowerCase() === "back") {
+                      return "bg-[var(--bg-back)]/60";
+                    } else if (bet.betType?.toLowerCase() === "lay") {
+                      return "bg-[var(--bg-lay)]/60";
+                    }
+                    // Default alternating colors
+                    return index % 2 === 0 ? "bg-white" : "bg-[#f9f9f9]";
+                  };
+
+                  return (
+                  <tr key={`${bet.eventName}-${index}`} className={`text-xs ${getRowBackground()}`}>
                     {tab === "sports" ? (
                       <>
                         <td className="py-2 px-2 border text-nowrap border-[#e0e0e0]">{bet.eventType || "-"}</td>
@@ -366,7 +379,8 @@ const CurrentBet = () => {
                       </>
                     )}
                   </tr>
-                ))
+                );
+              })
               )}
             </tbody>
           </table>

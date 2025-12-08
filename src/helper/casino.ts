@@ -190,3 +190,22 @@ export const getCasinoUserMatchBets = async (
   );
 };
 
+// Fetch individual casino result details
+export const getCasinoIndividualResult = async (
+  resultId: string | undefined,
+  cookies: any,
+  gameType: string
+): Promise<any> => {
+  if (!resultId || !gameType) {
+    throw new Error("resultId and gameType are required");
+  }
+  
+  return apiRequest(
+    `/api/v1/casinos/match-details?matchId=${resultId}&casinoType=${gameType}`,
+    cookies,
+    {
+      method: "GET",
+    }
+  );
+};
+

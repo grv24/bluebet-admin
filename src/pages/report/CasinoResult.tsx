@@ -4,7 +4,7 @@ import { useCookies } from "react-cookie";
 import toast from "react-hot-toast";
 import useCasinoGames from "@/hooks/useCasinoGames";
 import { SERVER_URL } from "@/helper/auth";
-import CasinoMatchDetailsModal from "@/components/modals/CasinoMatchDetailsModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 
 const pageSizeOptions = [25, 50, 100];
 
@@ -72,8 +72,7 @@ const CasinoResult = () => {
 
   // Modal states
   const [isCasinoModalOpen, setIsCasinoModalOpen] = useState(false);
-  const [casinoMatchData, setCasinoMatchData] = useState<any>(null);
-  const [selectedCasinoType, setSelectedCasinoType] = useState<string>("");
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
 
   // Get token from cookies
   const token = cookies.Admin || cookies.TechAdmin || cookies.token;
@@ -113,39 +112,10 @@ const CasinoResult = () => {
   };
 
   // Handle row click to show casino match details
-  const handleRowClick = async (item: CasinoHistoryItem) => {
-    try {
-      const matchId = item.result.mid;
-      const casinoType = casino; // Use the currently selected casino
-
-      const response = await fetch(
-        `${SERVER_URL}/api/v1/casinos/match-details?matchId=${matchId}&casinoType=${casinoType}`,
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch match details');
-      }
-
-      const data = await response.json();
-      console.log('Casino Match Details:', data);
-      
-      // Open casino modal
-      setCasinoMatchData(data);
-      setSelectedCasinoType(casinoType);
-      setIsCasinoModalOpen(true);
-      toast.success('Casino match details loaded');
-      
-    } catch (error) {
-      console.error('Error fetching match details:', error);
-      toast.error('Failed to load match details');
-    }
+  const handleRowClick = (item: CasinoHistoryItem) => {
+    const matchId = item.result.mid;
+    setSelectedResultId(String(matchId));
+    setIsCasinoModalOpen(true);
   };
 
   // Handle error display
@@ -236,20 +206,229 @@ const CasinoResult = () => {
               </td>
             </tr>
             ) : (
-              filteredData.map((item, index) => (
-                <tr 
-                  key={item.roundId || index}
-                  className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"} cursor-pointer hover:bg-blue-50`}
-                  onClick={() => handleRowClick(item)}
-                >
-                  <td className="py-1 px-2 text-sm border border-[#e0e0e0]">
-                    {item.roundId}
-                  </td>
-                  <td className="py-1 px-2 text-sm border border-[#e0e0e0]">
-                    {item.winner}
-                  </td>
-                </tr>
-              ))
+              filteredData.map((item, index) => {
+                // Render winner based on casino type
+                const renderWinner = () => {
+                  switch (casino) {
+                    case "TEEN_20_B":
+                    case "TEEN_3":
+                    case "TEENS_IN":
+                      return (
+                        <span className={`inline-flex items-center justify-center w-fit h-6 text-xs font-normal`}>
+                          {item.result?.win === "1" ? "Player A" : "Player B"}
+                        </span>
+                      );
+                    case "TRIO":
+                      return (
+                        <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-normal`}>
+                          Win
+                        </span>
+                      );
+                    case "TEEN_1":
+                      return (
+                        <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-normal`}>
+                          {item.result?.win === "1"
+                            ? "Player"
+                            : item.result?.win === "2"
+                              ? "Dealer"
+                              : "Tie"}
+                        </span>
+                      );
+                    case "NOTE_NUM":
+                      return (
+                        <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-normal`}>
+                          Won
+                        </span>
+                      );
+                    case "lucky6":
+                    case "lucky5":
+                      return (
+                        <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-normal`}>
+                          {item.winner === "1" ? "L" : item.winner === "2" ? "H" : "T"}
+                        </span>
+                      );
+                    case "LUCKY7EU":
+                      return (
+                        <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-normal`}>
+                          {item.winner === "1" ? "L" : item.winner === "2" ? "H" : "T"}
+                        </span>
+                      );
+                    case "LUCKY15":
+                      return (
+                        <span className={`inline-flex items-center justify-center w-fit h-6 text-xs font-normal`}>
+                          {item.winner === "1"
+                            ? "0 Run"
+                            : item.winner === "2"
+                              ? "1 Run"
+                              : item.winner === "3"
+                                ? "2 Run"
+                                : item.winner === "4"
+                                  ? "4 Run"
+                                  : item.winner === "5"
+                                    ? "6 Run"
+                                    : item.winner === "6"
+                                      ? "Wicket"
+                                      : "N/A"}
+                        </span>
+                      );
+                    case "AB_3":
+                    case "AB_20":
+                      return (
+                        <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-normal`}>
+                          Win
+                        </span>
+                      );
+                    case "AAA":
+                      return (
+                        <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-normal`}>
+                          {item.winner === "1"
+                            ? "Amar"
+                            : item.winner === "2"
+                              ? "Akbar"
+                              : item.winner === "3"
+                                ? "Anthony"
+                                : "N/A"}
+                        </span>
+                      );
+                    case "dt6":
+                      return (
+                        <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-normal`}>
+                          {item.winner == "1" ? "D" : item.winner == "2" ? "T" : "N"}
+                        </span>
+                      );
+                    case "DT_20_2":
+                      return (
+                        <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-normal`}>
+                          {item?.winner === "1" ? "D" : item?.winner === "2" ? "T" : "N"}
+                        </span>
+                      );
+                    case "CARD32EU":
+                      return (
+                        <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-normal`}>
+                          {item?.winner === "1"
+                            ? "8"
+                            : item?.winner === "2"
+                              ? "9"
+                              : item?.winner === "3"
+                                ? "10"
+                                : item?.winner === "4"
+                                  ? "11"
+                                  : "N"}
+                        </span>
+                      );
+                    case "BACCARAT2":
+                      return (
+                        <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-normal`}>
+                          {item?.winner === "1"
+                            ? "P"
+                            : item?.winner === "2"
+                              ? "B"
+                              : item?.winner === "3"
+                                ? "T"
+                                : "N"}
+                        </span>
+                      );
+                    case "TEEN_20":
+                    case "TEEN_20_C":
+                      return (
+                        <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-normal`}>
+                          {item.result?.win === "1" ? "A" : "B"}
+                        </span>
+                      );
+                    case "POKER_20":
+                      return (
+                        <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-normal`}>
+                          {item.result?.win === "11" ? "A" : "B"}
+                        </span>
+                      );
+                    case "ABJ":
+                      return (
+                        <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-normal`}>
+                          {item.winner == "1" || item?.winner == "1"
+                            ? "A"
+                            : item.winner === "2" || item?.winner === "2"
+                              ? "B"
+                              : "N"}
+                        </span>
+                      );
+                    case "TEEN_9":
+                      return (
+                        <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-normal`}>
+                          {item?.winner === "1"
+                            ? "T"
+                            : item?.winner === "2"
+                              ? "L"
+                              : item?.winner === "3"
+                                ? "D"
+                                : "N"}
+                        </span>
+                      );
+                    case "TEEN_8":
+                      return (
+                        <span className={`inline-flex items-center justify-center w-20 h-6 text-xs font-normal`}>
+                          {(() => {
+                            const win = item?.winner;
+                            return win;
+                          })()}
+                        </span>
+                      );
+                    case "CASINO_WAR":
+                      return (
+                        <span className={`inline-flex items-center justify-center w-20 h-6 text-xs font-normal`}>
+                          {(() => {
+                            const win = item?.winner;
+                            return win;
+                          })()}
+                        </span>
+                      );
+                    case "TEEN_MUF":
+                      return (
+                        <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-normal`}>
+                          {item?.winner === "1" ? "A" : item?.winner === "2" ? "B" : "N"}
+                        </span>
+                      );
+                    case "BOLLYWOOD_TABLE":
+                      return (
+                        <span className={`inline-flex items-center justify-center w-fit h-6 text-xs font-normal`}>
+                          {item?.winner == "2"
+                            ? "Amar Akbar Anthony"
+                            : item?.winner == "3"
+                              ? "Sahib Bibi Aur Ghulam"
+                              : item?.winner == "4"
+                                ? "Dharam Veer"
+                                : item?.winner == "5"
+                                  ? "Kis Kis ko Pyaar Karoon"
+                                  : item?.winner == "6"
+                                    ? "Ghulam"
+                                    : item?.winner}
+                        </span>
+                      );
+                    case "DRAGON_TIGER_20":
+                      return (
+                        <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-normal`}>
+                          {item?.winner === "1" ? "D" : item?.winner === "2" ? "T" : "N"}
+                        </span>
+                      );
+                    default:
+                      return item.winner;
+                  }
+                };
+
+                return (
+                  <tr 
+                    key={item.roundId || index}
+                    className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"} cursor-pointer hover:bg-blue-50`}
+                    onClick={() => handleRowClick(item)}
+                  >
+                    <td className="py-1 px-2 w-60 text-sm border border-[#e0e0e0]">
+                      {item.roundId}
+                    </td>
+                    <td className="py-1 px-4 text-sm border border-[#e0e0e0]">
+                      {renderWinner()}
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
@@ -283,15 +462,16 @@ const CasinoResult = () => {
       </div>
 
       {/* Casino Match Details Modal */}
-      <CasinoMatchDetailsModal
+      <IndividualResultModal
         isOpen={isCasinoModalOpen}
         onClose={() => {
           setIsCasinoModalOpen(false);
-          setCasinoMatchData(null);
-          setSelectedCasinoType("");
+          setSelectedResultId(null);
         }}
-        matchData={casinoMatchData}
-        casinoType={selectedCasinoType}
+        resultId={selectedResultId}
+        gameType={casino !== "All" ? casino : undefined}
+        title="Casino Result Details"
+        enableBetFiltering={true}
       />
     </div>
   );

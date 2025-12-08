@@ -10,7 +10,7 @@ import { getAccountStatementWithFilters } from "@/helper/account_statement";
 import { SERVER_URL } from "@/helper/auth";
 import useCasinoGames from "@/hooks/useCasinoGames";
 import SportMatchDetailsModal from "@/components/modals/SportMatchDetailsModal";
-import CasinoMatchDetailsModal from "@/components/modals/CasinoMatchDetailsModal";
+import IndividualResultModal from "@/components/modals/IndividualResultModal";
 
 const accountTypes = [
   "All",
@@ -71,7 +71,7 @@ const Statement = () => {
   const [isSportModalOpen, setIsSportModalOpen] = useState(false);
   const [isCasinoModalOpen, setIsCasinoModalOpen] = useState(false);
   const [sportMatchData, setSportMatchData] = useState<any>(null);
-  const [casinoMatchData, setCasinoMatchData] = useState<any>(null);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
   const [selectedCasinoType, setSelectedCasinoType] = useState<string>("");
 
   // Get dynamic game names based on account type
@@ -120,25 +120,10 @@ const Statement = () => {
     }
 
     try {
-      let response;
-      
-      if (transactionDetails.type === 'casino') {
-        // Casino API call
-        const { matchId, casinoType } = transactionDetails;
-        response = await fetch(
-          `${SERVER_URL}/api/v1/casinos/match-details?matchId=${matchId}&casinoType=${casinoType}`,
-          {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-      } else if (transactionDetails.type === 'sport') {
-        // Sport API call
+      if (transactionDetails.type === 'sport') {
+        // Sport API call - still needed for SportMatchDetailsModal
         const { betId } = transactionDetails;
-        response = await fetch(
+        const response = await fetch(
           `${SERVER_URL}/api/v1/sports/match-details/${betId}`,
           {
             method: 'GET',
@@ -148,28 +133,24 @@ const Statement = () => {
             },
           }
         );
-      }
 
-      if (!response || !response.ok) {
-        throw new Error('Failed to fetch match details');
-      }
-
-      const data = await response.json();
-        console.log(`${transactionDetails.type.toUpperCase()} Match Details:`, data);
-        
-        if (transactionDetails.type === 'sport') {
-          // Open sport modal
-          setSportMatchData(data);
-          setIsSportModalOpen(true);
-          toast.success('Sport match details loaded');
-        } else if (transactionDetails.type === 'casino') {
-          // Open casino modal
-          setCasinoMatchData(data);
-          setSelectedCasinoType(transactionDetails.casinoType || '');
-          setIsCasinoModalOpen(true);
-          toast.success('Casino match details loaded');
+        if (!response || !response.ok) {
+          throw new Error('Failed to fetch sport match details');
         }
-      
+
+        const data = await response.json();
+        console.log('SPORT Match Details:', data);
+        setSportMatchData(data);
+        setIsSportModalOpen(true);
+        toast.success('Sport match details loaded');
+      } else if (transactionDetails.type === 'casino') {
+        // Casino modal - IndividualResultModal will fetch data itself
+        const { matchId, casinoType } = transactionDetails;
+        setSelectedResultId(String(matchId));
+        setSelectedCasinoType(casinoType || '');
+        setIsCasinoModalOpen(true);
+        toast.success('Casino match details loading...');
+      }
     } catch (error) {
       console.error('Error fetching match details:', error);
       toast.error('Failed to load match details');
@@ -724,15 +705,18 @@ const Statement = () => {
       />
 
       {/* Casino Match Details Modal */}
-      <CasinoMatchDetailsModal
+      <IndividualResultModal
         isOpen={isCasinoModalOpen}
         onClose={() => {
           setIsCasinoModalOpen(false);
-          setCasinoMatchData(null);
+          setSelectedResultId(null);
           setSelectedCasinoType("");
         }}
-        matchData={casinoMatchData}
-        casinoType={selectedCasinoType}
+        resultId={selectedResultId}
+        gameType={selectedCasinoType || undefined}
+        title="Casino Match Details"
+        enableBetFiltering={true}
+        showUserName={true}
       />
     </div>
   );
