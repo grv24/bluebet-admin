@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { FaFilePdf, FaFileExcel } from "react-icons/fa6";
-import toast from "react-hot-toast";
+// import toast from "react-hot-toast";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
@@ -142,18 +142,18 @@ const Statement = () => {
         console.log('SPORT Match Details:', data);
         setSportMatchData(data);
         setIsSportModalOpen(true);
-        toast.success('Sport match details loaded');
+        // toast.success('Sport match details loaded');
       } else if (transactionDetails.type === 'casino') {
         // Casino modal - IndividualResultModal will fetch data itself
         const { matchId, casinoType } = transactionDetails;
         setSelectedResultId(String(matchId));
         setSelectedCasinoType(casinoType || '');
         setIsCasinoModalOpen(true);
-        toast.success('Casino match details loading...');
+        // toast.success('Casino match details loading...');
       }
     } catch (error) {
       console.error('Error fetching match details:', error);
-      toast.error('Failed to load match details');
+      // toast.error('Failed to load match details');
     }
   };
 
@@ -276,10 +276,10 @@ const Statement = () => {
       console.log("💾 Saving PDF with filename:", fileName);
       doc.save(fileName);
       
-      toast.success('PDF exported successfully!');
+      // toast.success('PDF exported successfully!');
     } catch (error: any) {
       console.error('❌ PDF export error:', error);
-      toast.error(`Failed to export PDF: ${error?.message || 'Unknown error'}`);
+      // toast.error(`Failed to export PDF: ${error?.message || 'Unknown error'}`);
     }
   };
 
@@ -327,10 +327,10 @@ const Statement = () => {
       const fileName = `Account_Statement_${new Date().toISOString().split('T')[0]}.xlsx`;
       XLSX.writeFile(workbook, fileName);
       
-      toast.success('Excel file exported successfully!');
+      // toast.success('Excel file exported successfully!');
     } catch (error: any) {
       console.error('Excel export error:', error);
-      toast.error(`Failed to export Excel file: ${error?.message || 'Unknown error'}`);
+      // toast.error(`Failed to export Excel file: ${error?.message || 'Unknown error'}`);
     }
   };
 
