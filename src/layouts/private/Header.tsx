@@ -411,9 +411,9 @@ const Header: React.FC = () => {
           href: "/reports/account-statement",
         },
         { name: "Current Bets", id: "current-bets", href: "/reports/current-bets" },
-        { name: "General Report", id: "general-report", href: "/reports/general-report" },
-        { name: "Game Report", id: "game-report", href: "/reports/game-report" },
-        { name: "Casino Report", id: "casino-report", href: "/reports/casino-report" },
+        // { name: "General Report", id: "general-report", href: "/reports/general-report" },
+        // { name: "Game Report", id: "game-report", href: "/reports/game-report" },
+        // { name: "Casino Report", id: "casino-report", href: "/reports/casino-report" },
         { name: "Profit And Loss", id: "profit-and-loss", href: "/reports/profit-and-loss" },
         {
           name: "Casino Result Report",
