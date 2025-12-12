@@ -677,7 +677,7 @@ const AddClient: React.FC = () => {
           // Reset login ID check state manually since we don't use useEffect
           resetState();
         } else {
-          toast.error(response.message || "Failed to create account");
+          toast.error(response.error || response.message || "Failed to create account");
         }
       } catch (error) {
         console.error("Error creating account:", error);
