@@ -234,6 +234,8 @@ const AddClient: React.FC = () => {
     watch,
     setValue,
     reset,
+    trigger,
+    getValues,
     formState: { errors },
   } = useForm<FormData>({
     defaultValues: {
@@ -798,6 +800,12 @@ const AddClient: React.FC = () => {
                     {...register("password", {
                       required: "Password is required",
                       validate: (v) => isStrongPassword(v) || passwordRule,
+                      onChange: () => {
+                        // Trigger retypePassword validation when password changes
+                        if (watchedValues.retypePassword) {
+                          trigger("retypePassword");
+                        }
+                      },
                     })}
                     className="w-full border border-gray-300 rounded px-3 py-2 pr-10 text-xs mb-2"
                     placeholder="User Password"
@@ -828,10 +836,16 @@ const AddClient: React.FC = () => {
                     type={showRetypePassword ? "text" : "password"}
                     {...register("retypePassword", {
                       required: "Please retype password",
-                      validate: (v) =>
-                        v === password ? true : "Passwords do not match",
+                      validate: (v) => {
+                        const currentPassword = getValues("password");
+                        return v === currentPassword ? true : "Passwords do not match";
+                      },
                     })}
-                    className="w-full border border-gray-300 rounded px-3 py-2 pr-10 text-xs mb-2"
+                    className={`w-full border rounded px-3 py-2 pr-10 text-xs mb-2 ${
+                      errors.retypePassword
+                        ? "border-red-500"
+                        : "border-gray-300"
+                    }`}
                     placeholder="Retype Password"
                   />
                   <button
@@ -850,6 +864,19 @@ const AddClient: React.FC = () => {
                     )}
                   </button>
                 </div>
+                {errors.retypePassword && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {errors.retypePassword.message}
+                  </p>
+                )}
+                {watchedValues.retypePassword &&
+                  watchedValues.password &&
+                  watchedValues.retypePassword !== watchedValues.password &&
+                  !errors.retypePassword && (
+                    <p className="text-xs text-red-500 mt-1">
+                      Passwords do not match
+                    </p>
+                  )}
               </div>
               <div className="md:col-span-2 text-[11px] text-gray-500 -mt-2">
                 {passwordRule}
