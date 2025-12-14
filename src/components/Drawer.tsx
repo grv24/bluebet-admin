@@ -156,7 +156,7 @@ const Drawer: React.FC<TopDrawerProps> = ({ items, groups, defaultOpen = false }
                   {col.map((m) => (
                     <div key={m.label} className="text-xs flex items-center justify-between">
                       <span className="opacity-90 whitespace-nowrap mr-2">{m.label}:</span>
-                      <span className={`font-medium ${typeof m.value === "number" && m.value < 0 ? "text-red-300" : "text-white"}`}>
+                      <span className={`font-medium`}>
                         {typeof m.value === "number" ? m.value.toLocaleString("en-IN") : m.value}
                       </span>
                     </div>

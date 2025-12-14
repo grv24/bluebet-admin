@@ -763,7 +763,7 @@ const ClientList: React.FC = () => {
           acc.creditRef += parseNumericValue(row.creditRef);
           acc.balance += parseNumericValue(row.balance);
           acc.clientPL += parseNumericValue(row.clientPL);
-          acc.availableBalance += parseNumericValue(row.availableBalance);
+          acc.availableBalance += parseNumericValue(row.balance);
           return acc;
         },
         {
