@@ -170,19 +170,19 @@ const Cricket: React.FC<CricketProps> = ({
   sportId,
   downlinesBets,
 }) => {
-  const [showMatchOdds, setShowMatchOdds] = useState<boolean>(false);
-  const [showBookmaker, setShowBookmaker] = useState<boolean>(false);
-  const [showNormalFancy, setShowNormalFancy] = useState<boolean>(false);
-  const [showOverByOver, setShowOverByOver] = useState<boolean>(false);
-  const [showBookSummary, setShowBookSummary] = useState<boolean>(false);
+  const [showMatchOdds, setShowMatchOdds] = useState<boolean>(true);
+  const [showBookmaker, setShowBookmaker] = useState<boolean>(true);
+  const [showNormalFancy, setShowNormalFancy] = useState<boolean>(true);
+  const [showOverByOver, setShowOverByOver] = useState<boolean>(true);
+  const [showBookSummary, setShowBookSummary] = useState<boolean>(true);
   const [showScoreCard, setShowScoreCard] = useState<boolean>(false);
   const [showMyBets, setShowMyBets] = useState<boolean>(false);
   const [activeBetTab, setActiveBetTab] = useState<'matched' | 'settled'>('matched');
-  const [showOddEven, setShowOddEven] = useState<boolean>(false);
+  const [showOddEven, setShowOddEven] = useState<boolean>(true);
   const [showTournamentWinner, setShowTournamentWinner] =
-    useState<boolean>(false);
-  const [showTiedMatch, setShowTiedMatch] = useState<boolean>(false);
-  const [showFancy1, setShowFancy1] = useState<boolean>(false);
+    useState<boolean>(true);
+  const [showTiedMatch, setShowTiedMatch] = useState<boolean>(true);
+  const [showFancy1, setShowFancy1] = useState<boolean>(true);
   const [showLiveMatch, setShowLiveMatch] = useState<boolean>(false);
   const [showUserBookModal, setShowUserBookModal] = useState<boolean>(false);
   const [showBetLockModal, setShowBetLockModal] = useState<boolean>(false);
@@ -1590,11 +1590,12 @@ const Cricket: React.FC<CricketProps> = ({
             Score Card
           </h2>
           <div
-            className={`bg-gray-100 border-gray-200 ${showScoreCard ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"}`}
+            className={`bg-black/89 border-gray-200 ${showScoreCard ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"}`}
           >
             <iframe
-              src={`https://apis.professorji.in/api/scorecard?eventId=${eventId}&sport=${sportId == "4" ? "cricket" : sportId == "1" ? "soccer" : "tennis"}`}
-              className="w-full h-full border-0"
+              // src={`https://apis.professorji.in/api/scorecard?eventId=${eventId}&sport=${sportId == "4" ? "cricket" : sportId == "1" ? "soccer" : "tennis"}`}
+              src={`https://bluebet9.com/public-iframe/scorecard?eventId=${eventId}&sportId=${sportId}`}
+              className="w-full md:h-38 h-44 border-0"
               title="Scoreboard"
               loading="lazy"
             />
@@ -1615,8 +1616,9 @@ const Cricket: React.FC<CricketProps> = ({
               className={`bg-gray-100 border-gray-200 ${showLiveMatch ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"}`}
             >
               <iframe
-                src={`https://apis.professorji.in/api/tv?eventId=${eventId}&sport=${sportId == "4" ? "cricket" : sportId == "1" ? "soccer" : "tennis"}`}
-                className="w-full h-full"
+                // src={`https://apis.professorji.in/api/tv?eventId=${eventId}&sport=${sportId == "4" ? "cricket" : sportId == "1" ? "soccer" : "tennis"}`}
+                src={`https://bluebet9.com/public-iframe/sport-tv?eventId=${eventId}&sportId=${sportId}`}
+                className="w-full md:h-68 h-44"
                 frameBorder="0"
                 allowFullScreen
                 title="Live Sport Stream"

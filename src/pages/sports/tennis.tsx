@@ -1058,11 +1058,12 @@ const Tennis: React.FC<TennisProps> = ({
             Score Card
           </h2>
           <div
-            className={`bg-gray-100 border-gray-200 ${showScoreCard ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"}`}
+            className={`bg-black/89 border-gray-200 ${showScoreCard ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"}`}
           >
             <iframe
-              src={`https://apis.professorji.in/api/scorecard?eventId=${eventId}&sport=${sportId == "4" ? "cricket" : sportId == "1" ? "soccer" : "tennis"}`}
-              className="w-full h-full border-0"
+              // src={`https://apis.professorji.in/api/scorecard?eventId=${eventId}&sport=${sportId == "4" ? "cricket" : sportId == "1" ? "soccer" : "tennis"}`}
+              src={`https://bluebet9.com/public-iframe/scorecard?eventId=${eventId}&sportId=${sportId}`}
+              className="w-full md:h-38 h-44 border-0"
               title="Scoreboard"
               loading="lazy"
             />
@@ -1082,8 +1083,9 @@ const Tennis: React.FC<TennisProps> = ({
               className={`bg-gray-100 border-gray-200 ${showLiveMatch ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"}`}
             >
               <iframe
-                src={`https://apis.professorji.in/api/tv?eventId=${eventId}&sport=${sportId == "4" ? "cricket" : sportId == "1" ? "soccer" : "tennis"}`}
-                className="w-full h-full"
+                // src={`https://apis.professorji.in/api/tv?eventId=${eventId}&sport=${sportId == "4" ? "cricket" : sportId == "1" ? "soccer" : "tennis"}`}
+                src={`https://bluebet9.com/public-iframe/sport-tv?eventId=${eventId}&sportId=${sportId}`}
+                className="w-full md:h-68 h-44"
                 frameBorder="0"
                 allowFullScreen
                 title="Live Sport Stream"
