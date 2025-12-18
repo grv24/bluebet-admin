@@ -22,6 +22,7 @@ import {
   PaymentGateway,
   SportDetail,
   CasinoGameDetail,
+  ChildAdmin,
 } from "@/pages";
 import type { Route } from "./types";
 import { Navigate } from "react-router-dom";
@@ -65,6 +66,15 @@ export const routes: Route[] = [
     private: true,
     title: `Clients | ${title}`,
     description: "Clients page",
+  },
+
+  {
+    path: "/clients/admin-child/:userId",
+    component: ChildAdmin,
+    layout: "private",
+    private: true,
+    title: `Child Admin | ${title}`,
+    description: "Child Admin page",
   },
 
   {

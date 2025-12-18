@@ -27,7 +27,7 @@ const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
 
   const userId = useMemo(() => {
     const id = decodedToken?.user?.PersonalDetails?.loginId || 
-               decodedToken?.user?.userId ||
+               decodedToken?.user?.userId || 
                "";
     console.log("🔌 PrivateLayout - User ID extraction:", {
       hasDecodedToken: !!decodedToken,

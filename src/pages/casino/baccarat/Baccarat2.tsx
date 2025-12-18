@@ -87,7 +87,7 @@ const Baccarat2Component: React.FC<Baccarat2Props> = ({
   const handleResultClick = (item: any) => {
     // Extract matchId from result item - socket results have mid directly
     const matchId = item?.mid || item?.result?.mid || item?.roundId || item?.id || item?.matchId;
-    
+
     if (matchId && apiGameType) {
       setSelectedResultId(String(matchId));
       setIsResultModalOpen(true);

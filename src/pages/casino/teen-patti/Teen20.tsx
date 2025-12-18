@@ -27,7 +27,7 @@ const Teen20Component = ({
 }) => {
   const [cookies] = useCookies(["clientToken"]);
   const navigate = useNavigate();
-  
+
   // Modal state for individual result details
   const [isResultModalOpen, setIsResultModalOpen] = useState(false);
   const [selectedResultId, setSelectedResultId] = useState<string | null>(null);

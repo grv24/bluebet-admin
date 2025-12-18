@@ -36,3 +36,5 @@ export const CasinoGameDetail = lazyWithErrorHandling(() => import("./casino/ind
 
 
 export const NotFound = lazyWithErrorHandling(() => import("./NotFound"));
+
+export const ChildAdmin = lazyWithErrorHandling(() => import("./client/child/index.tsx"));

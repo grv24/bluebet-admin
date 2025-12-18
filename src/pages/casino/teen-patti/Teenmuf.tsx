@@ -620,8 +620,8 @@ const TeenMufComponent: React.FC<TeenMufProps> = ({
                       handleResultClick(item);
                     }
                   }}
-                >
-                  {item.win === "1" ? "A" : "B"}
+              >
+                {item.win === "1" ? "A" : "B"}
                 </div>
               );
             })}

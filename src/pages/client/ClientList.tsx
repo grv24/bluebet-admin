@@ -35,7 +35,8 @@ const pageSizeOptions = [25, 50, 100];
  * Represents a single client's information with financial and account details
  */
 interface ClientRow {
-  userName: string;        // Client's username/display name
+  userName: string;        // Client's username/display name (loginId)
+  fullName: string;        // Client's full name (userName from API)
   creditRef: string;       // Credit reference number
   balance: number;         // Current account balance
   clientPL?: string;       // Client's profit/loss (optional)
@@ -584,6 +585,7 @@ const ClientList: React.FC = () => {
           user.PersonalDetails.loginId ||
           user.PersonalDetails.userName ||
           "N/A",
+        fullName: user.PersonalDetails.userName || user.PersonalDetails.loginId || "N/A",
         creditRef: creditRefNum ? creditRefNum.toLocaleString() : "0",
         balance,
         // Client P/L = Balance - Credit Reference
@@ -1387,7 +1389,19 @@ const ClientList: React.FC = () => {
                     className={`text-xs h-12 ${idx % 2 === 0 ? "bg-white" : "bg-[#0000000d]"}`}
                   >
                     <td className="pl-2 pr-2 py-2 align-middle border border-[#e0e0e0]">
-                      <span className="bg-[#444] text-white rounded leading-6 px-2 font-medium text-sm tracking-wider inline-block">
+                      <span 
+                        className={`bg-[#444] text-white rounded leading-6 px-2 font-medium text-sm tracking-wider inline-block ${
+                          row.accountType !== "User" 
+                            ? "cursor-pointer hover:bg-[#333] transition-colors" 
+                            : ""
+                        }`}
+                        onClick={() => {
+                          if (row.accountType !== "User") {
+                            navigate(`/clients/admin-child/${row._id}`);
+                          }
+                        }}
+                        title={row.fullName}
+                      >
                         {row.userName}
                       </span>
                     </td>

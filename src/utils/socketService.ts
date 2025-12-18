@@ -234,7 +234,7 @@ class SocketService {
               rooms.forEach((room) => {
                 // Use original casing if available, otherwise use lowercase
                 if (this.socket) {
-                  this.socket.emit('joinCasino', room);
+                this.socket.emit('joinCasino', room);
                 }
               });
             }

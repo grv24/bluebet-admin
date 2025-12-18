@@ -392,16 +392,16 @@ const AndarBahar2Component = ({
             ? results.slice(0, 10).map((item: any, index: number) => {
                 const matchId = item?.mid || item?.result?.mid || item?.roundId;
                 return (
-                  <h2
+                <h2
                     key={item?.mid || item?.roundId || index}
                     className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${item.win === "2" ? "text-red-500" : "text-yellow-400"} ${
                       matchId ? "cursor-pointer hover:scale-110 transition-transform" : ""
                     }`}
                     title={`${item.win === "1" ? "A" : "B"}${matchId ? " - Click to view details" : ""}`}
                     onClick={() => matchId && handleResultClick(item)}
-                  >
-                    {item.win === "1" ? "A" : "B"}
-                  </h2>
+                >
+                  {item.win === "1" ? "A" : "B"}
+                </h2>
                 );
               })
             : // Fallback to old data structure if results prop is not available
@@ -410,16 +410,16 @@ const AndarBahar2Component = ({
                 .map((item: any, index: number) => {
                   const matchId = item?.mid || item?.result?.mid || item?.roundId;
                   return (
-                    <h2
+                  <h2
                       key={item?.mid || item?.roundId || index}
                       className={`h-7 w-7 bg-[var(--bg-casino-result)] rounded-full border border-gray-300 flex justify-center items-center text-sm font-semibold ${item.win === "1" ? "text-red-500" : "text-yellow-400"} ${
                         matchId ? "cursor-pointer hover:scale-110 transition-transform" : ""
                       }`}
                       title={`${item.win === "1" ? "A" : "B"}${matchId ? " - Click to view details" : ""}`}
                       onClick={() => matchId && handleResultClick(item)}
-                    >
-                      {item.win === "1" ? "A" : "B"}
-                    </h2>
+                  >
+                    {item.win === "1" ? "A" : "B"}
+                  </h2>
                   );
                 })}
         </div>
