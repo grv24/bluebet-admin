@@ -457,7 +457,7 @@ const ChildAdmin: React.FC = () => {
 
   return (
     <div className="p-4 bg-[#fafafa] min-h-screen min-w-fit">
-      <div className="flex flex-wrap items-center justify-between mb-2 gap-2">
+      {/* <div className="flex flex-wrap items-center justify-between mb-2 gap-2">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate(-1)}
@@ -468,7 +468,7 @@ const ChildAdmin: React.FC = () => {
           </button>
           <h2 className="m-0 text-lg font-normal">Downline Account List</h2>
         </div>
-      </div>
+      </div> */}
 
       <div className="flex items-center gap-6 mb-3 border-b border-gray-200">
         <button
