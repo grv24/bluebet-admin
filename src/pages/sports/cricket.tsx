@@ -1649,7 +1649,7 @@ const Cricket: React.FC<CricketProps> = ({
             Book Summary
           </h2>
           <div
-            className={`bg-gray-100 border-gray-200 ${showBookSummary ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"}`}
+            className={`bg-gray-100 border-gray-200 overflow-hidden transition-all duration-300 ${showBookSummary ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"}`}
           >
             <h2 className="text-sm font-normal leading-6 tracking-tight text-gray-500 px-2">
               No data found
@@ -1671,7 +1671,7 @@ const Cricket: React.FC<CricketProps> = ({
             Score Card
           </h2>
           <div
-            className={`bg-black/89 border-gray-200 ${showScoreCard ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"}`}
+            className={`bg-black/89 border-gray-200 overflow-hidden transition-all duration-300 ${showScoreCard ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0 pointer-events-none"}`}
           >
             <iframe
               // src={`https://apis.professorji.in/api/scorecard?eventId=${eventId}&sport=${sportId == "4" ? "cricket" : sportId == "1" ? "soccer" : "tennis"}`}
@@ -1700,7 +1700,7 @@ const Cricket: React.FC<CricketProps> = ({
               Live Match
             </h2>
             <div
-              className={`bg-gray-100 border-gray-200 ${showLiveMatch ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"}`}
+              className={`bg-gray-100 border-gray-200 overflow-hidden transition-all duration-300 ${showLiveMatch ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0 pointer-events-none"}`}
             >
               <iframe
                 // src={`https://apis.professorji.in/api/tv?eventId=${eventId}&sport=${sportId == "4" ? "cricket" : sportId == "1" ? "soccer" : "tennis"}`}
