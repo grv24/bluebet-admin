@@ -134,7 +134,7 @@ const UserBook: React.FC<UserBookProps> = ({
   const team2Name = matchTeams?.team2;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/30 pt-4">
       <div className="relative bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-fadein">
         {/* Close Button */}
         <button
