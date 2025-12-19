@@ -42,6 +42,52 @@ const BetLock: React.FC<BetLockProps> = ({
   const [transactionError, setTransactionError] = useState<string>("");
   const [marketId, setMarketId] = useState<string | undefined>(mid);
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [finalEventName, setFinalEventName] = useState<string>(() => {
+    return eventName || (competition && matchName ? `${competition} > ${matchName}` : matchName || competition || "");
+  });
+  
+  // Helper function to get eventName with all fallbacks
+  const getEventName = (): string => {
+    // First check state
+    if (finalEventName && finalEventName.trim()) {
+      console.log("BetLock getEventName: Using finalEventName from state:", finalEventName);
+      return finalEventName;
+    }
+    // Then check props
+    if (eventName && eventName.trim()) {
+      console.log("BetLock getEventName: Using eventName from props:", eventName);
+      return eventName;
+    }
+    // Then construct from competition and match
+    if (competition && matchName) {
+      const constructed = `${competition} > ${matchName}`;
+      if (constructed.trim()) {
+        console.log("BetLock getEventName: Using constructed name:", constructed);
+        return constructed;
+      }
+    }
+    if (matchName && matchName.trim()) {
+      console.log("BetLock getEventName: Using matchName:", matchName);
+      return matchName;
+    }
+    if (competition && competition.trim()) {
+      console.log("BetLock getEventName: Using competition:", competition);
+      return competition;
+    }
+    // Log warning if we can't construct eventName
+    console.warn("BetLock: Unable to construct eventName. Props:", { eventName, competition, matchName, finalEventName });
+    return "";
+  };
+
+  // Helper function to get marketName - supports any market name
+  const getMarketName = (): string => {
+    // If marketName prop is provided, use it (convert to lowercase and replace spaces with underscores)
+    if (marketName && marketName.trim()) {
+      return marketName.toLowerCase().replace(/\s+/g, '_');
+    }
+    // Fallback to marketType if marketName is not provided
+    return marketType === "match_odds" ? "match_odds" : "bookmaker";
+  };
 
   // Get authentication token from cookies
   const [cookies] = useCookies([
@@ -57,6 +103,30 @@ const BetLock: React.FC<BetLockProps> = ({
     }
   }, [mid]);
 
+  // Also update marketId when modal opens if mid is available
+  useEffect(() => {
+    if (isOpen && mid && !marketId) {
+      setMarketId(mid);
+    }
+  }, [isOpen, mid, marketId]);
+
+  // Construct eventName when props change
+  useEffect(() => {
+    const constructedName = eventName || 
+      (competition && matchName ? `${competition} > ${matchName}` : matchName || competition || "");
+    if (constructedName && constructedName.trim()) {
+      setFinalEventName(constructedName);
+    }
+    // Debug logging
+    console.log("BetLock eventName construction:", {
+      eventName,
+      competition,
+      matchName,
+      constructedName,
+      finalEventName
+    });
+  }, [eventName, competition, matchName]);
+
   // Fetch users with bets on this event
   useEffect(() => {
     if (isOpen && eventId && authToken) {
@@ -71,8 +141,12 @@ const BetLock: React.FC<BetLockProps> = ({
       setTransactionCode("");
       setTransactionError("");
       setMarketId(mid); // Reset to prop value
+      // Reset eventName to constructed value
+      const constructedName = eventName || 
+        (competition && matchName ? `${competition} > ${matchName}` : matchName || competition || "");
+      setFinalEventName(constructedName);
     }
-  }, [isOpen, mid]);
+  }, [isOpen, mid, eventName, competition, matchName]);
 
   const fetchUsers = async () => {
     if (!authToken || !eventId) {
@@ -105,12 +179,25 @@ const BetLock: React.FC<BetLockProps> = ({
       console.log("BetLock clients API response:", data);
       if (data.success && data.clients) {
         // Get mid from API response if not provided as prop
-        if (!marketId) {
-          if (data.mid) {
-            setMarketId(data.mid);
-          } else if (data.eventId) {
-            // If mid is in the response at root level
-            setMarketId(data.mid || data.marketId);
+        // Try multiple possible field names
+        const apiMid = data.mid || data.marketId || data.market_id;
+        if (!marketId && apiMid) {
+          setMarketId(apiMid);
+        } else if (!marketId && mid) {
+          // Fallback to prop if API doesn't provide it
+          setMarketId(mid);
+        }
+
+        // Get eventName from API response if available
+        const apiEventName = data.eventName || data.event_name || data.name || data.matchName || data.match_name;
+        if (apiEventName) {
+          setFinalEventName(apiEventName);
+        } else if (!finalEventName) {
+          // If API doesn't provide it and we don't have it, try to construct it
+          const constructedName = eventName || 
+            (competition && matchName ? `${competition} > ${matchName}` : matchName || competition || "");
+          if (constructedName) {
+            setFinalEventName(constructedName);
           }
         }
         
@@ -161,18 +248,145 @@ const BetLock: React.FC<BetLockProps> = ({
       return;
     }
 
+    // Check if marketId is available
     if (!marketId) {
-      toast.error("Market ID is required");
+      // If still loading, wait a bit for fetchUsers to complete
+      if (loading) {
+        toast.error("Please wait for the data to load.");
+        return;
+      }
+      toast.error("Market ID is required. Unable to proceed without market information.");
       return;
     }
 
+    const currentMarketId = marketId;
+
     setTransactionError("");
 
-    // If user is already selected, just unselect (no API call needed for unselecting)
+    // If user is already selected, unselect and call API to unlock
     if (selectedUsers.has(username)) {
-      const newSelected = new Set(selectedUsers);
-      newSelected.delete(username);
-      setSelectedUsers(newSelected);
+      // Handle "All Account" unselection
+      if (username === "All Account") {
+        // Get all user IDs except "All Account"
+        const allUserIds = users
+          .filter((u) => u.username !== "All Account" && (u.userId || u.username))
+          .map((u) => u.userId || u.username!);
+        
+        if (allUserIds.length === 0) {
+          toast.error("No users available to unlock");
+          return;
+        }
+
+        setProcessingUsers(new Set(["All Account"]));
+        
+        try {
+          // Send unlock request for each user
+          const requests = allUserIds.map((userId) =>
+            fetch(`${SERVER_URL}/api/v1/sports/bet-lock`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+                Accept: "application/json",
+                "Content-Type": "application/json",
+              },
+          body: JSON.stringify({
+            mid: currentMarketId,
+            marketName: getMarketName(),
+            eventId: eventId || "",
+            eventName: getEventName(),
+            userId,
+            transactionPassword: transactionCode,
+          }),
+            })
+          );
+
+          const responses = await Promise.all(requests);
+          const results = await Promise.all(
+            responses.map((res) => res.json().catch(() => ({})))
+          );
+
+          const allSuccess = results.every((data) => data.success);
+          
+          if (allSuccess) {
+            // Unselect all users in UI
+            setSelectedUsers(new Set());
+            toast.success("All accounts unlocked successfully!");
+          } else {
+            const errorMessages = results
+              .filter((data) => !data.success)
+              .map((data) => data.error || data.message || "Failed to unlock bet")
+              .join(", ");
+            toast.error(errorMessages || "Some accounts failed to unlock");
+          }
+        } catch (error: any) {
+          console.error("Error unlocking bets:", error);
+          toast.error(error.message || "Error unlocking bets. Please try again.");
+        } finally {
+          setProcessingUsers(new Set());
+        }
+        return;
+      }
+
+      // Handle individual user unselection
+      const user = users.find((u) => u.username === username);
+      if (!user) {
+        toast.error("User not found");
+        return;
+      }
+
+      // Use userId if available, otherwise use username as userId
+      const userIdToUse = user.userId || user.username;
+      
+      if (!userIdToUse) {
+        toast.error("User ID not found");
+        return;
+      }
+
+      setProcessingUsers(new Set([username]));
+
+      try {
+        const response = await fetch(`${SERVER_URL}/api/v1/sports/bet-lock`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            mid: currentMarketId,
+            marketName: getMarketName(),
+            eventId: eventId || "",
+            eventName: getEventName(),
+            userId: userIdToUse,
+            transactionPassword: transactionCode,
+          }),
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok || !data.success) {
+          const errorMessage = data.error || data.message || `Failed to unlock bet: ${response.statusText}`;
+          toast.error(errorMessage);
+          setProcessingUsers(new Set());
+          return;
+        }
+
+        if (data.success) {
+          // Remove user from selected list
+          const newSelected = new Set(selectedUsers);
+          newSelected.delete(username);
+          setSelectedUsers(newSelected);
+          toast.success(`Bet unlocked successfully for ${username}!`);
+        } else {
+          const errorMessage = data.error || data.message || "Failed to unlock bet";
+          toast.error(errorMessage);
+        }
+      } catch (error: any) {
+        console.error("Error unlocking bet:", error);
+        toast.error(error.message || "Error unlocking bet. Please try again.");
+      } finally {
+        setProcessingUsers(new Set());
+      }
       return;
     }
 
@@ -193,10 +407,6 @@ const BetLock: React.FC<BetLockProps> = ({
 
       setProcessingUsers(new Set(["All Account"]));
       
-      // Construct eventName: competition > match or use provided eventName
-      const finalEventName = eventName || 
-        (competition && matchName ? `${competition} > ${matchName}` : matchName || competition || "");
-      
       try {
         // Send request for each user
         const requests = allUserIds.map((userId) =>
@@ -208,10 +418,10 @@ const BetLock: React.FC<BetLockProps> = ({
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              mid: marketId,
-              marketName: marketName || (marketType === "match_odds" ? "match_odds" : "bookmaker"),
+              mid: currentMarketId,
+              marketName: getMarketName(),
               eventId: eventId || "",
-              eventName: finalEventName,
+              eventName: getEventName(),
               userId,
               transactionPassword: transactionCode,
             }),
@@ -261,10 +471,6 @@ const BetLock: React.FC<BetLockProps> = ({
 
     setProcessingUsers(new Set([username]));
 
-    // Construct eventName: competition > match or use provided eventName
-    const finalEventName = eventName || 
-      (competition && matchName ? `${competition} > ${matchName}` : matchName || competition || "");
-
     try {
       const response = await fetch(`${SERVER_URL}/api/v1/sports/bet-lock`, {
         method: "POST",
@@ -273,14 +479,14 @@ const BetLock: React.FC<BetLockProps> = ({
           Accept: "application/json",
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          mid: marketId,
-          marketName: marketName || (marketType === "match_odds" ? "Match Odds" : "Bookmaker"),
-          eventId: eventId || "",
-          eventName: finalEventName,
-          userId: userIdToUse,
-          transactionPassword: transactionCode,
-        }),
+          body: JSON.stringify({
+            mid: currentMarketId,
+            marketName: getMarketName(),
+            eventId: eventId || "",
+            eventName: getEventName(),
+            userId: userIdToUse,
+            transactionPassword: transactionCode,
+          }),
       });
 
       const data = await response.json();
@@ -388,10 +594,10 @@ const BetLock: React.FC<BetLockProps> = ({
                   </svg>
                 )}
               </button>
-            </div>
             {transactionError && (
               <p className="text-red-500 text-xs mt-1">{transactionError}</p>
             )}
+            </div>
           </div>
 
           {/* Accounts List */}
