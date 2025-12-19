@@ -382,8 +382,9 @@ const Cricket: React.FC<CricketProps> = ({
       }
 
       const data = await response.json();
+      console.log(data,'data before modal');
       if (data.success) {
-        setViewMoreData(data.data);
+        setViewMoreData(data);
         setShowMyBetsModal(true);
       } else {
         toast.error(data.message || "Failed to fetch view more data");
