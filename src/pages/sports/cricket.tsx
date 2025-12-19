@@ -192,6 +192,8 @@ const Cricket: React.FC<CricketProps> = ({
   const [showLiveMatch, setShowLiveMatch] = useState<boolean>(false);
   const [showUserBookModal, setShowUserBookModal] = useState<boolean>(false);
   const [userBookMarketType, setUserBookMarketType] = useState<'match_odds' | 'bookmaker'>('match_odds');
+  const [selectedBookmakerIndex, setSelectedBookmakerIndex] = useState<number>(0);
+  const [expandedBookmakers, setExpandedBookmakers] = useState<Set<number>>(new Set());
   const [showBetLockModal, setShowBetLockModal] = useState<boolean>(false);
   const [showViewMoreModal, setShowViewMoreModal] = useState<boolean>(false);
   const [showMyBetsModal, setShowMyBetsModal] = useState<boolean>(false);
@@ -211,6 +213,24 @@ const Cricket: React.FC<CricketProps> = ({
   const normalizedOtherMarketOdds =
     matchOdds?.data?.data?.otherMarketOdds || [];
   const fancyOdds = matchOdds?.data?.data?.fancyOdds || [];
+
+  // Initialize all bookmakers as expanded when data is available
+  useEffect(() => {
+    if (normalizedBookMakerOdds?.length > 0) {
+      const bookmakerItem = normalizedBookMakerOdds[0];
+      const bookmakerMarkets = [];
+      
+      for (const key in bookmakerItem) {
+        if (key.startsWith("bm") && bookmakerItem[key]) {
+          bookmakerMarkets.push(bookmakerItem[key]);
+        }
+      }
+      
+      // Expand all bookmakers by default
+      const allIndices = new Set(bookmakerMarkets.map((_, index) => index));
+      setExpandedBookmakers(allIndices);
+    }
+  }, [normalizedBookMakerOdds]);
 
   // Get authentication token from cookies
   const [cookies] = useCookies([
@@ -601,7 +621,7 @@ const Cricket: React.FC<CricketProps> = ({
 
             return (
               <div className="flex flex-col">
-                <div
+                {/* <div
                   className="font-bold text-lg py-1 flex items-center px-2 bg-[var(--bg-secondary70)] gap-2 justify-between "
                 >
                   <h2
@@ -610,29 +630,7 @@ const Cricket: React.FC<CricketProps> = ({
                   >
                     Bookmaker
                   </h2>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setUserBookMarketType('bookmaker');
-                        setShowBetLockModal(true);
-                      }}
-                      className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
-                    >
-                      BET LOCK
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setUserBookMarketType('bookmaker');
-                        setShowUserBookModal(true);
-                      }}
-                      className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
-                    >
-                      USER BOOK
-                    </button>
-                  </div>
-                </div>
+                </div> */}
                 <div
                   className={`overflow-hidden transition-all duration-300 ease-in-out ${
                     showBookmaker
@@ -640,13 +638,65 @@ const Cricket: React.FC<CricketProps> = ({
                       : "max-h-0 opacity-0"
                   }`}
                 >
-                  {bookmakerMarkets.map((market, index) => (
-                    <div key={`bookmaker-${index}`} className="flex flex-col">
-                      <table className="w-full">
+                  {bookmakerMarkets.map((market, index) => {
+                    const isBookmakerExpanded = expandedBookmakers.has(index);
+                    return (
+                      <div key={`bookmaker-${index}`} className="flex flex-col">
+                        {/* Individual Bookmaker Header */}
+                        <div className="font-bold text-lg py-1 flex items-center px-2 bg-[var(--bg-secondary70)] gap-2 justify-between">
+                          <h2 
+                            onClick={() => {
+                              setExpandedBookmakers((prev) => {
+                                const newSet = new Set(prev);
+                                if (newSet.has(index)) {
+                                  newSet.delete(index);
+                                } else {
+                                  newSet.add(index);
+                                }
+                                return newSet;
+                              });
+                            }}
+                            className="text-sm font-normal hover:cursor-pointer text-white/90 leading-6 tracking-tight"
+                          >
+                            Bookmaker {index + 1}
+                          </h2>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setUserBookMarketType('bookmaker');
+                                setSelectedBookmakerIndex(index);
+                                setShowBetLockModal(true);
+                              }}
+                              className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
+                            >
+                              BET LOCK
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setUserBookMarketType('bookmaker');
+                                setSelectedBookmakerIndex(index);
+                                setShowUserBookModal(true);
+                              }}
+                              className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
+                            >
+                              USER BOOK
+                            </button>
+                          </div>
+                        </div>
+                        <div
+                          className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                            isBookmakerExpanded
+                              ? "max-h-[1000px] opacity-100"
+                              : "max-h-0 opacity-0"
+                          }`}
+                        >
+                          <table className="w-full">
                         <thead>
                           <tr>
                             <td className="text-xs font-bold text-[var(--bg-primary90)] pl-2 md:w-72">
-                              Bookmaker {index + 1}
+                              {/* Bookmaker {index + 1} */}
                             </td>
                             <td>
                               <div className="w-10 md:w-16"></div>
@@ -770,8 +820,10 @@ const Cricket: React.FC<CricketProps> = ({
                           )}
                         </tbody>
                       </table>
-                    </div>
-                  ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -979,7 +1031,7 @@ const Cricket: React.FC<CricketProps> = ({
                                 key={`fancy1-row-${item?.sid}`}
                                 className="border-white/10"
                               >
-                                <td className="border-white/10 bg-gray-100 border-b w-full w-1/2 align-top">
+                                <td className="border-white/10 bg-gray-100 border-b w-1/2 align-top">
                                   <div className="flex flex-col justify-start pt-1">
                                     <span className="truncate lg:max-w-64 text-xs md:text-sm font-normal whitespace-nowrap px-1 md:px-2">
                                       {item?.rname}
@@ -1992,6 +2044,19 @@ const Cricket: React.FC<CricketProps> = ({
         onClose={() => setShowUserBookModal(false)}
         eventId={eventId}
         marketType={userBookMarketType}
+        mid={
+          userBookMarketType === "match_odds"
+            ? normalizedMatchOdds.find((item: any) => item.market == "Match Odds")?.mid
+            : (() => {
+                const bookmakerItem = normalizedBookMakerOdds[0];
+                if (bookmakerItem) {
+                  const bookmakerKeys = Object.keys(bookmakerItem).filter(key => key.startsWith("bm"));
+                  const selectedKey = bookmakerKeys[selectedBookmakerIndex];
+                  return bookmakerItem[selectedKey]?.mid;
+                }
+                return normalizedBookMakerOdds.find((item: any) => item.market == "Bookmaker")?.mid;
+              })()
+        }
         matchTeams={{
           team1: normalizedMatchOdds?.[0]?.oddDatas?.[0]?.rname || "Australia",
           team2: normalizedMatchOdds?.[0]?.oddDatas?.[1]?.rname || "England",
@@ -2007,15 +2072,25 @@ const Cricket: React.FC<CricketProps> = ({
         mid={
           userBookMarketType === "match_odds"
             ? normalizedMatchOdds.find((item: any) => item.market == "Match Odds")?.mid
-            : normalizedBookMakerOdds.find((item: any) => item.market == "Bookmaker")?.mid
+            : (() => {
+                const bookmakerItem = normalizedBookMakerOdds[0];
+                if (bookmakerItem) {
+                  const bookmakerKeys = Object.keys(bookmakerItem).filter(key => key.startsWith("bm"));
+                  const selectedKey = bookmakerKeys[selectedBookmakerIndex];
+                  return bookmakerItem[selectedKey]?.mid;
+                }
+                return normalizedBookMakerOdds.find((item: any) => item.market == "Bookmaker")?.mid;
+              })()
+        }
+        marketName={
+          userBookMarketType === "match_odds" 
+            ? "Match Odds" 
+            : `Bookmaker ${selectedBookmakerIndex + 1}`
         }
         eventName={
           (typeof match === 'object' && match?.name) 
             ? match.name 
             : (competition && match ? `${competition} > ${match}` : match || competition || "")
-        }
-        marketName={
-          userBookMarketType === "match_odds" ? "Match Odds" : "Bookmaker"
         }
         competition={competition}
         match={match}

@@ -15,6 +15,7 @@ interface UserBookProps {
   onClose: () => void;
   eventId: string;
   marketType?: "match_odds" | "bookmaker";
+  mid?: string;
   matchTeams?: {
     team1?: string;
     team2?: string;
@@ -26,6 +27,7 @@ const UserBook: React.FC<UserBookProps> = ({
   onClose,
   eventId,
   marketType = "match_odds",
+  mid,
   matchTeams,
 }) => {
   const [userBookData, setUserBookData] = useState<UserBookData[]>([]);
@@ -44,7 +46,7 @@ const UserBook: React.FC<UserBookProps> = ({
     if (isOpen && eventId && authToken) {
       fetchUserBookData();
     }
-  }, [isOpen, eventId, authToken, marketType]);
+  }, [isOpen, eventId, authToken, marketType, mid]);
 
   // Format number: if it has many decimal places (like 65.99999999), format to 2 decimals, else return as is
   const formatNumber = (value: number): number | string => {
@@ -75,8 +77,15 @@ const UserBook: React.FC<UserBookProps> = ({
 
     setLoading(true);
     try {
+      // Build query parameters
+      const queryParams = new URLSearchParams();
+      queryParams.append('type', marketType);
+      if (mid && marketType === 'bookmaker') {
+        queryParams.append('mid', mid);
+      }
+      
       const response = await fetch(
-        `${SERVER_URL}/api/v1/sports/user-book/${eventId}?type=${marketType}`,
+        `${SERVER_URL}/api/v1/sports/user-book/${eventId}?${queryParams.toString()}`,
         {
           method: "GET",
           headers: {
