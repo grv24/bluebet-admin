@@ -2,6 +2,9 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useCookies } from "react-cookie";
 import { baseUrl, SERVER_URL } from "@/helper/auth";
 import toast from "react-hot-toast";
+import ViewMore from "./modal/ViewMore";
+import UserBook from "./modal/UserBook";
+import BetLock from "./modal/BetLock";
 
 interface TennisProps {
   matchOdds: any;
@@ -418,6 +421,7 @@ const Tennis: React.FC<TennisProps> = ({
   >("matched");
   const [showLiveMatch, setShowLiveMatch] = useState<boolean>(false);
   const [showUserBookModal, setShowUserBookModal] = useState<boolean>(false);
+  const [userBookMarketType, setUserBookMarketType] = useState<'match_odds' | 'bookmaker'>('match_odds');
   const [showBetLockModal, setShowBetLockModal] = useState<boolean>(false);
   const [showViewMoreModal, setShowViewMoreModal] = useState<boolean>(false);
   const [showMyBetsModal, setShowMyBetsModal] = useState<boolean>(false);
@@ -596,13 +600,21 @@ const Tennis: React.FC<TennisProps> = ({
                   </h2>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => setShowBetLockModal(true)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUserBookMarketType('match_odds');
+                        setShowBetLockModal(true);
+                      }}
                       className="text-xs px-2 font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
                     >
                       BET LOCK
                     </button>
                     <button
-                      onClick={() => setShowUserBookModal(true)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUserBookMarketType('match_odds');
+                        setShowUserBookModal(true);
+                      }}
                       className="text-xs px-2 font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
                     >
                       USER BOOK
@@ -750,13 +762,21 @@ const Tennis: React.FC<TennisProps> = ({
                     </h2>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => setShowBetLockModal(true)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setUserBookMarketType('bookmaker');
+                          setShowBetLockModal(true);
+                        }}
                         className="text-xs px-2 font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
                       >
                         BET LOCK
                       </button>
                       <button
-                        onClick={() => setShowUserBookModal(true)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setUserBookMarketType('bookmaker');
+                          setShowUserBookModal(true);
+                        }}
                         className="text-xs px-2 font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
                       >
                         USER BOOK
@@ -883,16 +903,14 @@ const Tennis: React.FC<TennisProps> = ({
                     </h2>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => setShowBetLockModal(true)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setUserBookMarketType('match_odds');
+                          setShowBetLockModal(true);
+                        }}
                         className="text-xs px-2 font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
                       >
                         BET LOCK
-                      </button>
-                      <button
-                        onClick={() => setShowUserBookModal(true)}
-                        className="text-xs px-2 font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
-                      >
-                        USER BOOK
                       </button>
                     </div>
                   </div>
@@ -973,16 +991,14 @@ const Tennis: React.FC<TennisProps> = ({
                     </h2>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => setShowBetLockModal(true)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setUserBookMarketType('match_odds');
+                          setShowBetLockModal(true);
+                        }}
                         className="text-xs px-2 font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
                       >
                         BET LOCK
-                      </button>
-                      <button
-                        onClick={() => setShowUserBookModal(true)}
-                        className="text-xs px-2 font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
-                      >
-                        USER BOOK
                       </button>
                     </div>
                   </div>
@@ -1253,83 +1269,33 @@ const Tennis: React.FC<TennisProps> = ({
       </div>
 
       {/* User Book Modal */}
-      {/* {showUserBookModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96 max-w-[90vw]">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold">User Book</h2>
-              <button
-                onClick={() => setShowUserBookModal(false)}
-                className="text-gray-500 hover:text-gray-700 text-xl"
-              >
-                ×
-              </button>
-            </div>
-            <div className="text-center text-gray-500 py-8">
-              No Record Found
-            </div>
-          </div>
-        </div>
-      )} */}
+      <UserBook
+        isOpen={showUserBookModal}
+        onClose={() => setShowUserBookModal(false)}
+        eventId={eventId}
+        marketType={userBookMarketType}
+        matchTeams={{
+          team1: normalizedMatchOdds?.[0]?.oddDatas?.[0]?.rname || "",
+          team2: normalizedMatchOdds?.[0]?.oddDatas?.[1]?.rname || "",
+        }}
+      />
 
       {/* Bet Lock Modal */}
-      {/* {showBetLockModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96 max-w-[90vw]">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold">Bet Lock</h2>
-              <button
-                onClick={() => setShowBetLockModal(false)}
-                className="text-gray-500 hover:text-gray-700 text-xl"
-              >
-                ×
-              </button>
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Transaction Code
-              </label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter transaction code"
-              />
-            </div>
-            <div className="mb-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">
-                Accounts:
-              </h3>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {[
-                  "All Account",
-                  "Rrttvkl",
-                  "Trad777",
-                  "Sona777777",
-                  "Smr77777",
-                  "Noida777",
-                  "Jkh7",
-                  "Pnk210",
-                ].map((account, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-gray-200 rounded"></div>
-                    <span className="text-sm">{account}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="flex justify-between">
-              <div className="bg-blue-500 text-white px-4 py-2 rounded text-center">
-                <div className="text-lg font-bold">42</div>
-                <div className="text-xs">1L</div>
-              </div>
-              <div className="bg-pink-500 text-white px-4 py-2 rounded text-center">
-                <div className="text-lg font-bold">46</div>
-                <div className="text-xs">1L</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )} */}
+      <BetLock
+        isOpen={showBetLockModal}
+        onClose={() => setShowBetLockModal(false)}
+        eventId={eventId}
+        marketType={userBookMarketType}
+        mid={
+          userBookMarketType === "match_odds"
+            ? normalizedMatchOdds.find((item: any) => item.market == "Match Odds")?.mid
+            : normalizedBookMakerOdds.find((item: any) => item.market == "Bookmaker")?.mid
+        }
+        eventName={match?.name || ""}
+        marketName={
+          userBookMarketType === "match_odds" ? "Match Odds" : "Bookmaker"
+        }
+      />
 
       {/* My Bets Modal */}
       {/* {showMyBetsModal && (

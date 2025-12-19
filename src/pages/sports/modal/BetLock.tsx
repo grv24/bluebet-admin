@@ -261,8 +261,8 @@ const BetLock: React.FC<BetLockProps> = ({
           </div>
 
           {/* Accounts List */}
-          <div className="mb-4">
-            <div className="border border-gray-200 rounded">
+          <div className="mb-4 flex-1 overflow-hidden flex flex-col">
+            <div className="border border-gray-200 rounded overflow-y-auto max-h-64">
               {loading ? (
                 <div className="text-center text-gray-500 py-4">Loading...</div>
               ) : users.length > 0 ? (
