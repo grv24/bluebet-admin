@@ -20,6 +20,9 @@ const Header: React.FC = () => {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(
     new Set(["sport-cricket"])
   );
+  // Use ref to track match expansion state independently
+  const matchExpansionRef = useRef<Map<string, boolean>>(new Map());
+  const [updateTrigger, setUpdateTrigger] = useState(0);
   const navigate = useNavigate();
   const [cookies, , removeCookie] = useCookies([
     baseUrl.includes("techadmin") ? "TechAdmin" : "Admin",
@@ -67,7 +70,8 @@ const Header: React.FC = () => {
       index: number,
       sportName: string
     ) => {
-      const competitionId = `comp-${competition.name}`;
+      // Create unique competition ID by including parent sport
+      const competitionId = `comp-${sportName}-${competition.name}`;
       const isExpanded = expandedItems.has(competitionId);
 
       return (
@@ -111,7 +115,8 @@ const Header: React.FC = () => {
       sportName: string,
       competitionName: string
     ) => {
-      const dateId = `date-${date.name}`;
+      // Create unique date ID by including parent context
+      const dateId = `date-${sportName}-${competitionName}-${date.name}`;
       const isExpanded = expandedItems.has(dateId);
 
       return (
@@ -157,16 +162,26 @@ const Header: React.FC = () => {
       competitionName: string,
       dateName: string
     ) => {
-      const matchId = `match-${match.gmid}`;
-      const isExpanded = expandedItems.has(matchId);
+      // Create unique match ID by including parent context and match name to ensure uniqueness
+      const matchId = `match-${sportName}-${competitionName}-${dateName}-${match.gmid}-${match.name}`;
+      
+      // Use ref to track expansion state for this specific match
+      const isExpanded = matchExpansionRef.current.get(matchId) || false;
+
+      const handleMatchToggle = () => {
+        const newExpandedState = !isExpanded;
+        matchExpansionRef.current.set(matchId, newExpandedState);
+        // Force re-render by updating state
+        setUpdateTrigger(prev => prev + 1);
+      };
 
       return (
-        <div key={matchId} className="relative">
+        <div key={`${matchId}-${index}`} className="relative">
           {/* Blue dot */}
           <div className="absolute left-0 top-2 w-2 h-2 bg-blue-500 rounded-full transform -translate-x-1"></div>
           <div
             className="flex items-center cursor-pointer py-1 hover:bg-gray-100 ml-4"
-            onClick={() => toggleExpanded(matchId)}
+            onClick={handleMatchToggle}
           >
             <i
               className={`fa-solid fa-${isExpanded ? "minus" : "plus"} text-xs mr-2 text-gray-600`}
