@@ -32,6 +32,7 @@ const UserBook: React.FC<UserBookProps> = ({
   const [userBookData, setUserBookData] = useState<UserBookData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [searchUsername, setSearchUsername] = useState<string>('');
+  const [hasDrawColumn, setHasDrawColumn] = useState<boolean>(false);
   
   // Get authentication token from cookies
   const [cookies] = useCookies([
@@ -70,6 +71,12 @@ const UserBook: React.FC<UserBookProps> = ({
       const data = await response.json();
       console.log('User Book API Response:', data);
       if (data.success && data.bets) {
+        // Check if any bet has "The Draw" field
+        const hasDrawField = Array.isArray(data.bets) && data.bets.some((bet: any) => 
+          bet.data && 'The Draw' in bet.data
+        );
+        setHasDrawColumn(hasDrawField);
+        
         // Transform API response to match our interface
         const transformedData: UserBookData[] = Array.isArray(data.bets)
           ? data.bets.map((bet: any) => ({
@@ -83,6 +90,7 @@ const UserBook: React.FC<UserBookProps> = ({
       } else {
         // If no data, use empty array
         setUserBookData([]);
+        setHasDrawColumn(false);
       }
     } catch (error) {
       console.error('Error fetching user book data:', error);
@@ -111,8 +119,8 @@ const UserBook: React.FC<UserBookProps> = ({
 
   if (!isOpen) return null;
 
-  const team1Name = matchTeams?.team1 || 'Australia';
-  const team2Name = matchTeams?.team2 || 'England';
+  const team1Name = matchTeams?.team1 ;
+  const team2Name = matchTeams?.team2 ;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
@@ -150,79 +158,72 @@ const UserBook: React.FC<UserBookProps> = ({
               <div className="text-gray-500">Loading...</div>
             </div>
           ) : filteredData.length > 0 ? (
-            <div className="p-4">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-100 sticky top-0">
-                  <tr>
-                    <th className="text-left p-3 font-semibold text-gray-700 border-b">UserName</th>
-                    <th className="text-left p-3 font-semibold text-gray-700 border-b">{team1Name}</th>
-                    <th className="text-left p-3 font-semibold text-gray-700 border-b">{team2Name}</th>
-                    <th className="text-left p-3 font-semibold text-gray-700 border-b">The Draw</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredData.map((user, index) => (
-                    <tr
-                      key={index}
-                      className="border-b hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="p-3 font-medium text-gray-800">{user.username}</td>
-                      <td
-                        className={`p-3 font-semibold ${
-                          user.australia >= 0 ? 'text-green-600' : 'text-red-600'
-                        }`}
-                      >
-                        {user.australia > 0 ? '+' : ''}
-                        {user.australia}
-                      </td>
-                      <td
-                        className={`p-3 font-semibold ${
-                          user.england >= 0 ? 'text-green-600' : 'text-red-600'
-                        }`}
-                      >
-                        {user.england > 0 ? '+' : ''}
-                        {user.england}
-                      </td>
-                      <td
-                        className={`p-3 font-semibold ${
-                          user.theDraw >= 0 ? 'text-green-600' : 'text-red-600'
-                        }`}
-                      >
-                        {user.theDraw > 0 ? '+' : ''}
-                        {user.theDraw}
-                      </td>
-                    </tr>
-                  ))}
-                  {/* Totals Row */}
-                  <tr className="bg-gray-100 font-bold border-t-2 border-gray-300">
-                    <td className="p-3 text-gray-800">Total</td>
-                    <td
-                      className={`p-3 ${
-                        totals.australia >= 0 ? 'text-green-600' : 'text-red-600'
-                      }`}
-                    >
-                      {totals.australia > 0 ? '+' : ''}
-                      {totals.australia}
-                    </td>
-                    <td
-                      className={`p-3 ${
-                        totals.england >= 0 ? 'text-green-600' : 'text-red-600'
-                      }`}
-                    >
-                      {totals.england > 0 ? '+' : ''}
-                      {totals.england}
-                    </td>
-                    <td
-                      className={`p-3 ${
-                        totals.theDraw >= 0 ? 'text-green-600' : 'text-red-600'
-                      }`}
-                    >
-                      {totals.theDraw > 0 ? '+' : ''}
-                      {totals.theDraw}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <div className="user-book">
+              {/* Header Table */}
+              <ul className="mtree transit bubba mtree-header list-none m-0 p-0">
+                <li className="mtree-node">
+                  <table className="w-full text-sm border-0 mb-0">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="text-right p-3 font-semibold text-gray-700">UserName</th>
+                        {hasDrawColumn && (
+                          <th className="text-right p-3 font-semibold text-gray-700">The Draw</th>
+                        )}
+                        <th className="text-right p-3 font-semibold text-gray-700">{team2Name}</th>
+                        <th className="text-right p-3 font-semibold text-gray-700">{team1Name}</th>
+                      </tr>
+                    </thead>
+                  </table>
+                </li>
+              </ul>
+
+              {/* Data Rows */}
+              <ul className="mtree transit bubba user-table list-none m-0 p-0">
+                {filteredData.map((user, index) => (
+                  <li key={index} className="mtree-node mtree-closed item">
+                    <table className="w-full text-sm mb-0">
+                      <tbody>
+                        <tr className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors`}>
+                          <td className="text-right p-3 font-medium text-gray-800">{user.username}</td>
+                          {hasDrawColumn && (
+                            <td className={`text-right p-3 font-semibold ${user.theDraw >= 0 ? 'positive text-green-600' : 'negative text-red-600'}`}>
+                              {user.theDraw}
+                            </td>
+                          )}
+                          <td className={`text-right p-3 font-semibold ${user.england >= 0 ? 'positive text-green-600' : 'negative text-red-600'}`}>
+                            {user.england}
+                          </td>
+                          <td className={`text-right p-3 font-semibold ${user.australia >= 0 ? 'positive text-green-600' : 'negative text-red-600'}`}>
+                            {user.australia}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </li>
+                ))}
+                
+                {/* Totals Row */}
+                <li className="mtree-node item">
+                  <table className="w-full text-sm mb-0">
+                    <tbody>
+                      <tr className="bg-gray-100 font-bold border-t-2 border-gray-300">
+                        <td className="text-right p-3 text-gray-800">Total</td>
+                        {hasDrawColumn && (
+                          <td className={`text-right p-3 ${totals.theDraw >= 0 ? 'positive text-green-600' : 'negative text-red-600'}`}>
+                            {totals.theDraw}
+                          </td>
+                        )}
+                        <td className={`text-right p-3 ${totals.england >= 0 ? 'positive text-green-600' : 'negative text-red-600'}`}>
+                          {totals.england}
+                        </td>
+                        <td className={`text-right p-3 ${totals.australia >= 0 ? 'positive text-green-600' : 'negative text-red-600'}`}>
+                            {totals.australia}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </li>
+              </ul>
             </div>
           ) : (
             <div className="flex items-center justify-center py-12">
