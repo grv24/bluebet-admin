@@ -68,15 +68,15 @@ const UserBook: React.FC<UserBookProps> = ({
       }
 
       const data = await response.json();
-      if (data.success && data.data) {
+      console.log('User Book API Response:', data);
+      if (data.success && data.bets) {
         // Transform API response to match our interface
-        // Adjust this based on actual API response structure
-        const transformedData: UserBookData[] = Array.isArray(data.data)
-          ? data.data.map((item: any) => ({
-              username: item.username || item.userName || '',
-              australia: item.australia || item.team1 || 0,
-              england: item.england || item.team2 || 0,
-              theDraw: item.theDraw || item.draw || 0,
+        const transformedData: UserBookData[] = Array.isArray(data.bets)
+          ? data.bets.map((bet: any) => ({
+              username: bet.username || '',
+              australia: bet.data?.Australia || 0,
+              england: bet.data?.England || 0,
+              theDraw: bet.data?.['The Draw'] || 0,
             }))
           : [];
         setUserBookData(transformedData);
