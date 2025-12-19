@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { FaTimes } from "react-icons/fa";
 import TooltipPortal from "../../../components/TooltipPortal";
 
@@ -15,9 +15,35 @@ const ViewMore: React.FC<ViewMoreProps> = ({
   onClose,
   data,
 }) => {
+  // Helper function to get initial market - prioritize match_odds
+  const getInitialMarket = (markets: any): string => {
+    if (!markets || typeof markets !== 'object') return "normal";
+    
+    const marketKeys = Object.keys(markets);
+    if (marketKeys.length === 0) return "normal";
+    
+    // Look for match_odds in various formats (case-insensitive)
+    const matchOddsKey = marketKeys.find(
+      (key) => key.toLowerCase() === "match_odds" || 
+               key.toLowerCase() === "matchodds" ||
+               key.toLowerCase() === "match odds"
+    );
+    
+    // If match_odds found, use it; otherwise use first available
+    return matchOddsKey || marketKeys[0];
+  };
+
   const [activeMainTab, setActiveMainTab] = useState<string>(() => {
-    return data?.markets ? Object.keys(data.markets)[0] : "normal";
+    return getInitialMarket(data?.markets);
   });
+
+  // Update activeMainTab when data changes or modal opens
+  useEffect(() => {
+    if (isOpen && data?.markets) {
+      const initialMarket = getInitialMarket(data.markets);
+      setActiveMainTab(initialMarket);
+    }
+  }, [isOpen, data?.markets]);
   const [searchFilters, setSearchFilters] = useState({
     username: "",
     amountFrom: "",

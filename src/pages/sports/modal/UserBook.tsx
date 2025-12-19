@@ -6,9 +6,8 @@ import toast from "react-hot-toast";
 
 interface UserBookData {
   username: string;
-  australia: number;
-  england: number;
-  theDraw: number;
+  data: { [key: string]: number };
+  allOtherInfo?: Array<{ [key: string]: number }>;
 }
 
 interface UserBookProps {
@@ -31,7 +30,7 @@ const UserBook: React.FC<UserBookProps> = ({
 }) => {
   const [userBookData, setUserBookData] = useState<UserBookData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [hasDrawColumn, setHasDrawColumn] = useState<boolean>(false);
+  const [teamNames, setTeamNames] = useState<string[]>([]);
 
   // Get authentication token from cookies
   const [cookies] = useCookies([
@@ -97,26 +96,37 @@ const UserBook: React.FC<UserBookProps> = ({
       const data = await response.json();
       console.log("User Book API Response:", data);
       if (data.success && data.bets) {
-        // Check if any bet has "The Draw" field
-        const hasDrawField =
-          Array.isArray(data.bets) &&
-          data.bets.some((bet: any) => bet.data && "The Draw" in bet.data);
-        setHasDrawColumn(hasDrawField);
+        // Extract all unique team/option names from all bets
+        const allTeamNames = new Set<string>();
+        
+        Array.isArray(data.bets) && data.bets.forEach((bet: any) => {
+          if (bet.data && typeof bet.data === 'object') {
+            Object.keys(bet.data).forEach((key) => {
+              // Exclude 'newExposure' as it's not a team name
+              if (key !== 'newExposure') {
+                allTeamNames.add(key);
+              }
+            });
+          }
+        });
+
+        // Convert Set to Array and sort for consistent display
+        const sortedTeamNames = Array.from(allTeamNames).sort();
+        setTeamNames(sortedTeamNames);
 
         // Transform API response to match our interface
         const transformedData: UserBookData[] = Array.isArray(data.bets)
           ? data.bets.map((bet: any) => ({
               username: bet.username || "",
-              australia: bet.data?.Australia || 0,
-              england: bet.data?.England || 0,
-              theDraw: bet.data?.["The Draw"] || 0,
+              data: bet.data || {},
+              allOtherInfo: bet.allOtherInfo || [],
             }))
           : [];
         setUserBookData(transformedData);
       } else {
         // If no data, use empty array
         setUserBookData([]);
-        setHasDrawColumn(false);
+        setTeamNames([]);
       }
     } catch (error) {
       console.error("Error fetching user book data:", error);
@@ -154,7 +164,7 @@ const UserBook: React.FC<UserBookProps> = ({
               <div className="flex items-center justify-center py-12">
                 <div className="text-gray-500">Loading...</div>
               </div>
-            ) : userBookData.length > 0 ? (
+            ) : userBookData.length > 0 && teamNames.length > 0 ? (
               <div className="user-book">
                 <table className="w-full text-sm border-collapse">
                   <thead>
@@ -162,17 +172,14 @@ const UserBook: React.FC<UserBookProps> = ({
                       <th className="text-left px-3 py-1 font-normal text-gray-700">
                         UserName
                       </th>
-                      <th className="text-right px-3 py-1 font-normal text-gray-700">
-                        Australia
-                      </th>
-                      <th className="text-right px-3 py-1 font-normal text-gray-700">
-                        England
-                      </th>
-                      {hasDrawColumn && (
-                        <th className="text-right px-3 py-1 font-normal text-gray-700">
-                          The Draw
+                      {teamNames.map((teamName) => (
+                        <th
+                          key={teamName}
+                          className="text-right px-3 py-1 font-normal text-gray-700"
+                        >
+                          {teamName}
                         </th>
-                      )}
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
@@ -184,17 +191,14 @@ const UserBook: React.FC<UserBookProps> = ({
                         <td className="text-left px-3 py-1 font-medium text-gray-800">
                           {user.username}
                         </td>
-                        <td className={`text-right px-3 py-1 font-normal`}>
-                          {formatNumber(user.australia)}
-                        </td>
-                        <td className={`text-right px-3 py-1 font-normal `}>
-                          {formatNumber(user.england)}
-                        </td>
-                        {hasDrawColumn && (
-                          <td className={`text-right px-3 py-1 font-normal `}>
-                            {formatNumber(user.theDraw)}
+                        {teamNames.map((teamName) => (
+                          <td
+                            key={teamName}
+                            className="text-right px-3 py-1 font-normal"
+                          >
+                            {formatNumber(user.data[teamName] || 0)}
                           </td>
-                        )}
+                        ))}
                       </tr>
                     ))}
                   </tbody>

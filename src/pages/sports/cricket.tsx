@@ -795,7 +795,7 @@ const Cricket: React.FC<CricketProps> = ({
             );
 
             return (
-              <div className="grid grid-cols-2 gap-1">
+              <div className="grid lg:grid-cols-2 grid-cols-1 gap-1">
                 {normal && (
                   <div key={normal.mid} className="flex flex-col">
                     <div
@@ -853,7 +853,7 @@ const Cricket: React.FC<CricketProps> = ({
                               >
                                 <td className="border-white/10 bg-gray-100 border-b  align-top">
                                   <div className="flex flex-col justify-start pt-1">
-                                    <span className="truncate max-w-64 text-sm px-1 md:px-2">
+                                    <span className="truncate lg:max-w-64  text-sm px-1 md:px-2">
                                       {item?.rname}
                                     </span>
                                   </div>
@@ -1244,7 +1244,7 @@ const Cricket: React.FC<CricketProps> = ({
                               >
                                 <td className="border-white/10 bg-gray-100 border-b w-full align-top">
                                   <div className="flex flex-col justify-start pt-1 w-full">
-                                    <span className="truncate max-w-64 text-sm px-1 md:px-2">
+                                    <span className="truncate lg:max-w-64  text-sm px-1 md:px-2">
                                       {item?.rname}
                                     </span>
                                   </div>
