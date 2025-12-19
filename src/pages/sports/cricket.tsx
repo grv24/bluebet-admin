@@ -851,7 +851,7 @@ const Cricket: React.FC<CricketProps> = ({
                                 key={`fancy-row-${item?.sid}`}
                                 className="border-white/10"
                               >
-                                <td className="border-white/10 bg-gray-100 border-b  align-top">
+                                <td className="border-white/10 bg-gray-100 border-b w-full align-top">
                                   <div className="flex flex-col justify-start pt-1">
                                     <span className="truncate lg:max-w-64  text-sm px-1 md:px-2">
                                       {item?.rname}
@@ -979,9 +979,9 @@ const Cricket: React.FC<CricketProps> = ({
                                 key={`fancy1-row-${item?.sid}`}
                                 className="border-white/10"
                               >
-                                <td className="border-white/10 bg-gray-100 border-b md:w-72 w-1/2 align-top">
+                                <td className="border-white/10 bg-gray-100 border-b w-full w-1/2 align-top">
                                   <div className="flex flex-col justify-start pt-1">
-                                    <span className="truncate max-w-64  text-xs md:text-sm font-normal whitespace-nowrap px-1 md:px-2">
+                                    <span className="truncate lg:max-w-64 text-xs md:text-sm font-normal whitespace-nowrap px-1 md:px-2">
                                       {item?.rname}
                                     </span>
                                   </div>
