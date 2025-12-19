@@ -13,7 +13,7 @@ export interface ClientRow {
   creditRef: string;
   ust: boolean;
   bst: boolean;
-  exposureLimit: number;
+  exposureLimit?: number;
   defaultPercent: number;
   accountType: string;
   _id?: string; // This will be userId from the new structure

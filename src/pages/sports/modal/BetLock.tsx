@@ -8,7 +8,7 @@ interface BetLockProps {
   isOpen: boolean;
   onClose: () => void;
   eventId: string;
-  marketType?: "match_odds" | "bookmaker";
+  marketType?: "match_odds" | "bookmaker" | string;
   mid?: string;
   eventName?: string;
   marketName?: string;
@@ -96,19 +96,19 @@ const BetLock: React.FC<BetLockProps> = ({
   const authToken =
     cookies[baseUrl.includes("techadmin") ? "TechAdmin" : "Admin"];
 
-  // Update marketId when mid prop changes
+  // Update marketId when mid prop changes or when modal opens
   useEffect(() => {
     if (mid) {
       setMarketId(mid);
     }
   }, [mid]);
 
-  // Also update marketId when modal opens if mid is available
+  // Reset marketId when modal opens to ensure we use the latest mid prop
   useEffect(() => {
-    if (isOpen && mid && !marketId) {
+    if (isOpen && mid) {
       setMarketId(mid);
     }
-  }, [isOpen, mid, marketId]);
+  }, [isOpen, mid]);
 
   // Construct eventName when props change
   useEffect(() => {
@@ -130,9 +130,14 @@ const BetLock: React.FC<BetLockProps> = ({
   // Fetch users with bets on this event
   useEffect(() => {
     if (isOpen && eventId && authToken) {
+      // Always use the latest mid prop value, reset marketId state if mid prop changed
+      if (mid) {
+        setMarketId(mid);
+      }
+      // Use a small delay to ensure state is updated, or use mid prop directly in fetchUsers
       fetchUsers();
     }
-  }, [isOpen, eventId, authToken, marketType]);
+  }, [isOpen, eventId, authToken, marketType, mid]);
 
   // Reset state when modal closes
   useEffect(() => {
@@ -156,9 +161,19 @@ const BetLock: React.FC<BetLockProps> = ({
 
     setLoading(true);
     try {
+      // Build query parameters
+      const queryParams = new URLSearchParams();
+      queryParams.append('eventId', eventId);
+      queryParams.append('marketType', marketType || 'match_odds');
+      // Add mid if available - prioritize prop over state to ensure we use the latest value
+      const currentMid = mid || marketId;
+      if (currentMid) {
+        queryParams.append('mid', currentMid);
+      }
+      
       // Use bet-lock/clients API to fetch clients list
       const response = await fetch(
-        `${SERVER_URL}/api/v1/sports/bet-lock/clients?eventId=${eventId}&marketType=${marketType}`,
+        `${SERVER_URL}/api/v1/sports/bet-lock/clients?${queryParams.toString()}`,
         {
           method: "GET",
           headers: {
@@ -178,13 +193,16 @@ const BetLock: React.FC<BetLockProps> = ({
       const data = await response.json();
       console.log("BetLock clients API response:", data);
       if (data.success && data.clients) {
-        // Get mid from API response if not provided as prop
-        // Try multiple possible field names
-        const apiMid = data.mid || data.marketId || data.market_id;
-        if (!marketId && apiMid) {
-          setMarketId(apiMid);
+        // Only use mid from API response if we don't have one from props
+        // Prefer the prop mid over API response mid to ensure correctness
+        if (!marketId && !mid) {
+          // Only set from API if we have no mid at all
+          const apiMid = data.mid || data.marketId || data.market_id;
+          if (apiMid) {
+            setMarketId(apiMid);
+          }
         } else if (!marketId && mid) {
-          // Fallback to prop if API doesn't provide it
+          // Use prop mid if marketId state is not set
           setMarketId(mid);
         }
 

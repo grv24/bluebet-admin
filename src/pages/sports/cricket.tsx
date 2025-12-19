@@ -195,6 +195,7 @@ const Cricket: React.FC<CricketProps> = ({
   const [selectedBookmakerIndex, setSelectedBookmakerIndex] = useState<number>(0);
   const [expandedBookmakers, setExpandedBookmakers] = useState<Set<number>>(new Set());
   const [showBetLockModal, setShowBetLockModal] = useState<boolean>(false);
+  const [selectedBetLockMarket, setSelectedBetLockMarket] = useState<{ mid?: string; marketName?: string; marketType?: string }>({});
   const [showViewMoreModal, setShowViewMoreModal] = useState<boolean>(false);
   const [showMyBetsModal, setShowMyBetsModal] = useState<boolean>(false);
   const [showBetDetailsModal, setShowBetDetailsModal] =
@@ -218,16 +219,19 @@ const Cricket: React.FC<CricketProps> = ({
   useEffect(() => {
     if (normalizedBookMakerOdds?.length > 0) {
       const bookmakerItem = normalizedBookMakerOdds[0];
-      const bookmakerMarkets = [];
       
-      for (const key in bookmakerItem) {
-        if (key.startsWith("bm") && bookmakerItem[key]) {
-          bookmakerMarkets.push(bookmakerItem[key]);
-        }
-      }
+      // Get all bm keys and sort them to ensure correct order (bm1, bm2, bm3, etc.)
+      const bookmakerKeys = Object.keys(bookmakerItem)
+        .filter(key => key.startsWith("bm"))
+        .sort((a, b) => {
+          // Extract numbers from bm1, bm2, etc. and sort numerically
+          const numA = parseInt(a.replace("bm", "")) || 0;
+          const numB = parseInt(b.replace("bm", "")) || 0;
+          return numA - numB;
+        });
       
       // Expand all bookmakers by default
-      const allIndices = new Set(bookmakerMarkets.map((_, index) => index));
+      const allIndices = new Set(bookmakerKeys.map((_, index) => index));
       setExpandedBookmakers(allIndices);
     }
   }, [normalizedBookMakerOdds]);
@@ -451,6 +455,12 @@ const Cricket: React.FC<CricketProps> = ({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        const matchOddsMarket = normalizedMatchOdds.find((item: any) => item.market == "Match Odds");
+                        setSelectedBetLockMarket({
+                          mid: matchOddsMarket?.mid,
+                          marketName: "Match Odds",
+                          marketType: 'match_odds'
+                        });
                         setUserBookMarketType('match_odds');
                         setShowBetLockModal(true);
                       }}
@@ -613,9 +623,20 @@ const Cricket: React.FC<CricketProps> = ({
             const bookmakerItem = normalizedBookMakerOdds[0];
             const bookmakerMarkets = [];
 
-            for (const key in bookmakerItem) {
-              if (key.startsWith("bm") && bookmakerItem[key]) {
-                bookmakerMarkets.push(bookmakerItem[key]);
+            // Get all bm keys and sort them to ensure correct order (bm1, bm2, bm3, etc.)
+            const bookmakerKeys = Object.keys(bookmakerItem)
+              .filter(key => key.startsWith("bm"))
+              .sort((a, b) => {
+                // Extract numbers from bm1, bm2, etc. and sort numerically
+                const numA = parseInt(a.replace("bm", "")) || 0;
+                const numB = parseInt(b.replace("bm", "")) || 0;
+                return numA - numB;
+              });
+
+            // Push markets in sorted order
+            for (const key of bookmakerKeys) {
+              if (bookmakerItem[key]) {
+                bookmakerMarkets.push({ key, market: bookmakerItem[key] });
               }
             }
 
@@ -638,10 +659,14 @@ const Cricket: React.FC<CricketProps> = ({
                       : "max-h-0 opacity-0"
                   }`}
                 >
-                  {bookmakerMarkets.map((market, index) => {
+                  {bookmakerMarkets.map(({ key, market }, index) => {
                     const isBookmakerExpanded = expandedBookmakers.has(index);
+                    // Use market.market if available, otherwise construct from key (bm1 -> "Bookmaker 1", bm2 -> "Bookmaker 2")
+                    const marketName = market.market || `Bookmaker ${index + 1}`;
+                    const bookmakerNumber = parseInt(key.replace("bm", "")) || (index + 1);
+                    
                     return (
-                      <div key={`bookmaker-${index}`} className="flex flex-col">
+                      <div key={`bookmaker-${key}`} className="flex flex-col">
                         {/* Individual Bookmaker Header */}
                         <div className="font-bold text-lg py-1 flex items-center px-2 bg-[var(--bg-secondary70)] gap-2 justify-between">
                           <h2 
@@ -658,12 +683,17 @@ const Cricket: React.FC<CricketProps> = ({
                             }}
                             className="text-sm font-normal hover:cursor-pointer text-white/90 leading-6 tracking-tight"
                           >
-                            Bookmaker {index + 1}
+                            {marketName}
                           </h2>
                           <div className="flex items-center gap-2">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
+                                setSelectedBetLockMarket({
+                                  mid: market.mid,
+                                  marketName: marketName,
+                                  marketType: 'bookmaker'
+                                });
                                 setUserBookMarketType('bookmaker');
                                 setSelectedBookmakerIndex(index);
                                 setShowBetLockModal(true);
@@ -861,6 +891,11 @@ const Cricket: React.FC<CricketProps> = ({
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
+                            setSelectedBetLockMarket({
+                              mid: normal?.mid,
+                              marketName: "Normal Fancy",
+                              marketType: 'other'
+                            });
                             setUserBookMarketType('match_odds');
                             setShowBetLockModal(true);
                           }}
@@ -989,6 +1024,11 @@ const Cricket: React.FC<CricketProps> = ({
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
+                            setSelectedBetLockMarket({
+                              mid: fancy1?.mid,
+                              marketName: "Fancy 1",
+                              marketType: 'other'
+                            });
                             setUserBookMarketType('match_odds');
                             setShowBetLockModal(true);
                           }}
@@ -1117,6 +1157,11 @@ const Cricket: React.FC<CricketProps> = ({
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
+                            setSelectedBetLockMarket({
+                              mid: overbyover?.[0]?.mid,
+                              marketName: "Over By Over",
+                              marketType: 'other'
+                            });
                             setUserBookMarketType('match_odds');
                             setShowBetLockModal(true);
                           }}
@@ -1252,6 +1297,11 @@ const Cricket: React.FC<CricketProps> = ({
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
+                            setSelectedBetLockMarket({
+                              mid: oddEven?.mid,
+                              marketName: "Odd Even",
+                              marketType: 'other'
+                            });
                             setUserBookMarketType('match_odds');
                             setShowBetLockModal(true);
                           }}
@@ -1394,6 +1444,11 @@ const Cricket: React.FC<CricketProps> = ({
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
+                            setSelectedBetLockMarket({
+                              mid: tournamentWinner?.mid,
+                              marketName: "Tournament Winner",
+                              marketType: 'other'
+                            });
                             setUserBookMarketType('match_odds');
                             setShowBetLockModal(true);
                           }}
@@ -1556,6 +1611,11 @@ const Cricket: React.FC<CricketProps> = ({
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
+                            setSelectedBetLockMarket({
+                              mid: tiedMatchOdd?.mid,
+                              marketName: "Tied Match",
+                              marketType: 'other'
+                            });
                             setUserBookMarketType('match_odds');
                             setShowBetLockModal(true);
                           }}
@@ -2050,7 +2110,14 @@ const Cricket: React.FC<CricketProps> = ({
             : (() => {
                 const bookmakerItem = normalizedBookMakerOdds[0];
                 if (bookmakerItem) {
-                  const bookmakerKeys = Object.keys(bookmakerItem).filter(key => key.startsWith("bm"));
+                  // Get all bm keys and sort them to ensure correct order
+                  const bookmakerKeys = Object.keys(bookmakerItem)
+                    .filter(key => key.startsWith("bm"))
+                    .sort((a, b) => {
+                      const numA = parseInt(a.replace("bm", "")) || 0;
+                      const numB = parseInt(b.replace("bm", "")) || 0;
+                      return numA - numB;
+                    });
                   const selectedKey = bookmakerKeys[selectedBookmakerIndex];
                   return bookmakerItem[selectedKey]?.mid;
                 }
@@ -2068,24 +2135,35 @@ const Cricket: React.FC<CricketProps> = ({
         isOpen={showBetLockModal}
         onClose={() => setShowBetLockModal(false)}
         eventId={eventId}
-        marketType={userBookMarketType}
+        marketType={selectedBetLockMarket.marketType || userBookMarketType}
         mid={
-          userBookMarketType === "match_odds"
-            ? normalizedMatchOdds.find((item: any) => item.market == "Match Odds")?.mid
-            : (() => {
-                const bookmakerItem = normalizedBookMakerOdds[0];
-                if (bookmakerItem) {
-                  const bookmakerKeys = Object.keys(bookmakerItem).filter(key => key.startsWith("bm"));
-                  const selectedKey = bookmakerKeys[selectedBookmakerIndex];
-                  return bookmakerItem[selectedKey]?.mid;
-                }
-                return normalizedBookMakerOdds.find((item: any) => item.market == "Bookmaker")?.mid;
-              })()
+          selectedBetLockMarket.mid || (
+            userBookMarketType === "match_odds"
+              ? normalizedMatchOdds.find((item: any) => item.market == "Match Odds")?.mid
+              : (() => {
+                  const bookmakerItem = normalizedBookMakerOdds[0];
+                  if (bookmakerItem) {
+                    // Get all bm keys and sort them to ensure correct order
+                    const bookmakerKeys = Object.keys(bookmakerItem)
+                      .filter(key => key.startsWith("bm"))
+                      .sort((a, b) => {
+                        const numA = parseInt(a.replace("bm", "")) || 0;
+                        const numB = parseInt(b.replace("bm", "")) || 0;
+                        return numA - numB;
+                      });
+                    const selectedKey = bookmakerKeys[selectedBookmakerIndex];
+                    return bookmakerItem[selectedKey]?.mid;
+                  }
+                  return normalizedBookMakerOdds.find((item: any) => item.market == "Bookmaker")?.mid;
+                })()
+          )
         }
         marketName={
-          userBookMarketType === "match_odds" 
-            ? "Match Odds" 
-            : `Bookmaker ${selectedBookmakerIndex + 1}`
+          selectedBetLockMarket.marketName || (
+            userBookMarketType === "match_odds" 
+              ? "Match Odds" 
+              : `Bookmaker ${selectedBookmakerIndex + 1}`
+          )
         }
         eventName={
           (typeof match === 'object' && match?.name) 

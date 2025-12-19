@@ -44,7 +44,7 @@ interface ClientRow {
   availableBalance: number; // Available balance for transactions
   ust: boolean;           // User status toggle
   bst: boolean;           // Betting status toggle
-  exposureLimit: number;   // Maximum exposure limit
+  exposureLimit?: number;   // Maximum exposure limit (optional)
   defaultPercent: number;  // Default percentage setting
   accountType: string;     // Type of account (e.g., "Client", "Agent")
   _id?: string;           // Optional database ID
@@ -168,7 +168,7 @@ const exportToPDF = (data: ClientRow[], totals: any, activeTab: string) => {
       row.availableBalance.toLocaleString(),
       row.ust ? 'Active' : 'Inactive',
       row.bst ? 'Active' : 'Inactive',
-      row.exposureLimit.toLocaleString(),
+      row.exposureLimit !== undefined && row.exposureLimit !== null ? row.exposureLimit.toLocaleString() : '-',
       row.defaultPercent.toString(),
       row.accountType
     ]);
@@ -285,7 +285,7 @@ const exportToExcel = (data: ClientRow[], totals: any, activeTab: string) => {
         row.availableBalance,
         row.ust ? 'Active' : 'Inactive',
         row.bst ? 'Active' : 'Inactive',
-        row.exposureLimit,
+        row.exposureLimit !== undefined && row.exposureLimit !== null ? row.exposureLimit : '-',
         row.defaultPercent,
         row.accountType
       ]),
@@ -596,7 +596,7 @@ const ClientList: React.FC = () => {
         // Interpret as ACTIVE states (true means active)
         ust: user.userLocked === true ? false : true,
         bst: user.bettingLocked === true ? false : true,
-        exposureLimit: user.AccountDetails.ExposureLimit || 0,
+        exposureLimit: user.AccountDetails.ExposureLimit !== undefined && user.AccountDetails.ExposureLimit !== null ? user.AccountDetails.ExposureLimit : undefined,
         defaultPercent: parseFloat((user as any).commissionDetails?.partnershipOwn || "0"), // Use partnershipOwn from commissionDetails
         accountType: user.__type === "client" ? "User" : user.__type || "User",
         _id: user.userId || "",
@@ -743,7 +743,7 @@ const ClientList: React.FC = () => {
         acc.clientPL += parseNumericValue(row.clientPL);
         acc.exposure += parseNumericValue(row.exposure);
         acc.availableBalance += parseNumericValue(row.availableBalance);
-        acc.exposureLimit += parseNumericValue(row.exposureLimit);
+        acc.exposureLimit += row.exposureLimit !== undefined && row.exposureLimit !== null ? parseNumericValue(row.exposureLimit) : 0;
         acc.defaultPercent += parseNumericValue(row.defaultPercent);
         return acc;
       },
@@ -1439,7 +1439,7 @@ const ClientList: React.FC = () => {
                       />
                     </td>
                     <td className="px-2 py-2 text-center font-medium align-middle border border-[#e0e0e0]">
-                      {row.exposureLimit.toLocaleString()}
+                      {row.exposureLimit !== undefined && row.exposureLimit !== null ? row.exposureLimit.toLocaleString() : '-'}
                     </td>
                     <td className="px-2 py-2 text-center font-medium align-middle border border-[#e0e0e0]">
                       {row.defaultPercent}

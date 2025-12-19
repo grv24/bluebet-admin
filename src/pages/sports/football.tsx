@@ -239,6 +239,7 @@ const Football: React.FC<FootballProps> = ({
   const [showUserBookModal, setShowUserBookModal] = useState<boolean>(false);
   const [userBookMarketType, setUserBookMarketType] = useState<'match_odds' | 'bookmaker'>('match_odds');
   const [showBetLockModal, setShowBetLockModal] = useState<boolean>(false);
+  const [selectedBetLockMarket, setSelectedBetLockMarket] = useState<{ mid?: string; marketName?: string; marketType?: string }>({});
   const [showViewMoreModal, setShowViewMoreModal] = useState<boolean>(false);
   const [showMyBetsModal, setShowMyBetsModal] = useState<boolean>(false);
   const [showBetDetailsModal, setShowBetDetailsModal] = useState<boolean>(false);
@@ -412,6 +413,12 @@ const Football: React.FC<FootballProps> = ({
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
+                        const matchOddsMarket = normalizedMatchOdds.find((item: any) => item.market == "Match Odds");
+                        setSelectedBetLockMarket({
+                          mid: matchOddsMarket?.mid,
+                          marketName: "Match Odds",
+                          marketType: 'match_odds'
+                        });
                         setUserBookMarketType('match_odds');
                         setShowBetLockModal(true);
                       }}
@@ -597,6 +604,11 @@ const Football: React.FC<FootballProps> = ({
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
+                            setSelectedBetLockMarket({
+                              mid: item?.mid,
+                              marketName: item?.market,
+                              marketType: 'other'
+                            });
                             setUserBookMarketType('match_odds');
                             setShowBetLockModal(true);
                           }}
@@ -781,6 +793,11 @@ const Football: React.FC<FootballProps> = ({
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
+                          setSelectedBetLockMarket({
+                            mid: correctSet?.mid,
+                            marketName: correctSet?.market,
+                            marketType: 'other'
+                          });
                           setUserBookMarketType('match_odds');
                           setShowBetLockModal(true);
                         }}
@@ -798,7 +815,7 @@ const Football: React.FC<FootballProps> = ({
                         ? "max-h-[1000px] opacity-100"
                         : "max-h-0 opacity-0"
                     }`}
-                  >
+                    >
                     {/* Grid of odds */}
                     <div className={`grid grid-cols-1 gap-x-2 ${gridClass}`}>
                       {data.map((item: any, idx: number) => (
@@ -1043,16 +1060,14 @@ const Football: React.FC<FootballProps> = ({
         isOpen={showBetLockModal}
         onClose={() => setShowBetLockModal(false)}
         eventId={eventId}
-        marketType={userBookMarketType}
-        mid={
-          normalizedMatchOdds.find((item: any) => item.market == "Match Odds")?.mid
-        }
+        marketType={selectedBetLockMarket.marketType || userBookMarketType}
+        mid={selectedBetLockMarket.mid || normalizedMatchOdds.find((item: any) => item.market == "Match Odds")?.mid}
         eventName={
           (typeof match === 'object' && match?.name) 
             ? match.name 
             : (competition && match ? `${competition} > ${match}` : match || competition || "")
         }
-        marketName="Match Odds"
+        marketName={selectedBetLockMarket.marketName || "Match Odds"}
         competition={competition}
         match={match}
       />
