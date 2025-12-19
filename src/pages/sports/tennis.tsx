@@ -1291,10 +1291,12 @@ const Tennis: React.FC<TennisProps> = ({
             ? normalizedMatchOdds.find((item: any) => item.market == "Match Odds")?.mid
             : normalizedBookMakerOdds.find((item: any) => item.market == "Bookmaker")?.mid
         }
-        eventName={match?.name || ""}
+        eventName={match?.name || (competition && match ? `${competition} > ${match}` : match || "")}
         marketName={
           userBookMarketType === "match_odds" ? "Match Odds" : "Bookmaker"
         }
+        competition={competition}
+        match={match}
       />
 
       {/* My Bets Modal */}

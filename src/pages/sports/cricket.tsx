@@ -806,7 +806,7 @@ const Cricket: React.FC<CricketProps> = ({
                         Normal Fancy
                       </h2>
                       <div className="flex items-center gap-2">
-                        <button
+                        <button 
                           onClick={(e) => {
                             e.stopPropagation();
                             setUserBookMarketType('match_odds');
@@ -934,7 +934,7 @@ const Cricket: React.FC<CricketProps> = ({
                         Fancy 1
                       </h2>
                       <div className="flex items-center gap-2">
-                        <button
+                        <button 
                           onClick={(e) => {
                             e.stopPropagation();
                             setUserBookMarketType('match_odds');
@@ -1062,7 +1062,7 @@ const Cricket: React.FC<CricketProps> = ({
                         Over By Over
                       </h2>
                       <div className="flex items-center gap-2">
-                        <button
+                        <button 
                           onClick={(e) => {
                             e.stopPropagation();
                             setUserBookMarketType('match_odds');
@@ -1197,7 +1197,7 @@ const Cricket: React.FC<CricketProps> = ({
                         Odd Even
                       </h2>
                       <div className="flex items-center gap-2">
-                        <button
+                        <button 
                           onClick={(e) => {
                             e.stopPropagation();
                             setUserBookMarketType('match_odds');
@@ -1339,7 +1339,7 @@ const Cricket: React.FC<CricketProps> = ({
                         Tournament Winner
                       </h2>
                       <div className="flex items-center gap-2">
-                        <button
+                        <button 
                           onClick={(e) => {
                             e.stopPropagation();
                             setUserBookMarketType('match_odds');
@@ -1501,7 +1501,7 @@ const Cricket: React.FC<CricketProps> = ({
                         Tied Match
                       </h2>
                       <div className="flex items-center gap-2">
-                        <button
+                        <button 
                           onClick={(e) => {
                             e.stopPropagation();
                             setUserBookMarketType('match_odds');
@@ -2009,10 +2009,12 @@ const Cricket: React.FC<CricketProps> = ({
             ? normalizedMatchOdds.find((item: any) => item.market == "Match Odds")?.mid
             : normalizedBookMakerOdds.find((item: any) => item.market == "Bookmaker")?.mid
         }
-        eventName={match?.name || ""}
+        eventName={match?.name || (competition && match ? `${competition} > ${match}` : match || "")}
         marketName={
           userBookMarketType === "match_odds" ? "Match Odds" : "Bookmaker"
         }
+        competition={competition}
+        match={match}
       />
 
       {/* My Bets Modal */}
