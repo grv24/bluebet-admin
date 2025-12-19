@@ -15,6 +15,7 @@ interface UserBookProps {
   isOpen: boolean;
   onClose: () => void;
   eventId: string;
+  marketType?: 'match_odds' | 'bookmaker';
   matchTeams?: {
     team1?: string;
     team2?: string;
@@ -25,6 +26,7 @@ const UserBook: React.FC<UserBookProps> = ({
   isOpen,
   onClose,
   eventId,
+  marketType = 'match_odds',
   matchTeams,
 }) => {
   const [userBookData, setUserBookData] = useState<UserBookData[]>([]);
@@ -42,7 +44,7 @@ const UserBook: React.FC<UserBookProps> = ({
     if (isOpen && eventId && authToken) {
       fetchUserBookData();
     }
-  }, [isOpen, eventId, authToken]);
+  }, [isOpen, eventId, authToken, marketType]);
 
   const fetchUserBookData = async () => {
     if (!authToken || !eventId) {
@@ -52,7 +54,7 @@ const UserBook: React.FC<UserBookProps> = ({
 
     setLoading(true);
     try {
-      const response = await fetch(`${SERVER_URL}/api/v1/sports/user-book/${eventId}`, {
+      const response = await fetch(`${SERVER_URL}/api/v1/sports/user-book/${eventId}?type=${marketType}`, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authToken}`,

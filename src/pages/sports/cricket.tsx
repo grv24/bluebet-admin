@@ -190,6 +190,7 @@ const Cricket: React.FC<CricketProps> = ({
   const [showFancy1, setShowFancy1] = useState<boolean>(true);
   const [showLiveMatch, setShowLiveMatch] = useState<boolean>(false);
   const [showUserBookModal, setShowUserBookModal] = useState<boolean>(false);
+  const [userBookMarketType, setUserBookMarketType] = useState<'match_odds' | 'bookmaker'>('match_odds');
   const [showBetLockModal, setShowBetLockModal] = useState<boolean>(false);
   const [showViewMoreModal, setShowViewMoreModal] = useState<boolean>(false);
   const [showMyBetsModal, setShowMyBetsModal] = useState<boolean>(false);
@@ -427,13 +428,20 @@ const Cricket: React.FC<CricketProps> = ({
                   </h2>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => setShowBetLockModal(true)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowBetLockModal(true);
+                      }}
                       className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
                     >
                       BET LOCK
                     </button>
                     <button
-                      onClick={() => setShowUserBookModal(true)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUserBookMarketType('match_odds');
+                        setShowUserBookModal(true);
+                      }}
                       className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
                     >
                       USER BOOK
@@ -592,23 +600,30 @@ const Cricket: React.FC<CricketProps> = ({
             return (
               <div className="flex flex-col">
                 <div
-                 
                   className="font-bold text-lg py-1 flex items-center px-2 bg-[var(--bg-secondary70)] gap-2 justify-between "
                 >
                   <h2
-                   onClick={() => setShowBookmaker(!showBookmaker)}
-                  className="text-sm font-normal hover:cursor-pointer text-white/90 leading-6 tracking-tight">
+                    onClick={() => setShowBookmaker(!showBookmaker)}
+                    className="text-sm font-normal hover:cursor-pointer text-white/90 leading-6 tracking-tight"
+                  >
                     Bookmaker
                   </h2>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => setShowBetLockModal(true)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowBetLockModal(true);
+                      }}
                       className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
                     >
                       BET LOCK
                     </button>
                     <button
-                      onClick={() => setShowUserBookModal(true)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUserBookMarketType('bookmaker');
+                        setShowUserBookModal(true);
+                      }}
                       className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
                     >
                       USER BOOK
@@ -781,20 +796,21 @@ const Cricket: React.FC<CricketProps> = ({
                 {normal && (
                   <div key={normal.mid} className="flex flex-col">
                     <div
-                      
+                      onClick={() => setShowNormalFancy(!showNormalFancy)}
                       className="font-bold text-lg py-1 flex items-center px-2 bg-[var(--bg-secondary70)] gap-2 justify-between cursor-pointer"
                     >
-                      <h2
-                       onClick={() => setShowNormalFancy(!showNormalFancy)}
-                      className="text-sm font-normal hover:cursor-pointer text-white/90 leading-6 tracking-tight">
+                      <h2 className="text-sm font-normal hover:cursor-pointer text-white/90 leading-6 tracking-tight">
                         Normal Fancy
                       </h2>
                       <div className="flex items-center gap-2">
-                        <button className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowBetLockModal(true);
+                          }}
+                          className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
+                        >
                           BET LOCK
-                        </button>
-                        <button className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90">
-                          USER BOOK
                         </button>
                       </div>
                     </div>
@@ -907,20 +923,21 @@ const Cricket: React.FC<CricketProps> = ({
                 {fancy1 && (
                   <div className="flex flex-col">
                     <div
-                     
+                      onClick={() => setShowFancy1(!showFancy1)}
                       className="font-bold text-lg py-1 flex items-center px-2 bg-[var(--bg-secondary70)] gap-2 justify-between cursor-pointer"
                     >
-                      <h2
-                       onClick={() => setShowFancy1(!showFancy1)}
-                      className="text-sm font-normal hover:cursor-pointer text-white/90 leading-6 tracking-tight">
+                      <h2 className="text-sm font-normal hover:cursor-pointer text-white/90 leading-6 tracking-tight">
                         Fancy 1
                       </h2>
                       <div className="flex items-center gap-2">
-                        <button className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowBetLockModal(true);
+                          }}
+                          className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
+                        >
                           BET LOCK
-                        </button>
-                        <button className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90">
-                          USER BOOK
                         </button>
                       </div>
                     </div>
@@ -1033,20 +1050,21 @@ const Cricket: React.FC<CricketProps> = ({
                 {Array.isArray(overbyover) && overbyover.length > 0 && (
                   <div className="flex flex-col">
                     <div
-
+                      onClick={() => setShowOverByOver(!showOverByOver)}
                       className="font-bold text-lg py-1 flex items-center px-2 bg-[var(--bg-secondary70)] gap-2 justify-between cursor-pointer"
                     >
-                      <h2
-                       onClick={() => setShowOverByOver(!showOverByOver)}
-                      className="text-sm font-normal hover:cursor-pointer text-white/90 leading-6 tracking-tight">
+                      <h2 className="text-sm font-normal hover:cursor-pointer text-white/90 leading-6 tracking-tight">
                         Over By Over
                       </h2>
                       <div className="flex items-center gap-2">
-                        <button className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowBetLockModal(true);
+                          }}
+                          className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
+                        >
                           BET LOCK
-                        </button>
-                        <button className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90">
-                          USER BOOK
                         </button>
                       </div>
                     </div>
@@ -1166,20 +1184,21 @@ const Cricket: React.FC<CricketProps> = ({
                 {oddEven && (
                   <div className="flex flex-col">
                     <div
-
+                      onClick={() => setShowOddEven(!showOddEven)}
                       className="font-bold text-lg py-1 flex items-center px-2 bg-[var(--bg-secondary70)] gap-2 justify-between cursor-pointer"
                     >
-                      <h2
-                       onClick={() => setShowOddEven(!showOddEven)}
-                      className="text-sm font-normal hover:cursor-pointer text-white/90 leading-6 tracking-tight">
+                      <h2 className="text-sm font-normal hover:cursor-pointer text-white/90 leading-6 tracking-tight">
                         Odd Even
                       </h2>
                       <div className="flex items-center gap-2">
-                        <button className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowBetLockModal(true);
+                          }}
+                          className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
+                        >
                           BET LOCK
-                        </button>
-                        <button className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90">
-                          USER BOOK
                         </button>
                       </div>
                     </div>
@@ -1306,20 +1325,21 @@ const Cricket: React.FC<CricketProps> = ({
                 {tournamentWinner && (
                   <div key={tournamentWinner.mid} className="flex flex-col">
                     <div
-                      
+                      onClick={() => setShowTournamentWinner(!showTournamentWinner)}
                       className="font-bold text-lg py-1 flex items-center px-2 bg-[var(--bg-secondary70)] gap-2 justify-between cursor-pointer"
                     >
-                      <h2
-                       onClick={() => setShowTournamentWinner(!showTournamentWinner)}
-                      className="text-sm font-normal hover:cursor-pointer text-white/90 leading-6 tracking-tight">
+                      <h2 className="text-sm font-normal hover:cursor-pointer text-white/90 leading-6 tracking-tight">
                         Tournament Winner
                       </h2>
                       <div className="flex items-center gap-2">
-                        <button className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowBetLockModal(true);
+                          }}
+                          className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
+                        >
                           BET LOCK
-                        </button>
-                        <button className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90">
-                          USER BOOK
                         </button>
                       </div>
                     </div>
@@ -1466,20 +1486,21 @@ const Cricket: React.FC<CricketProps> = ({
                 {tiedMatchOdd && (
                   <div key={tiedMatchOdd.mid} className="flex flex-col">
                     <div
-
+                      onClick={() => setShowTiedMatch(!showTiedMatch)}
                       className="font-bold text-lg py-1 flex items-center px-2 bg-[var(--bg-secondary70)] gap-2 justify-between cursor-pointer"
                     >
-                      <h2
-                       onClick={() => setShowTiedMatch(!showTiedMatch)}
-                      className="text-sm font-normal hover:cursor-pointer text-white/90 leading-6 tracking-tight">
+                      <h2 className="text-sm font-normal hover:cursor-pointer text-white/90 leading-6 tracking-tight">
                         Tied Match
                       </h2>
                       <div className="flex items-center gap-2">
-                        <button className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowBetLockModal(true);
+                          }}
+                          className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
+                        >
                           BET LOCK
-                        </button>
-                        <button className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90">
-                          USER BOOK
                         </button>
                       </div>
                     </div>
@@ -1961,6 +1982,7 @@ const Cricket: React.FC<CricketProps> = ({
         isOpen={showUserBookModal}
         onClose={() => setShowUserBookModal(false)}
         eventId={eventId}
+        marketType={userBookMarketType}
         matchTeams={{
           team1: normalizedMatchOdds?.[0]?.oddDatas?.[0]?.rname || "Australia",
           team2: normalizedMatchOdds?.[0]?.oddDatas?.[1]?.rname || "England",
