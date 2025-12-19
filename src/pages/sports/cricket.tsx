@@ -178,9 +178,9 @@ const Cricket: React.FC<CricketProps> = ({
   const [showBookmaker, setShowBookmaker] = useState<boolean>(true);
   const [showNormalFancy, setShowNormalFancy] = useState<boolean>(true);
   const [showOverByOver, setShowOverByOver] = useState<boolean>(true);
-  const [showBookSummary, setShowBookSummary] = useState<boolean>(true);
+  const [showBookSummary, setShowBookSummary] = useState<boolean>(false);
   const [showScoreCard, setShowScoreCard] = useState<boolean>(false);
-  const [showMyBets, setShowMyBets] = useState<boolean>(false);
+  const [showMyBets, setShowMyBets] = useState<boolean>(true);
   const [activeBetTab, setActiveBetTab] = useState<
     "matched" | "settled" | "unmatched"
   >("matched");
@@ -1782,7 +1782,7 @@ const Cricket: React.FC<CricketProps> = ({
         </div>
         <div className="space-y-4">{cricketMatchOddsRender()}</div>
       </div>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 max-h-screen overflow-y-auto">
         <div className="flex flex-col">
           <h2
             onClick={() => setShowBookSummary(!showBookSummary)}
@@ -1855,8 +1855,8 @@ const Cricket: React.FC<CricketProps> = ({
             </div>
           </div>
         )}
-        <div className="flex flex-col">
-          <div className="flex items-center bg-[var(--bg-secondary70)] py-1 px-2 justify-between">
+        <div className="flex flex-col max-h-[500px]">
+          <div className="flex items-center bg-[var(--bg-secondary70)] py-1 px-2 justify-between flex-shrink-0">
             <h2
               onClick={() => setShowMyBets(!showMyBets)}
               className=" text-white/90 leading-6 tracking-tight text-sm px-2 cursor-pointer"
@@ -1872,10 +1872,10 @@ const Cricket: React.FC<CricketProps> = ({
             </button>
           </div>
           <div
-            className={`bg-gray-100 border-gray-200 max-h-[60vh] overflow-y-auto `}
+            className={`bg-gray-100 border-gray-200 overflow-hidden flex flex-col flex-1 min-h-0 ${showMyBets ? '' : 'hidden'}`}
           >
             {downlinesBets?.success && downlinesBets?.bets?.length > 0 ? (
-              <div className="p-2">
+              <div className="p-2 flex flex-col h-full overflow-hidden">
                 {/* Old Card-Based UI - Commented Out */}
                 {/* <div className="flex justify-between items-center mb-2 text-xs">
                   <span className="text-gray-600">Total Bets: {downlinesBets.totalBets}</span>
@@ -1983,7 +1983,7 @@ const Cricket: React.FC<CricketProps> = ({
       </div> */}
 
                 {/* New Table-Based UI - Screenshot Style */}
-                <div className="flex border-b mb-2">
+                <div className="flex border-b mb-2 flex-shrink-0">
                   <button
                     onClick={() => setActiveBetTab("matched")}
                     className={`px-3 py-2 font-medium text-xs ${
@@ -2005,9 +2005,9 @@ const Cricket: React.FC<CricketProps> = ({
                     Unmatched Bets
                   </button>
                 </div>
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto flex-1 overflow-y-auto min-h-0">
                   <table className="w-full text-xs">
-                    <thead>
+                    <thead className="sticky top-0 z-10 bg-gray-50">
                       <tr className="bg-gray-50">
                         <th className="text-left p-2 font-medium text-gray-700">
                           UserName
@@ -2045,7 +2045,7 @@ const Cricket: React.FC<CricketProps> = ({
                           <React.Fragment key={bet.betId}>
                             {/* First Row - Normal and Timestamp */}
                             <tr className={bgColor}>
-                              <td className="px-2 py-1 border-l-2 border-blue-500">
+                              <td className={`px-2 py-1 border-l-2 ${isBackType?"border-blue-500":"border-red-500"} `}>
                                 {bet?.market}
                               </td>
                               <td className="px-2"></td>
@@ -2066,7 +2066,7 @@ const Cricket: React.FC<CricketProps> = ({
                             </tr>
                             {/* Second Row - Username, Bet Description, Rate, Amount */}
                             <tr className={bgColor}>
-                              <td className="px-2 border-l-2 border-blue-500">
+                              <td className={`px-2 border-l-2 ${isBackType?"border-blue-500":"border-red-500"} `}>
                                 {bet.username || bet.userName}
                               </td>
                               <td className="px-2">
