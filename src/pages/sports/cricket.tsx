@@ -46,6 +46,19 @@ const renderLockedOverlay = (status: string) => (
 );
 
 /**
+ * Format number with k notation (e.g., 5000 -> 5k, 50000 -> 50k)
+ * @param num - Number to format
+ * @returns Formatted string with k notation
+ */
+const formatMaxValue = (num: number | undefined | null): string => {
+  if (!num || num === 0) return "0";
+  if (num >= 1000) {
+    return `${(num / 1000).toFixed(0)}k`;
+  }
+  return num.toString();
+};
+
+/**
  * Custom hook to track value changes and trigger blink effect
  * @param value - The value to track for changes
  * @param vol - Volume value to include in change detection
@@ -491,7 +504,7 @@ const Cricket: React.FC<CricketProps> = ({
                     <thead>
                       <tr>
                         <td className="text-xs font-bold text-[var(--bg-primary90)] pl-2 md:w-72">
-                          {/* Min: {data?.min || 0} Max: {data?.max || 0} */}
+                          Min: {matchOdd?.min || 0} Max: {formatMaxValue(matchOdd?.max)}
                         </td>
                         <td>
                           <div className="w-10 md:w-16"></div>
@@ -726,7 +739,7 @@ const Cricket: React.FC<CricketProps> = ({
                         <thead>
                           <tr>
                             <td className="text-xs font-bold text-[var(--bg-primary90)] pl-2 md:w-72">
-                              {/* Bookmaker {index + 1} */}
+                              Min: {market?.min || 0} Max: {formatMaxValue(market?.max)}
                             </td>
                             <td>
                               <div className="w-10 md:w-16"></div>
@@ -915,7 +928,9 @@ const Cricket: React.FC<CricketProps> = ({
                       <table className="w-full">
                         <thead>
                           <tr className="border-white/10 border-b">
-                            <td className="text-xs font-bold text-[var(--bg-primary90)] pl-2"></td>
+                            <td className="text-xs font-bold text-[var(--bg-primary90)] pl-2">
+                              Min: {normal?.min || 0} Max: {formatMaxValue(normal?.max)}
+                            </td>
                             <td className="p-0 border-white/10 w-full">
                               <div className="flex justify-center">
                                 <div className="text-center text-xs md:text-sm py-1 bg-[var(--lay)] font-semibold w-16 md:w-28">
@@ -1048,7 +1063,9 @@ const Cricket: React.FC<CricketProps> = ({
                       <table className="w-full">
                         <thead>
                           <tr className="border-white/10 border-b">
-                            <td className="text-xs font-bold text-[var(--bg-primary90)] pl-2 md:w-72 w-1/2"></td>
+                            <td className="text-xs font-bold text-[var(--bg-primary90)] pl-2 md:w-72 w-1/2">
+                              Min: {fancy1?.min || 0} Max: {formatMaxValue(fancy1?.max)}
+                            </td>
                             <td className="p-0 border-white/10 w-full">
                               <div className="flex justify-end">
                                 <div className="text-center text-xs md:text-sm py-1 bg-[var(--lay)] font-semibold w-16 md:w-28">
@@ -1186,7 +1203,9 @@ const Cricket: React.FC<CricketProps> = ({
                           <table className="w-full">
                             <thead>
                               <tr className="border-white/10 border-b">
-                                <td className="text-xs font-bold text-[var(--bg-primary90)] pl-2 md:w-72 w-1/2"></td>
+                                <td className="text-xs font-bold text-[var(--bg-primary90)] pl-2 md:w-72 w-1/2">
+                                  Min: {item?.min || 0} Max: {formatMaxValue(item?.max)}
+                                </td>
                                 <td className="p-0 border-white/10 w-full">
                                   <div className="flex justify-end">
                                     <div className="text-center text-xs md:text-sm py-1 bg-[var(--lay)] font-semibold w-16 md:w-28">
@@ -1321,7 +1340,9 @@ const Cricket: React.FC<CricketProps> = ({
                       <table className="w-full">
                         <thead>
                           <tr className="border-white/10 border-b">
-                            <td className="text-xs font-bold text-[var(--bg-primary90)] pl-2"></td>
+                            <td className="text-xs font-bold text-[var(--bg-primary90)] pl-2">
+                              Min: {oddEven?.min || 0} Max: {formatMaxValue(oddEven?.max)}
+                            </td>
                             <td className="p-0 border-white/10 w-full">
                               <div className="flex justify-end">
                                 <div className="text-center text-xs md:text-sm py-1 bg-[var(--lay)] font-semibold w-16 md:w-28">
@@ -1469,7 +1490,7 @@ const Cricket: React.FC<CricketProps> = ({
                         <thead>
                           <tr>
                             <td className="text-xs font-bold text-[var(--bg-primary90)] pl-2 md:w-72">
-                              {/* Min: {tournamentWinner?.min || 0} Max: {tournamentWinner?.max || 0} */}
+                              Min: {tournamentWinner?.min || 0} Max: {formatMaxValue(tournamentWinner?.max)}
                             </td>
                             <td>
                               <div className="w-10 md:w-16"></div>
@@ -1636,7 +1657,7 @@ const Cricket: React.FC<CricketProps> = ({
                         <thead>
                           <tr>
                             <td className="text-xs font-bold text-[var(--bg-primary90)] pl-2 md:w-72">
-                              {/* Min: {tiedMatchOdd?.min || 0} Max: {tiedMatchOdd?.max || 0} */}
+                              Min: {tiedMatchOdd?.min || 0} Max: {formatMaxValue(tiedMatchOdd?.max)}
                             </td>
                             <td>
                               <div className="w-10 md:w-16"></div>

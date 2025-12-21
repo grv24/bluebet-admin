@@ -46,6 +46,19 @@ const renderLockedOverlay = (status: string) => (
 );
 
 /**
+ * Format number with k notation (e.g., 5000 -> 5k, 50000 -> 50k)
+ * @param num - Number to format
+ * @returns Formatted string with k notation
+ */
+const formatMaxValue = (num: number | undefined | null): string => {
+  if (!num || num === 0) return "0";
+  if (num >= 1000) {
+    return `${(num / 1000).toFixed(0)}k`;
+  }
+  return num.toString();
+};
+
+/**
  * Custom hook to track value changes and trigger blink effect
  * @param value - The value to track for changes
  * @param vol - Volume value to include in change detection
@@ -195,7 +208,9 @@ const TwoMatchOdd = ({
               {showHeader && (
                 <thead>
                   <tr className="border-white/10 border-b bg-white/10">
-                    <td className="text-xs font-bold text-[var(--bg-primary90)] pl-2 md:w-72 w-50"></td>
+                    <td className="text-xs font-bold text-[var(--bg-primary90)] pl-2 md:w-72 w-50">
+                      Max: {formatMaxValue(data?.max)}
+                    </td>
                     <td className="p-0 border-white/10 w-full">
                       <div className="flex justify-end">
                         <div className="text-center text-sm md:text-base py-1 bg-[var(--back)] font-semibold w-full">
@@ -212,7 +227,7 @@ const TwoMatchOdd = ({
 
               <tbody className="border-white/10">
                 <tr className="border-white/10">
-                  <td className="border-white/10 border-b md:w-72 w-50 align-top">
+                  <td className="border-white/10 bg-gray-100 border-b md:w-72 w-50 align-top">
                     <div className="flex flex-col justify-start pt-1">
                       <span className="truncate min-w-28 md:w-28 w-68 text-sm font-semibold whitespace-nowrap px-2">
                         {item?.rname}
@@ -712,7 +727,7 @@ const Tennis: React.FC<TennisProps> = ({
                     <thead>
                       <tr>
                         <td className="text-xs font-bold text-[var(--bg-primary90)] pl-2 md:w-72">
-                          {/* Min: {matchOdd?.min || 0} Max: {matchOdd?.max || 0} */}
+                          Min: {matchOdd?.min || 0} Max: {formatMaxValue(matchOdd?.max)}
                         </td>
                         <td>
                           <div className="w-10 md:w-16"></div>
@@ -826,7 +841,7 @@ const Tennis: React.FC<TennisProps> = ({
               </div>
             );
           })()}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid lg:grid-cols-2 grid-cols-1 gap-2">
           {/* Bookmaker */}
           {normalizedBookMakerOdds?.length > 0 &&
             (() => {
@@ -898,7 +913,9 @@ const Tennis: React.FC<TennisProps> = ({
                               {showHeader && (
                                 <thead>
                                   <tr className="border-white/10 border-b">
-                                    <td className="text-xs font-bold text-[var(--bg-primary90)] pl-2 md:w-72 w-50"></td>
+                                    <td className="text-xs font-bold text-[var(--bg-primary90)] pl-2 md:w-72 w-50">
+                                      Min: {bookmaker?.min || 0} Max: {formatMaxValue(bookmaker?.max)}
+                                    </td>
                                     <td className="p-0 border-white/10 w-full">
                                       <div className="flex justify-end">
                                         <div className="text-center text-sm md:text-base py-1 bg-[var(--back)] font-semibold w-full">
@@ -1026,7 +1043,7 @@ const Tennis: React.FC<TennisProps> = ({
                         : "max-h-0 opacity-0"
                     }`}
                   >
-                    <div className="grid  grid-cols-1 gap-2 p-2">
+                    <div className="grid  grid-cols-1 gap-2">
                         <TwoMatchOdd
                             data={item}
                             sportType={

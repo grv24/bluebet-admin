@@ -46,6 +46,19 @@ const renderLockedOverlay = (status: string) => (
 );
 
 /**
+ * Format number with k notation (e.g., 5000 -> 5k, 50000 -> 50k)
+ * @param num - Number to format
+ * @returns Formatted string with k notation
+ */
+const formatMaxValue = (num: number | undefined | null): string => {
+  if (!num || num === 0) return "0";
+  if (num >= 1000) {
+    return `${(num / 1000).toFixed(0)}k`;
+  }
+  return num.toString();
+};
+
+/**
  * Custom hook to track value changes and trigger blink effect
  * @param value - The value to track for changes
  * @param vol - Volume value to include in change detection
@@ -510,7 +523,9 @@ const Football: React.FC<FootballProps> = ({
                   <table className="w-full">
                     <thead>
                       <tr>
-                        <td className="text-xs font-bold text-[var(--bg-primary90)] pl-2 md:w-72"></td>
+                        <td className="text-xs font-bold text-[var(--bg-primary90)] pl-2 md:w-72">
+                          Min: {matchOdd?.min || 0} Max: {formatMaxValue(matchOdd?.max)}
+                        </td>
                         <td>
                           <div className="w-10 md:w-16"></div>
                         </td>
@@ -709,7 +724,7 @@ const Football: React.FC<FootballProps> = ({
                       <thead>
                         <tr>
                           <td className="text-xs font-bold text-[var(--bg-primary90)] pl-2 md:w-72">
-                            {/* Min: {item?.min || 0} Max: {item?.max || 0} */}
+                            Min: {item?.min || 0} Max: {formatMaxValue(item?.max)}
                           </td>
                           <td>
                             <div className="w-10 md:w-16"></div>
