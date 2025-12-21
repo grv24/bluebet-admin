@@ -33,7 +33,7 @@ const UserBook: React.FC<UserBookProps> = ({
   const [userBookData, setUserBookData] = useState<UserBookData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [teamNames, setTeamNames] = useState<string[]>([]);
-
+  
   // Get authentication token from cookies
   const [cookies] = useCookies([
     baseUrl.includes("techadmin") ? "TechAdmin" : "Admin",
@@ -88,11 +88,11 @@ const UserBook: React.FC<UserBookProps> = ({
         `${SERVER_URL}/api/v1/sports/user-book/${eventId}?${queryParams.toString()}`,
         {
           method: "GET",
-          headers: {
-            Authorization: `Bearer ${authToken}`,
+        headers: {
+          Authorization: `Bearer ${authToken}`,
             Accept: "application/json",
             "Content-Type": "application/json",
-          },
+        },
         }
       );
 
@@ -122,7 +122,7 @@ const UserBook: React.FC<UserBookProps> = ({
         // Convert Set to Array and sort for consistent display
         const sortedTeamNames = Array.from(allTeamNames).sort();
         setTeamNames(sortedTeamNames);
-
+        
         // Transform API response to match our interface
         const transformedData: UserBookData[] = Array.isArray(data.bets)
           ? data.bets.map((bet: any) => ({
@@ -165,18 +165,18 @@ const UserBook: React.FC<UserBookProps> = ({
 
         {/* Header */}
         <h2 className="text-xl p-4 font-normal mb-2">User Book</h2>
-
+        
         <div className="px-8 py-4 pb-4 flex-1 overflow-hidden flex flex-col">
-          {/* Summary Table */}
-          <div className="flex-1 overflow-y-auto">
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-gray-500">Loading...</div>
-              </div>
+        {/* Summary Table */}
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-gray-500">Loading...</div>
+            </div>
             ) : userBookData.length > 0 && teamNames.length > 0 ? (
-              <div className="user-book">
+            <div className="user-book">
                 <table className="w-full text-sm border-collapse">
-                  <thead>
+                    <thead>
                     <tr className="border-b border-gray-200">
                       <th className="text-left px-3 py-1 font-normal text-gray-700">
                         UserName
@@ -189,9 +189,9 @@ const UserBook: React.FC<UserBookProps> = ({
                           {teamName}
                         </th>
                       ))}
-                    </tr>
-                  </thead>
-                  <tbody>
+                      </tr>
+                    </thead>
+                      <tbody>
                     {userBookData.map((user, index) => (
                       <tr
                         key={index}
@@ -199,7 +199,7 @@ const UserBook: React.FC<UserBookProps> = ({
                       >
                         <td className="text-left px-3 py-1 font-medium text-gray-800">
                           {user.username}
-                        </td>
+                            </td>
                         {teamNames.map((teamName) => (
                           <td
                             key={teamName}
@@ -210,15 +210,15 @@ const UserBook: React.FC<UserBookProps> = ({
                         ))}
                       </tr>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-gray-500">No Record Found</div>
-              </div>
-            )}
-          </div>
+                    </tbody>
+                  </table>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-gray-500">No Record Found</div>
+            </div>
+          )}
+        </div>
         </div>
       </div>
 

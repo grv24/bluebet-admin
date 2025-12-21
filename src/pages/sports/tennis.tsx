@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import { FaTimes } from "react-icons/fa";
 import { useCookies } from "react-cookie";
 import { baseUrl, SERVER_URL } from "@/helper/auth";
 import toast from "react-hot-toast";
@@ -409,22 +410,26 @@ const Tennis: React.FC<TennisProps> = ({
   sportId,
   downlinesBets,
 }) => {
-  const [showMatchOdds, setShowMatchOdds] = useState<boolean>(false);
-  const [showBookmaker, setShowBookmaker] = useState<boolean>(false);
+  const [showMatchOdds, setShowMatchOdds] = useState<boolean>(true);
+  const [showBookmaker, setShowBookmaker] = useState<boolean>(true);
   const [showOtherMarkets, setShowOtherMarkets] = useState<boolean>(false);
+  const [expandedOtherMarkets, setExpandedOtherMarkets] = useState<Set<string>>(new Set());
   const [showCorrectScoreSets, setShowCorrectScoreSets] = useState<{ [key: string]: boolean }>({});
   const [showBookSummary, setShowBookSummary] = useState<boolean>(false);
   const [showScoreCard, setShowScoreCard] = useState<boolean>(false);
-  const [showMyBets, setShowMyBets] = useState<boolean>(false);
+  const [showMyBets, setShowMyBets] = useState<boolean>(true);
   const [activeBetTab, setActiveBetTab] = useState<
-    "matched" | "settled"
+    "matched" | "settled" | "unmatched"
   >("matched");
   const [showLiveMatch, setShowLiveMatch] = useState<boolean>(false);
   const [showUserBookModal, setShowUserBookModal] = useState<boolean>(false);
   const [userBookMarketType, setUserBookMarketType] = useState<'match_odds' | 'bookmaker'>('match_odds');
   const [showBetLockModal, setShowBetLockModal] = useState<boolean>(false);
+  const [selectedBetLockMarket, setSelectedBetLockMarket] = useState<{ mid?: string; marketName?: string; marketType?: string }>({});
   const [showViewMoreModal, setShowViewMoreModal] = useState<boolean>(false);
   const [showMyBetsModal, setShowMyBetsModal] = useState<boolean>(false);
+  const [viewMoreData, setViewMoreData] = useState<any>(null);
+  const [loadingViewMore, setLoadingViewMore] = useState<boolean>(false);
   const [showBetDetailsModal, setShowBetDetailsModal] = useState<boolean>(false);
   const [betDetails, setBetDetails] = useState<any>(null);
   const [loadingBetDetails, setLoadingBetDetails] = useState<boolean>(false);
@@ -446,6 +451,30 @@ const Tennis: React.FC<TennisProps> = ({
 
   // Log downlines bets data for debugging
   console.log("Downlines Bets:", downlinesBets);
+
+  // Initialize expanded other markets
+  useEffect(() => {
+    if (normalizedOtherMarketOdds?.length > 0) {
+      const filteredOdds =
+        normalizedOtherMarketOdds?.filter((item: any) =>
+          [
+            "Game Winner",
+            "Game To Deuce",
+            "Point Winner",
+            "Set Race",
+            "Tie Break",
+            "Set Winner",
+          ].some((market) => item.market.includes(market))
+        ) || [];
+      
+      if (filteredOdds.length > 0) {
+        const marketKeys = filteredOdds
+          .map((item: any, index: number) => item.market || `market-${index}`)
+          .filter((key: string) => key) as string[];
+        setExpandedOtherMarkets(new Set(marketKeys));
+      }
+    }
+  }, [normalizedOtherMarketOdds]);
 
   // Helper functions for bet actions
   const handleProceedBet = async (betId: string) => {
@@ -572,6 +601,51 @@ const Tennis: React.FC<TennisProps> = ({
     }
   };
 
+  // Fetch view more bets data
+  const fetchViewMoreBets = async () => {
+    if (!authToken || !eventId) {
+      console.error("No auth token or eventId available");
+      toast.error("Unable to fetch view more data");
+      return;
+    }
+
+    setLoadingViewMore(true);
+    try {
+      const response = await fetch(
+        `${SERVER_URL}/api/v1/sports/user-event-bets/${eventId}/view-more`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch view more data: ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+      console.log(data,'data before modal');
+      if (data.success) {
+        setViewMoreData(data);
+        setShowMyBetsModal(true);
+      } else {
+        toast.error(data.message || "Failed to fetch view more data");
+        console.error("Failed to fetch view more data:", data.message);
+      }
+    } catch (error) {
+      console.error("Error fetching view more data:", error);
+      toast.error("Error fetching view more data. Please try again.");
+    } finally {
+      setLoadingViewMore(false);
+    }
+  };
+
   // Filter bets based on status
   const matchedBets =
     downlinesBets?.bets?.filter((bet: any) => bet.betStatus === "pending") ||
@@ -602,6 +676,12 @@ const Tennis: React.FC<TennisProps> = ({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        const matchOddsMarket = normalizedMatchOdds.find((item: any) => item.market == "Match Odds");
+                        setSelectedBetLockMarket({
+                          mid: matchOddsMarket?.mid,
+                          marketName: "Match Odds",
+                          marketType: 'match_odds'
+                        });
                         setUserBookMarketType('match_odds');
                         setShowBetLockModal(true);
                       }}
@@ -764,6 +844,12 @@ const Tennis: React.FC<TennisProps> = ({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
+                          const bookmakerMarket = normalizedBookMakerOdds.find((item: any) => item.market == "Bookmaker");
+                          setSelectedBetLockMarket({
+                            mid: bookmakerMarket?.mid,
+                            marketName: "Bookmaker",
+                            marketType: 'bookmaker'
+                          });
                           setUserBookMarketType('bookmaker');
                           setShowBetLockModal(true);
                         }}
@@ -892,22 +978,41 @@ const Tennis: React.FC<TennisProps> = ({
 
               if (filteredOdds.length === 0) return null;
 
+              return filteredOdds.map((item: any, index: number) => {
+                const marketKey = item.market || `market-${index}`;
+                const isExpanded = expandedOtherMarkets.has(marketKey);
+
               return (
-                <div className="flex flex-col">
+                  <div key={marketKey} className="flex flex-col">
                   <div
-                    onClick={() => setShowOtherMarkets(!showOtherMarkets)}
+                      onClick={() => {
+                        setExpandedOtherMarkets((prev) => {
+                          const newSet = new Set(prev);
+                          if (newSet.has(marketKey)) {
+                            newSet.delete(marketKey);
+                          } else {
+                            newSet.add(marketKey);
+                          }
+                          return newSet;
+                        });
+                      }}
                     className="font-bold text-lg py-1 flex items-center px-2 bg-[var(--bg-secondary70)] gap-2 justify-between cursor-pointer"
                   >
                     <h2 className="text-sm font-normal text-white/90 leading-6 tracking-tight">
-                      Other Market Odds
+                        {item.market}
                     </h2>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setUserBookMarketType('match_odds');
-                          setShowBetLockModal(true);
-                        }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedBetLockMarket({
+                              mid: item?.mid,
+                              marketName: item?.market,
+                              marketType: 'other'
+                            });
+                            setUserBookMarketType('match_odds');
+                            setShowBetLockModal(true);
+                          }}
                         className="text-xs px-2 font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
                       >
                         BET LOCK
@@ -916,28 +1021,13 @@ const Tennis: React.FC<TennisProps> = ({
                   </div>
                   <div
                     className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                      showOtherMarkets
+                        isExpanded
                         ? "max-h-[1000px] opacity-100"
                         : "max-h-0 opacity-0"
                     }`}
                   >
-                    <div className="grid lg:grid-cols-2 grid-cols-1 gap-2 p-2">
-                      {filteredOdds.length === 1 ? (
+                    <div className="grid  grid-cols-1 gap-2 p-2">
                         <TwoMatchOdd
-                          data={filteredOdds[0]}
-                          sportType={
-                            sportId == "4"
-                              ? "cricket"
-                              : sportId == "1"
-                                ? "soccer"
-                                : "tennis"
-                          }
-                          profitLossBook={sportId == "2" ? {} : {}}
-                        />
-                      ) : (
-                        filteredOdds.map((item: any, index: number) => (
-                          <TwoMatchOdd
-                            key={index}
                             data={item}
                             sportType={
                               sportId == "4"
@@ -948,12 +1038,11 @@ const Tennis: React.FC<TennisProps> = ({
                             }
                             profitLossBook={sportId == "2" ? {} : {}}
                           />
-                        ))
-                      )}
                     </div>
                   </div>
                 </div>
               );
+              });
             })()}
 
           {/* Correct Score */}
@@ -993,6 +1082,11 @@ const Tennis: React.FC<TennisProps> = ({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
+                          setSelectedBetLockMarket({
+                            mid: correctSet?.mid,
+                            marketName: correctSet?.market,
+                            marketType: 'other'
+                          });
                           setUserBookMarketType('match_odds');
                           setShowBetLockModal(true);
                         }}
@@ -1059,7 +1153,7 @@ const Tennis: React.FC<TennisProps> = ({
             Book Summary
           </h2>
           <div
-            className={`bg-gray-100 border-gray-200 ${showBookSummary ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"}`}
+            className={`bg-gray-100 border-gray-200 overflow-hidden transition-all duration-300 ${showBookSummary ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0 pointer-events-none"}`}
           >
             <h2 className="text-sm font-normal leading-6 tracking-tight text-gray-500 px-2">
               No data found
@@ -1074,7 +1168,7 @@ const Tennis: React.FC<TennisProps> = ({
             Score Card
           </h2>
           <div
-            className={`bg-black/89 border-gray-200 ${showScoreCard ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"}`}
+            className={`bg-black/89 border-gray-200 overflow-hidden transition-all duration-300 ${showScoreCard ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0 pointer-events-none"}`}
           >
             <iframe
               // src={`https://apis.professorji.in/api/scorecard?eventId=${eventId}&sport=${sportId == "4" ? "cricket" : sportId == "1" ? "soccer" : "tennis"}`}
@@ -1096,7 +1190,7 @@ const Tennis: React.FC<TennisProps> = ({
               Live Match
             </h2>
             <div
-              className={`bg-gray-100 border-gray-200 ${showLiveMatch ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"}`}
+              className={`bg-gray-100 border-gray-200 overflow-hidden transition-all duration-300 ${showLiveMatch ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0 pointer-events-none"}`}
             >
               <iframe
                 // src={`https://apis.professorji.in/api/tv?eventId=${eventId}&sport=${sportId == "4" ? "cricket" : sportId == "1" ? "soccer" : "tennis"}`}
@@ -1109,35 +1203,32 @@ const Tennis: React.FC<TennisProps> = ({
             </div>
           </div>
         )}
-        <div className="flex flex-col">
-          <div className="flex items-center bg-[var(--bg-secondary70)] py-1 px-2 justify-between">
+        <div className="flex flex-col max-h-[500px]">
+          <div className="flex items-center bg-[var(--bg-secondary70)] py-1 px-2 justify-between flex-shrink-0">
             <h2
               onClick={() => setShowMyBets(!showMyBets)}
-              className="text-white/90 leading-6 tracking-tight text-sm px-2 cursor-pointer"
+              className=" text-white/90 leading-6 tracking-tight text-sm px-2 cursor-pointer"
             >
               My Bets
             </h2>
             <button
-              onClick={() => setShowMyBetsModal(true)}
-              className="bg-[var(--bg-secondary)] text-white/90 leading-6 tracking-tight text-sm px-2 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                fetchViewMoreBets();
+              }}
+              disabled={loadingViewMore}
+              className="bg-[var(--bg-secondary)] text-white/90 leading-6 tracking-tight text-sm px-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed relative z-10"
             >
-              View More
+              {loadingViewMore ? "Loading..." : "View More"}
             </button>
           </div>
           <div
-            className={`bg-gray-100 border-gray-200 ${showMyBets ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"}`}
+            className={`bg-gray-100 border-gray-200 overflow-hidden flex flex-col flex-1 min-h-0 ${showMyBets ? '' : 'hidden'}`}
           >
             {downlinesBets?.success && downlinesBets?.bets?.length > 0 ? (
-              <div className="p-2">
-                <div className="flex justify-between items-center mb-2 text-xs">
-                  <span className="text-gray-600">
-                    Total Bets: {downlinesBets.totalBets}
-                  </span>
-                  <span className="text-gray-600">
-                    Users: {downlinesBets.downlineUserCount}
-                  </span>
-                </div>
-                <div className="flex border-b mb-2">
+              <div className="p-2 flex flex-col h-full overflow-hidden">
+                {/* New Table-Based UI - Screenshot Style */}
+                <div className="flex border-b mb-2 flex-shrink-0">
                   <button
                     onClick={() => setActiveBetTab("matched")}
                     className={`px-3 py-2 font-medium text-xs ${
@@ -1146,117 +1237,100 @@ const Tennis: React.FC<TennisProps> = ({
                         : "text-gray-500 hover:text-gray-700"
                     }`}
                   >
-                    Matched ({matchedBets.length})
+                    Matched Bets
                   </button>
                   <button
-                    onClick={() => setActiveBetTab("settled")}
+                    onClick={() => setActiveBetTab("unmatched")}
                     className={`px-3 py-2 font-medium text-xs ${
-                      activeBetTab === "settled"
+                      activeBetTab === "unmatched"
                         ? "text-blue-600 border-b-2 border-blue-600"
                         : "text-gray-500 hover:text-gray-700"
                     }`}
                   >
-                    Settled ({settledBets.length})
+                    Unmatched Bets
                   </button>
                 </div>
-                <div className="space-y-1 max-h-60 overflow-y-auto">
+                <div className="overflow-x-auto flex-1 overflow-y-auto min-h-0">
+                  <table className="w-full text-xs">
+                    <thead className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
+                      <tr className="bg-white">
+                        <th className="text-left p-2 font-medium text-gray-700">
+                          UserName
+                        </th>
+                        <th className="text-left p-2 font-medium text-gray-700">
+                          Nation
+                        </th>
+                        <th className="text-left p-2 font-medium text-gray-700">
+                          Rate
+                        </th>
+                        <th className="text-left p-2 font-medium text-gray-700">
+                          Amount
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
                   {(activeBetTab === "matched"
                     ? matchedBets
-                    : settledBets
-                  ).map((bet: any, index: number) => (
-                    <div
-                      key={bet.betId}
-                      className="p-2 bg-white rounded text-xs border"
-                    >
-                      <div className="flex justify-between items-start mb-1">
-                        <div className="flex-1">
-                          <div className="font-medium text-gray-800">
-                            {bet.rname}
-                          </div>
-                          <div className="text-gray-500 text-[10px]">
-                            {bet.market}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div
-                            className={`px-2 py-1 rounded text-[10px] ${
-                              bet.betStatus === "pending"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : bet.betStatus === "won"
-                                  ? "bg-green-100 text-green-800"
-                                  : bet.betStatus === "lost"
-                                    ? "bg-red-100 text-red-800"
-                                    : bet.betStatus === "settled"
-                                      ? "bg-blue-100 text-blue-800"
-                                      : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {bet.betStatus}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center text-[10px]">
-                        <div>
-                          <span className="text-gray-500">Amount:</span>
-                          <span className="font-medium ml-1">
-                            ₹{bet.betAmount}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Profit:</span>
-                          <span className="font-medium ml-1 text-green-600">
-                            ₹{bet.betProfit}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Loss:</span>
-                          <span className="font-medium ml-1 text-red-600">
-                            ₹{bet.betLoss}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-[9px] text-gray-400 mt-1">
-                        {new Date(bet.createdAt).toLocaleString()}
-                      </div>
-                      {/* Action Buttons */}
-                      <div className="flex gap-1 mt-2">
-                        {activeBetTab === "matched" && (
-                          <>
-                            <button
-                              onClick={() => fetchBetDetails(bet.betId)}
-                              disabled={loadingBetDetails}
-                              className="px-2 py-1 bg-green-500 text-white rounded text-[9px] hover:bg-green-600 disabled:opacity-50"
-                            >
-                              {loadingBetDetails ? "Loading..." : "Proceed"}
-                            </button>
-                            <button
-                              onClick={() => handleDeleteBet(bet.betId)}
-                              className="px-2 py-1 bg-red-500 text-white rounded text-[9px] hover:bg-red-600"
-                            >
-                              Delete
-                            </button>
-                          </>
-                        )}
-                        {activeBetTab === "settled" && (
-                          <>
-                            <button
-                              onClick={() => fetchBetDetails(bet.betId)}
-                              disabled={loadingBetDetails}
-                              className="px-2 py-1 bg-blue-500 text-white rounded text-[9px] hover:bg-blue-600 disabled:opacity-50"
-                            >
-                              {loadingBetDetails ? "Loading..." : "Details"}
-                            </button>
-                            <button
-                              onClick={() => handleReopenBet(bet.betId)}
-                              className="px-2 py-1 bg-orange-500 text-white rounded text-[9px] hover:bg-orange-600"
-                            >
-                              Reopen
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                        : downlinesBets?.bets?.filter(
+                            (bet: any) =>
+                              bet.betStatus !== "pending" &&
+                              !["won", "lost", "settled"].includes(
+                                bet.betStatus
+                              )
+                          ) || []
+                      ).map((bet: any, index: number) => {
+                        // Determine background color based on bet type
+                        const betType = bet.betData?.betType;
+                        const isBackType = betType?.toLowerCase() === "back";
+                        const bgColor = isBackType
+                          ? "bg-[var(--bg-back)]/60"
+                          : "bg-[var(--bg-lay)]/60";
+
+                        return (
+                          <React.Fragment key={bet.betId}>
+                            {/* First Row - Market and Timestamp */}
+                            <tr className={bgColor}>
+                              <td className={`px-2 py-1 border-l-2 ${isBackType?"border-blue-500":"border-red-500"} `}>
+                                {bet?.market}
+                              </td>
+                              <td className="px-2"></td>
+                              <td className="px-2 text-nowrap">
+                                {new Date(bet.createdAt)
+                                  .toLocaleString("en-GB", {
+                                    day: "2-digit",
+                                    month: "2-digit",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    second: "2-digit",
+                                    hour12: false,
+                                  })
+                                  .replace(",", "")}
+                              </td>
+                              <td className="px-2"></td>
+                            </tr>
+                            {/* Second Row - Username, Bet Description, Rate, Amount */}
+                            <tr className={bgColor}>
+                              <td className={`px-2 border-l-2 ${isBackType?"border-blue-500":"border-red-500"} `}>
+                                {bet.username || bet.userName}
+                              </td>
+                              <td className="px-2">
+                                {bet.rname ? `${bet.rname}` : ""}
+                              </td>
+                              <td className="px-2 text-center">
+                                {bet.betData?.odd || "-"}
+                              </td>
+                              <td className="px-2">{bet.betAmount}</td>
+                            </tr>
+                            {/* Spacer row for gap between entries */}
+                            <tr>
+                              <td colSpan={4} className="h-0.5"></td>
+                            </tr>
+                          </React.Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             ) : (
@@ -1274,6 +1348,11 @@ const Tennis: React.FC<TennisProps> = ({
         onClose={() => setShowUserBookModal(false)}
         eventId={eventId}
         marketType={userBookMarketType}
+        mid={
+          userBookMarketType === "match_odds"
+            ? normalizedMatchOdds.find((item: any) => item.market == "Match Odds")?.mid
+            : normalizedBookMakerOdds.find((item: any) => item.market == "Bookmaker")?.mid
+        }
         matchTeams={{
           team1: normalizedMatchOdds?.[0]?.oddDatas?.[0]?.rname || "",
           team2: normalizedMatchOdds?.[0]?.oddDatas?.[1]?.rname || "",
@@ -1285,20 +1364,20 @@ const Tennis: React.FC<TennisProps> = ({
         isOpen={showBetLockModal}
         onClose={() => setShowBetLockModal(false)}
         eventId={eventId}
-        marketType={userBookMarketType}
-        mid={
+        marketType={selectedBetLockMarket.marketType || userBookMarketType}
+        mid={selectedBetLockMarket.mid || (
           userBookMarketType === "match_odds"
             ? normalizedMatchOdds.find((item: any) => item.market == "Match Odds")?.mid
             : normalizedBookMakerOdds.find((item: any) => item.market == "Bookmaker")?.mid
-        }
+        )}
         eventName={
           (typeof match === 'object' && match?.name) 
             ? match.name 
             : (competition && match ? `${competition} > ${match}` : match || competition || "")
         }
-        marketName={
+        marketName={selectedBetLockMarket.marketName || (
           userBookMarketType === "match_odds" ? "Match Odds" : "Bookmaker"
-        }
+        )}
         competition={competition}
         match={match}
       />
@@ -1489,58 +1568,30 @@ const Tennis: React.FC<TennisProps> = ({
       )} */}
 
       {/* View More Modal */}
-      {/* {showViewMoreModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96 max-w-[90vw]">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold">View More</h2>
-              <button
-                onClick={() => setShowViewMoreModal(false)}
-                className="text-gray-500 hover:text-gray-700 text-xl"
-              >
-                ×
-              </button>
-            </div>
-            <div className="mb-4">
-              <div className="flex border-b">
-                <button className="px-4 py-2 text-blue-600 border-b-2 border-blue-600 font-medium">
-                  Matched Bets
-                </button>
-                <button className="px-4 py-2 text-gray-500 hover:text-gray-700">
-                  Deleted Bets
-                </button>
-              </div>
-            </div>
-            <div className="text-center text-gray-500 py-8">
-              No records found
-            </div>
-          </div>
-        </div>
-      )} */}
+      <ViewMore
+        isOpen={showMyBetsModal}
+        onClose={() => setShowMyBetsModal(false)}
+        data={viewMoreData}
+        eventId={eventId}
+        onBetDetailClick={fetchBetDetails}
+      />
 
       {/* Bet Details Modal */}
       {showBetDetailsModal && betDetails && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-hidden">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-2xl font-bold">Bet Details</h2>
-                  <p className="text-blue-100 text-sm mt-1">Complete bet information and user details</p>
-                </div>
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/30 pt-4">
+          <div className="relative bg-white rounded-lg shadow-lg w-full max-w-5xl max-h-[95vh] overflow-hidden animate-fadein">
+            {/* Close Button */}
                 <button
+              className="absolute top-4 right-4 bg-[var(--bg-primary)] text-white rounded-full w-8 h-8 cursor-pointer flex items-center justify-center text-md z-10"
                   onClick={() => setShowBetDetailsModal(false)}
-                  className="text-white/80 hover:text-white hover:bg-white/20 rounded-full p-2 transition-all duration-200"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+              <FaTimes />
                 </button>
-              </div>
-            </div>
             
-            <div className="p-6 overflow-y-auto max-h-[calc(95vh-120px)]">
+            {/* Header */}
+            <h2 className="text-xl p-4 font-normal mb-2">Bet Details</h2>
+
+            <div className="px-8 py-4 pb-4 overflow-y-auto max-h-[calc(95vh-120px)]">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Bet Information */}
               <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border border-gray-100 shadow-sm">
@@ -1641,6 +1692,82 @@ const Tennis: React.FC<TennisProps> = ({
                 </div>
               </div>
 
+              {/* Technical Information */}
+              <div className="mt-8 bg-gradient-to-br from-purple-50 to-white rounded-xl p-6 border border-purple-100 shadow-sm">
+                <div className="flex items-center mb-6">
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                    <svg
+                      className="w-5 h-5 text-purple-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Technical Information
+                  </h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600 font-medium">
+                      IP Address
+                    </span>
+                    <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                      {betDetails.ipAddress}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600 font-medium">
+                      User Agent
+                    </span>
+                    <span
+                      className="font-medium text-xs truncate max-w-xs bg-gray-100 px-2 py-1 rounded"
+                      title={betDetails.userAgent}
+                    >
+                      {betDetails.userAgent}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Raw Bet Data */}
+              {betDetails.rawBetData && (
+                <div className="mt-8 bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border border-gray-100 shadow-sm">
+                  <div className="flex items-center mb-6">
+                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
+                      <svg
+                        className="w-5 h-5 text-gray-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      Raw Bet Data
+                    </h3>
+                  </div>
+                  <div className="bg-gray-900 p-4 rounded-lg">
+                    <pre className="text-xs text-gray-300 overflow-x-auto font-mono">
+                      {JSON.stringify(betDetails.rawBetData, null, 2)}
+                    </pre>
+                  </div>
+                </div>
+              )}
+
               {/* Bet Result Section */}
               {betDetails.status === 'pending' && (
                 <div className="mt-8 bg-gradient-to-br from-blue-50 to-white rounded-xl p-6 border border-blue-100 shadow-sm">
@@ -1739,11 +1866,15 @@ const Tennis: React.FC<TennisProps> = ({
                 >
                   Close
                 </button>
-                {betDetails.status === 'pending' && (
+                {betDetails.status === "pending" && (
                   <>
                     <button
                       onClick={() => handleProceedBet(betDetails.betId)}
-                      disabled={!selectedResult || !resultValue.trim() || isProcessingBet}
+                      disabled={
+                        !selectedResult ||
+                        !resultValue.trim() ||
+                        isProcessingBet
+                      }
                       className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl font-medium hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
                     >
                       {isProcessingBet ? "Processing..." : "Proceed Bet"}
@@ -1756,7 +1887,7 @@ const Tennis: React.FC<TennisProps> = ({
                     </button>
                   </>
                 )}
-                {betDetails.status === 'settled' && (
+                {betDetails.status === "settled" && (
                   <button
                     onClick={() => handleReopenBet(betDetails.betId)}
                     disabled={isProcessingBet}
@@ -1768,6 +1899,11 @@ const Tennis: React.FC<TennisProps> = ({
               </div>
             </div>
           </div>
+
+          <style>{`
+            .animate-fadein { animation: fadein 0.2s; }
+            @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+          `}</style>
         </div>
       )}
     </div>
