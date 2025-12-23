@@ -4,7 +4,7 @@ import { FaTimes } from "react-icons/fa";
 import { ClientRow } from "./DepositModal";
 import { useCookies } from "react-cookie";
 import { useMutation } from "@tanstack/react-query";
-import { changeUserStatus } from "@/helper/user";
+import { SERVER_URL, getAuthCookieKey, baseUrl } from "@/helper/auth";
 import toast from "react-hot-toast";
 
 interface ChangeStatusModalProps {
@@ -46,29 +46,51 @@ const ChangeStatusModal: React.FC<ChangeStatusModalProps> = ({ open, onClose, us
       transactionPassword: string;
       userType: string;
     }) => {
-      const response: any = await changeUserStatus({
-        cookies: cookieBag,
-        userId: user?._id || "",
-        lockUser,
-        lockBet,
-        transactionPassword,
-        userType: user?.__type || "",
-      });
-      if (!response?.success) {
-        toast.error(response?.message)
-        // throw new Error(response?.message || "Update failed");
+      // Get token from cookies
+      const authCookieKey = getAuthCookieKey();
+      const token = cookieBag?.[authCookieKey] || cookieBag[baseUrl.includes("techadmin") ? "TechAdmin" : "Admin"];
+      
+      if (!token || token === "undefined") {
+        throw new Error("Authentication token not found");
       }
-      return response;
+
+      const response = await fetch(`${SERVER_URL}/api/v1/users/lock`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          userId: user?._id || "",
+          betLockValue: lockBet,
+          userLockValue: lockUser,
+          transactionPassword,
+          userType: user?.__type || "",
+        }),
+      });
+
+      // Parse response body regardless of status code
+      const data = await response.json();
+
+      // Check if API returned success: false or HTTP error
+      if (!response.ok || (data && typeof data === 'object' && 'success' in data && !data.success)) {
+        const errorMessage = data?.error || data?.message || `HTTP error! status: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+      
+      return data;
     },
     onSuccess: () => {
+      toast.success("User status updated successfully");
       setPassword("");
       setError("");
       if (propsOnSuccess) propsOnSuccess();
       onClose();
     },
     onError: (err: any) => {
-      toast.error(err?.message)
-      // setError(err?.message || "Request failed. Please try again.");
+      const errorMessage = err?.message || err?.error || "Request failed. Please try again.";
+      toast.error(errorMessage);
+      setError(errorMessage);
     },
   });
 
@@ -89,9 +111,7 @@ const ChangeStatusModal: React.FC<ChangeStatusModalProps> = ({ open, onClose, us
         </button>
         <h2 className="text-xl p-4 font-normal mb-2">{title}</h2>
         <div className="px-12 py-4 pb-4">
-          {error && (
-            <div className="text-center text-sm text-red-500 mb-4">{error}</div>
-          )}
+         
           {/* Username */}
           <div className="mb-6">
             <span className="text-md font-normal text-[#ffc85a]">{user.userName}</span>

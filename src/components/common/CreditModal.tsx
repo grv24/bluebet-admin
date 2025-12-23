@@ -4,7 +4,7 @@ import { FaTimes } from "react-icons/fa";
 import { ClientRow } from "./DepositModal";
 import { useCookies } from "react-cookie";
 import { useMutation } from "@tanstack/react-query";
-import { changeCreditReference } from "@/helper/user";
+import { SERVER_URL, getAuthCookieKey, baseUrl } from "@/helper/auth";
 import toast from "react-hot-toast";
 
 interface CreditModalProps {
@@ -36,7 +36,7 @@ const CreditModal: React.FC<CreditModalProps> = ({
   }, [open]);
 
   const { mutate, isPending } = useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       cookies: cookieBag,
       downlineUserId,
       creditReference,
@@ -48,15 +48,42 @@ const CreditModal: React.FC<CreditModalProps> = ({
       creditReference: number;
       transactionPassword: string;
       userType: string;
-    }) =>
-      changeCreditReference({
-        cookies: cookieBag,
-        userId: user?._id || "",
-        creditReference,
-        transactionPassword,
-        userType,
-      }),
+    }) => {
+      // Get token from cookies
+      const authCookieKey = getAuthCookieKey();
+      const token = cookieBag?.[authCookieKey] || cookieBag[baseUrl.includes("techadmin") ? "TechAdmin" : "Admin"];
+      
+      if (!token || token === "undefined") {
+        throw new Error("Authentication token not found");
+      }
+
+      const response = await fetch(`${SERVER_URL}/api/v1/users/set-credit-ref`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          userId: user?._id || "",
+          newCreditRef: creditReference,
+          transactionPassword,
+          userType,
+        }),
+      });
+
+      // Parse response body regardless of status code
+      const data = await response.json();
+
+      // Check if API returned success: false or HTTP error
+      if (!response.ok || (data && typeof data === 'object' && 'success' in data && !data.success)) {
+        const errorMessage = data?.error || data?.message || `HTTP error! status: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+      
+      return data;
+    },
     onSuccess: () => {
+      toast.success("Credit reference updated successfully");
       setNewLimit(0);
       setPassword("");
       setError("");
@@ -64,8 +91,9 @@ const CreditModal: React.FC<CreditModalProps> = ({
       onClose();
     },
     onError: (err: any) => {
-     toast?.error(err?.message)
-      // setError(err?.message || "Request failed. Please try again.");
+      const errorMessage = err?.message || err?.error || "Request failed. Please try again.";
+      toast.error(errorMessage);
+      setError(errorMessage);
     },
   });
 
@@ -84,10 +112,7 @@ const CreditModal: React.FC<CreditModalProps> = ({
         </button>
         <h2 className="text-xl p-4 font-normal mb-2">{title}</h2>
         <div className="px-8 py-4 pb-4">
-          {/* Error Display */}
-          {error && (
-            <div className="col-span-2 text-red-500 text-sm mb-2 text-center">{error}</div>
-          )}
+         
           {/* Form Fields - two column grid */}
           <form
             className="grid grid-cols-2 gap-x-4 gap-y-3 items-center"

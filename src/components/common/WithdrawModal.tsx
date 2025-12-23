@@ -3,8 +3,8 @@ import { FaTimes, FaEye, FaEyeSlash } from 'react-icons/fa'
 import { FaArrowLeft, FaArrowRight } from 'react-icons/fa'
 import { ClientRow } from './DepositModal'
 import { useCookies } from 'react-cookie'
-import { baseUrl, getDecodedTokenData } from '@/helper/auth'
-import { withdrawChips, getOwnBalance } from '@/helper/user'
+import { baseUrl, getDecodedTokenData, SERVER_URL, getAuthCookieKey } from '@/helper/auth'
+import { getOwnBalance } from '@/helper/user'
 import toast from 'react-hot-toast'
 
 interface WithdrawModalProps {
@@ -84,22 +84,49 @@ const WithdrawModal = ({ open, onClose, user, title }: WithdrawModalProps) => {
 
       try {
         setLoading(true);
-        await withdrawChips({
-          cookies,
-          amount: enteredAmount,
-          userId: user?._id || "", // This is now userId from the new structure
-          transactionPassword: password,
-          userType: user?.__type || "",
+        
+        // Get token from cookies (using same method as used elsewhere in the component)
+        const authCookieKey = getAuthCookieKey();
+        const token = cookies?.[authCookieKey] || cookies[baseUrl.includes("techadmin") ? "TechAdmin" : "Admin"];
+        
+        if (!token || token === "undefined") {
+          throw new Error("Authentication token not found");
+        }
+
+        const response = await fetch(`${SERVER_URL}/api/v1/users/withdraw`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            amount: enteredAmount,
+            userId: user?._id || "",
+            transactionPassword: password,
+            userType: user?.__type || "",
+          }),
         });
 
+        // Parse response body regardless of status code
+        const data = await response.json();
+
+        // Check if API returned success: false or HTTP error
+        if (!response.ok || (data && typeof data === 'object' && 'success' in data && !data.success)) {
+          const errorMessage = data?.error || data?.message || `HTTP error! status: ${response.status}`;
+          throw new Error(errorMessage);
+        }
+
+        // Success
+        toast.success(data?.message || "Withdraw successful");
         // Reset state and close
         setAmount("");
         setRemark("");
         setPassword("");
         onClose();
       } catch (err: any) {
-        toast.error(err?.message)
-        // setError(err?.message || "Withdraw failed.");
+        const errorMessage = err?.message || err?.error || "Withdraw failed. Please try again.";
+        toast.error(errorMessage);
+        setError(errorMessage);
         console.error(err);
       } finally {
         setLoading(false);
@@ -152,10 +179,7 @@ const WithdrawModal = ({ open, onClose, user, title }: WithdrawModalProps) => {
                 />
               </div>
             </div>
-            {/* Error */}
-            {error && (
-              <div className="col-span-2 text-red-500 text-sm mb-2 text-center">{error}</div>
-            )}
+          
             {/* Form Fields - two column grid */}
             <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-x-4 gap-y-3 items-center">
               <label className="text-sm font-normal text-left pr-2">

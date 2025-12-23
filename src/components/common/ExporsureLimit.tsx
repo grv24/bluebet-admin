@@ -4,7 +4,7 @@ import { ClientRow } from "./DepositModal";
 import { FaTimes } from "react-icons/fa";
 import { useCookies } from "react-cookie";
 import { useMutation } from "@tanstack/react-query";
-import { exposureLimitChange } from "@/helper/user";
+import { SERVER_URL, getAuthCookieKey } from "@/helper/auth";
 import toast from "react-hot-toast";
 
 interface ExporsureLimitProps {
@@ -39,7 +39,7 @@ const ExporsureLimit: React.FC<ExporsureLimitProps> = ({
   }, [open, user?.exposureLimit]);
 
   const { mutate, isPending } = useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       cookies: cookieBag,
       downlineUserId,
       exposureLimit,
@@ -51,15 +51,42 @@ const ExporsureLimit: React.FC<ExporsureLimitProps> = ({
       exposureLimit: number;
       transactionPassword: string;
       userType: string;
-    }) =>
-      exposureLimitChange({
-        cookies: cookieBag,
-        userId: user?._id || "",
-        newLimit:exposureLimit,
-        transactionPassword,
-        userType: user?.__type || "",
-      }),
+    }) => {
+      // Get token from cookies
+      const authCookieKey = getAuthCookieKey();
+      const token = cookieBag?.[authCookieKey] || cookieBag?.token;
+      
+      if (!token || token === "undefined") {
+        throw new Error("Authentication token not found");
+      }
+
+      const response = await fetch(`${SERVER_URL}/api/v1/users/set-exposure-limit`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          userId: user?._id || "",
+          newLimit: exposureLimit,
+          transactionPassword,
+          userType: user?.__type || "",
+        }),
+      });
+
+      // Parse response body regardless of status code
+      const data = await response.json();
+
+      // Check if API returned success: false or HTTP error
+      if (!response.ok || (data && typeof data === 'object' && 'success' in data && !data.success)) {
+        const errorMessage = data?.error || data?.message || `HTTP error! status: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+      
+      return data;
+    },
     onSuccess: () => {
+      toast.success("Exposure limit updated successfully");
       setNewLimit(0);
       setPassword("");
       setFormError("");
@@ -67,8 +94,9 @@ const ExporsureLimit: React.FC<ExporsureLimitProps> = ({
       onClose();
     },
     onError: (err: any) => {
-      toast.error(err?.message);
-      setFormError(err?.message || "Request failed. Please try again.");
+      const errorMessage = err?.message || err?.error || "Request failed. Please try again.";
+      toast.error(errorMessage);
+      setFormError(errorMessage);
     },
   });
 
@@ -109,10 +137,7 @@ const ExporsureLimit: React.FC<ExporsureLimitProps> = ({
         </button>
         <h2 className="text-xl p-4 font-normal mb-2">{title}</h2>
         <div className="px-8 py-4 pb-4">
-          {/* Error Display */}
-          {formError && (
-            <div className="col-span-2 text-red-500 text-sm mb-2 text-center">{formError}</div>
-          )}
+         
           {/* Form Fields - two column grid */}
           <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-x-4 gap-y-3 items-center">
             <label className="text-sm font-normal text-left pr-2">

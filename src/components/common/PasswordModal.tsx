@@ -5,8 +5,7 @@ import { ClientRow } from "./DepositModal";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useCookies } from "react-cookie";
 import { useMutation } from "@tanstack/react-query";
-import { changeDownlinePassword } from "@/helper/user";
-import { baseUrl } from "@/helper/auth";
+import { SERVER_URL, getAuthCookieKey, baseUrl } from "@/helper/auth";
 import toast from "react-hot-toast";
 
 interface PasswordModalProps {
@@ -38,16 +37,43 @@ const PasswordModal: React.FC<PasswordModalProps> = ({
   const { mutate, isPending } = useMutation({
     mutationFn: async () => {
       if (!user?._id) throw new Error("Missing user id");
-      return changeDownlinePassword(
-        user._id,
-        newpassword.trim(),
-        transactionPassword.trim(),
-        cookieBag,
-        user?.__type || ""
-      );
+      
+      // Get token from cookies
+      const authCookieKey = getAuthCookieKey();
+      const token = cookieBag?.[authCookieKey] || cookieBag[baseUrl.includes("techadmin") ? "TechAdmin" : "Admin"];
+      
+      if (!token || token === "undefined") {
+        throw new Error("Authentication token not found");
+      }
+
+      const response = await fetch(`${SERVER_URL}/api/v1/users/change-password-downline`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          userId: user._id,
+          newPassword: newpassword.trim(),
+          transactionPassword: transactionPassword.trim(),
+          userType: user?.__type || "",
+        }),
+      });
+
+      // Parse response body regardless of status code
+      const data = await response.json();
+
+      // Check if API returned success: false or HTTP error
+      if (!response.ok || (data && typeof data === 'object' && 'success' in data && !data.success)) {
+        const errorMessage = data?.error || data?.message || `HTTP error! status: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+      
+      return data;
     },
     onSuccess: (res: any) => {
       if (res?.success) {
+        toast.success(res?.message || "Password updated successfully");
         setFormSuccess(res?.message || "Password updated successfully");
         setFormError("");
         setNewPassword("");
@@ -58,15 +84,16 @@ const PasswordModal: React.FC<PasswordModalProps> = ({
           onClose();
         }, 800);
       } else {
-        toast.error(res?.message || res?.error);
-        // setFormError(res?.message || res?.error || "Update failed");
+        const errorMessage = res?.error || res?.message || "Update failed";
+        toast.error(errorMessage);
+        setFormError(errorMessage);
         setFormSuccess("");
       }
     },
     onError: (err: any) => {
-      // console.log(err,'err')
-      toast.error(err?.message || err?.error);
-      // setFormError(err?.message || "Request failed");
+      const errorMessage = err?.message || err?.error || "Request failed. Please try again.";
+      toast.error(errorMessage);
+      setFormError(errorMessage);
       setFormSuccess("");
     },
   });
@@ -85,17 +112,7 @@ const PasswordModal: React.FC<PasswordModalProps> = ({
         </button>
         <h2 className="text-xl p-4 font-normal mb-2">{title}</h2>
         <div className="px-4 md:px-8 py-4 pb-4">
-          {(formError || formSuccess) && (
-            <div
-              className={`mb-3 text-sm px-3 py-2 rounded border ${
-                formError
-                  ? "bg-red-50 text-red-700 border-red-200"
-                  : "bg-green-50 text-green-700 border-green-200"
-              }`}
-            >
-              {formError || formSuccess}
-            </div>
-          )}
+        
           {/* Form Fields - two column grid */}
           <form
             onSubmit={(e) => {
