@@ -904,7 +904,7 @@ const Football: React.FC<FootballProps> = ({
                         ? "max-h-[1000px] opacity-100"
                         : "max-h-0 opacity-0"
                     }`}
-                    >
+                  >
                     {/* Grid of odds */}
                     <div className={`grid grid-cols-1 gap-x-2 ${gridClass}`}>
                       {data.map((item: any, idx: number) => (
@@ -1024,7 +1024,7 @@ const Football: React.FC<FootballProps> = ({
               <div className="p-2 flex flex-col h-full overflow-hidden">
                 {/* New Table-Based UI - Screenshot Style */}
                 <div className="flex border-b mb-2 flex-shrink-0">
-                  <button
+                  <button 
                     onClick={() => setActiveBetTab("matched")}
                     className={`px-3 py-2 font-medium text-xs ${
                       activeBetTab === "matched"
@@ -1034,7 +1034,7 @@ const Football: React.FC<FootballProps> = ({
                   >
                     Matched Bets
                   </button>
-                  <button
+                  <button 
                     onClick={() => setActiveBetTab("unmatched")}
                     className={`px-3 py-2 font-medium text-xs ${
                       activeBetTab === "unmatched"
@@ -1321,13 +1321,13 @@ const Football: React.FC<FootballProps> = ({
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/30 pt-4">
           <div className="relative bg-white rounded-lg shadow-lg w-full max-w-5xl max-h-[95vh] overflow-hidden animate-fadein">
             {/* Close Button */}
-            <button
+                <button
               className="absolute top-4 right-4 bg-[var(--bg-primary)] text-white rounded-full w-8 h-8 cursor-pointer flex items-center justify-center text-md z-10"
-              onClick={() => setShowBetDetailsModal(false)}
-            >
+                  onClick={() => setShowBetDetailsModal(false)}
+                >
               <FaTimes />
-            </button>
-
+                </button>
+            
             {/* Header */}
             <h2 className="text-xl p-4 font-normal mb-2">Bet Details</h2>
 
@@ -1429,7 +1429,7 @@ const Football: React.FC<FootballProps> = ({
                     </div>
                   </div>
                 )}
-              </div>
+                </div>
               </div>
 
               {/* Technical Information */}

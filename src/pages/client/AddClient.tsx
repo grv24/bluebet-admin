@@ -478,10 +478,15 @@ const AddClient: React.FC = () => {
     const total = upline + our + downline; // Total = Upline + Our + Downline
     const own = our; // Own is same as our
 
-    // Validation: our and downline should be non-negative, and downline should not exceed our
-    const isValidDownline = downline <= our;
+    // TechAdmin can give commission below 100 or equal to 100
+    const isTechAdmin = userType === "TechAdmin" || userType === "techAdmin";
+    const maxOurAllowed = isTechAdmin ? 100 : 100; // Allow <= 100 for techadmin
+    
+    // Validation: For techadmin, downline can be up to 100. For others, downline should not exceed our
+    const isValidDownline = isTechAdmin 
+      ? (downline >= 0 && downline <= 100)
+      : (downline <= our);
     const isValidAllocation = our >= 0 && downline >= 0 && isValidDownline;
-    const maxOurAllowed = 100; // No specific limit for commission
 
     console.log("Commission Calc Debug (with downline constraint):", {
       parentOwn: `From accounts API: ${parentOwn}`,
@@ -511,7 +516,7 @@ const AddClient: React.FC = () => {
       isValidAllocation: isValidAllocation, // Validation flag
       maxOurAllowed: maxOurAllowed, // No specific limit
     };
-  }, [panelData?.panelCommission, ourCommission, downlineCommission]);
+  }, [panelData?.panelCommission, ourCommission, downlineCommission, userType]);
 
   // Calculate partnership values using accounts API data with downline constraint
   const partnershipCalculations = useMemo((): PartnershipCalculations => {
@@ -1032,7 +1037,9 @@ const AddClient: React.FC = () => {
                   <div className="bg-red-50 border border-red-200 rounded px-3 py-2 mt-2">
                     
                     <p className="text-gray-500 text-xs mt-1">
-                      Note: Downline (editable) should be {watch("ourCommission")}% or less
+                      {userType === "TechAdmin" || userType === "techAdmin" 
+                        ? `Note: Downline (editable) should be between 0% and 100%`
+                        : `Note: Downline (editable) should be ${watch("ourCommission")}% or less`}
                     </p>
                   </div>
                 )}
@@ -1049,7 +1056,7 @@ const AddClient: React.FC = () => {
 
               <div className="flex flex-col">
                 <div className=" bg-[#0000000d] flex justify-between items-center border-white font-normal text-xs">
-                  <div className="w-1/2 px-4 leading-8 flex gap-2">
+                  <div className="w-[57.5%] px-4 leading-8 flex gap-2">
                     <h2 className="text-xs font-normal">Upline Share</h2>
                     <p className="text-xs text-gray-500">(Fixed - cannot be changed)</p>
                   </div>
@@ -1061,7 +1068,7 @@ const AddClient: React.FC = () => {
                   />
                 </div>
                 <div className=" bg-white flex justify-between items-center border-white font-normal text-xs">
-                  <div className="w-1/2 px-4 leading-8 flex gap-2 items-center">
+                  <div className="w-[56.5%] px-4 leading-8 flex gap-2 items-center">
                     <h2 className="text-xs font-normal">Your Share</h2>
                     <p className="text-xs text-gray-500">(Available for distribution)</p>
                   </div>
@@ -1077,9 +1084,9 @@ const AddClient: React.FC = () => {
                 </div>
                 <div className=" bg-[#0000000d] flex justify-between items-center border-white font-normal text-xs">
                   <div className="w-1/2 px-4 leading-8 flex gap-2 items-center">
-                    <h2 className="text-xs font-normal">Give to Downline</h2>
-                    <p className="text-xs text-gray-500">(% of your share)</p>
-                    <div className="text-xs text-blue-600 font-medium">
+                    <h2 className="text-xs font-normal text-nowrap">Give to Downline</h2>
+                    <p className="text-xs text-gray-500 text-nowrap">(% of your share)</p>
+                    <div className="text-xs text-blue-600 font-medium text-nowrap">
                       = {partnershipCalculations.downlineAbsolute.toFixed(2)}% actual share
                     </div>
                   </div>

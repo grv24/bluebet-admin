@@ -54,10 +54,23 @@ interface ClientRow {
 /**
  * Interface for user data received from API
  * Represents the structure of user data returned from the server
+ * Supports both nested (old) and flat (new) API response structures
  */
 interface APIUser {
-  userId: string;         // User ID
-  PersonalDetails: {      // Personal information
+  // New flat structure fields
+  username?: string;      // Login identifier (new structure)
+  creditRef?: number;     // Credit reference number (new structure)
+  balance?: number;       // Current balance (new structure)
+  clientProfitLoss?: number; // Client profit/loss (new structure)
+  exposure?: number;      // Current exposure (new structure)
+  availableBalance?: number; // Available balance (new structure)
+  exposureLimit?: number; // Maximum exposure limit (new structure)
+  partnershipOwn?: number; // Partnership own value (new structure)
+  accountType?: string;   // Account type (new structure)
+  
+  // Old nested structure fields (for backward compatibility)
+  userId?: string;         // User ID
+  PersonalDetails?: {      // Personal information (old structure)
     loginId: string;      // Login identifier
     userName: string;     // Display name
     user_password: string; // User password
@@ -66,7 +79,7 @@ interface APIUser {
     idIsActive: boolean;  // Whether user is active
     isAutoRegisteredUser: boolean; // Whether user was auto-registered
   };
-  AccountDetails: {       // Financial account information
+  AccountDetails?: {       // Financial account information (old structure)
     liability: number;    // Liability amount
     Balance: number;      // Current balance
     profitLoss: number;   // Profit/loss amount
@@ -76,15 +89,15 @@ interface APIUser {
     ExposureLimit: number; // Maximum exposure limit
     creditRef: number;    // Credit reference number
   };
-  userLocked: boolean;    // Whether user account is locked
-  bettingLocked: boolean; // Whether betting is locked
-  fancyLocked: boolean;   // Whether fancy betting is locked
-  __type: string;         // User type (e.g., "Client", "Agent")
-  allowedNoOfUsers: number; // Allowed number of users
-  createdUsersCount: number; // Created users count
-  remarks: string;        // User remarks
-  createdAt: string;      // Creation date
-  updatedAt: string;      // Last update date
+  userLocked?: boolean;    // Whether user account is locked
+  bettingLocked?: boolean; // Whether betting is locked
+  fancyLocked?: boolean;   // Whether fancy betting is locked
+  __type?: string;         // User type (e.g., "Client", "Agent")
+  allowedNoOfUsers?: number; // Allowed number of users
+  createdUsersCount?: number; // Created users count
+  remarks?: string;        // User remarks
+  createdAt?: string;      // Creation date
+  updatedAt?: string;      // Last update date
 }
 
 /**
@@ -107,6 +120,18 @@ interface DownlineListResponse {
   data: {                 // Response data wrapper
     pagination: PaginationData; // Pagination information
     users: APIUser[];      // Array of user objects
+    summary?: {            // Summary data (optional)
+      totalUsers: number;
+      totalBalance: string;
+      totalFreeChips: number;
+      totalAvailableBalance: string;
+      totalLiability: number;
+      totalExposure: number;
+      totalProfitLoss: number;
+      totalCreditRef: number;
+      totalSettledAmount: number;
+      description: string;
+    };
   };
 }
 
@@ -572,35 +597,88 @@ const ClientList: React.FC = () => {
 
   console.log(modalState, "modalState");
   // Optimized data transformation with error handling
+  // Supports both new flat structure and old nested structure
   const transformedData = useMemo<ClientRow[]>(() => {
     if (!downlineData?.data?.users || !Array.isArray(downlineData.data.users)) {
       return [];
     }
     console.log(downlineData.data.users, "downlineData");
     return downlineData.data.users.map((user: APIUser): ClientRow => {
-      const balance = user.AccountDetails.Balance || 0;
-      const creditRefNum = user.AccountDetails.creditRef || 0;
+      // Support both new flat structure and old nested structure
+      const isNewStructure = user.username !== undefined || user.balance !== undefined;
+      
+      const balance = isNewStructure 
+        ? (user.balance || 0)
+        : (user.AccountDetails?.Balance || 0);
+      
+      const creditRefNum = isNewStructure
+        ? (user.creditRef || 0)
+        : (user.AccountDetails?.creditRef || 0);
+      
+      const userName = isNewStructure
+        ? (user.username || "N/A")
+        : (user.PersonalDetails?.loginId || user.PersonalDetails?.userName || "N/A");
+      
+      const fullName = isNewStructure
+        ? (user.username || "N/A")
+        : (user.PersonalDetails?.userName || user.PersonalDetails?.loginId || "N/A");
+      
+      const exposure = isNewStructure
+        ? (user.exposure || 0)
+        : (user.AccountDetails?.Exposure || 0);
+      
+      const availableBalance = isNewStructure
+        ? (user.availableBalance || 0)
+        : (balance - exposure);
+      
+      const clientPL = isNewStructure
+        ? (user.clientProfitLoss !== undefined ? formatNumber(user.clientProfitLoss) : formatNumber(balance - creditRefNum))
+        : formatNumber(balance - creditRefNum);
+      
+      const userLocked = isNewStructure
+        ? (user.userLocked || false)
+        : (user.userLocked || false);
+      
+      const bettingLocked = isNewStructure
+        ? (user.bettingLocked || false)
+        : (user.bettingLocked || false);
+      
+      const exposureLimit = isNewStructure
+        ? (user.exposureLimit !== undefined && user.exposureLimit !== null ? user.exposureLimit : undefined)
+        : (user.AccountDetails?.ExposureLimit !== undefined && user.AccountDetails?.ExposureLimit !== null ? user.AccountDetails.ExposureLimit : undefined);
+      
+      const defaultPercent = isNewStructure
+        ? (user.partnershipOwn !== undefined ? parseFloat(String(user.partnershipOwn)) : 0)
+        : parseFloat((user as any).commissionDetails?.partnershipOwn || "0");
+      
+      const accountType = isNewStructure
+        ? (user.accountType === "client" ? "User" : (user.accountType || "User"))
+        : (user.__type === "client" ? "User" : (user.__type || "User"));
+      
+      const userId = isNewStructure
+        ? (user.username || "")
+        : (user.userId || "");
+      
+      const userType = isNewStructure
+        ? (user.accountType || "User")
+        : (user.__type || "User");
+      
       return {
-        userName:
-          user.PersonalDetails.loginId ||
-          user.PersonalDetails.userName ||
-          "N/A",
-        fullName: user.PersonalDetails.userName || user.PersonalDetails.loginId || "N/A",
+        userName,
+        fullName,
         creditRef: creditRefNum ? creditRefNum.toLocaleString() : "0",
         balance,
-        // Client P/L = Balance - Credit Reference
-        clientPL: formatNumber(balance - creditRefNum),
-        exposure: user.AccountDetails.Exposure || 0,
-        // Available Balance = Balance - Exposure
-        availableBalance: balance - (user.AccountDetails.Exposure || 0),
+        clientPL,
+        exposure,
+        availableBalance,
         // Interpret as ACTIVE states (true means active)
-        ust: user.userLocked === true ? false : true,
-        bst: user.bettingLocked === true ? false : true,
-        exposureLimit: user.AccountDetails.ExposureLimit !== undefined && user.AccountDetails.ExposureLimit !== null ? user.AccountDetails.ExposureLimit : undefined,
-        defaultPercent: parseFloat((user as any).commissionDetails?.partnershipOwn || "0"), // Use partnershipOwn from commissionDetails
-        accountType: user.__type === "client" ? "User" : user.__type || "User",
-        _id: user.userId || "",
-        __type: user.__type || "User",
+        ust: userLocked === true ? false : true,
+        bst: bettingLocked === true ? false : true,
+        exposureLimit,
+        defaultPercent,
+        accountType,
+        _id: userId,
+        __type: userType,
       };
     });
   }, [downlineData?.data?.users]);
