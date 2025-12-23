@@ -88,7 +88,7 @@ const Drawer: React.FC<TopDrawerProps> = ({ items, groups, defaultOpen = false }
       [
         { label: "Down Level Credit Reference", value: balanceData?.downLevelCreditReference || 0 },
         { label: "Down Level Profit/Loss", value: balanceData?.downLevelProfitLoss || 0 },
-        { label: "My Profit/Loss", value: balanceData?.commissionEarned || 0 },
+        { label: "My Profit/Loss", value: balanceData?.myProfitLoss || 0 },
       ],
     ],
     [balanceData]

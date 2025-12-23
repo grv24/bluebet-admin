@@ -58,6 +58,7 @@ interface ClientRow {
  */
 interface APIUser {
   // New flat structure fields
+  userId?: string;         // User ID (new structure)
   username?: string;      // Login identifier (new structure)
   creditRef?: number;     // Credit reference number (new structure)
   balance?: number;       // Current balance (new structure)
@@ -69,7 +70,6 @@ interface APIUser {
   accountType?: string;   // Account type (new structure)
   
   // Old nested structure fields (for backward compatibility)
-  userId?: string;         // User ID
   PersonalDetails?: {      // Personal information (old structure)
     loginId: string;      // Login identifier
     userName: string;     // Display name
@@ -605,7 +605,8 @@ const ClientList: React.FC = () => {
     console.log(downlineData.data.users, "downlineData");
     return downlineData.data.users.map((user: APIUser): ClientRow => {
       // Support both new flat structure and old nested structure
-      const isNewStructure = user.username !== undefined || user.balance !== undefined;
+      // Check for new structure: has userId at root level OR has username/balance at root level
+      const isNewStructure = user.userId !== undefined || user.username !== undefined || user.balance !== undefined;
       
       const balance = isNewStructure 
         ? (user.balance || 0)
@@ -656,7 +657,7 @@ const ClientList: React.FC = () => {
         : (user.__type === "client" ? "User" : (user.__type || "User"));
       
       const userId = isNewStructure
-        ? (user.username || "")
+        ? (user.userId || "")
         : (user.userId || "");
       
       const userType = isNewStructure
