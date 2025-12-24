@@ -29,8 +29,20 @@ interface ClientRow {
 }
 
 interface APIUser {
-  userId: string;
-  PersonalDetails: {
+  // New flat structure fields
+  userId?: string;         // User ID (new structure)
+  username?: string;      // Login identifier (new structure)
+  creditRef?: number;     // Credit reference number (new structure)
+  balance?: number;       // Current balance (new structure)
+  clientProfitLoss?: number; // Client profit/loss (new structure)
+  exposure?: number;      // Current exposure (new structure)
+  availableBalance?: number; // Available balance (new structure)
+  exposureLimit?: number; // Maximum exposure limit (new structure)
+  partnershipOwn?: number; // Partnership own value (new structure)
+  accountType?: string;   // Account type (new structure)
+  
+  // Old nested structure fields (for backward compatibility)
+  PersonalDetails?: {
     loginId: string;
     userName: string;
     user_password: string;
@@ -39,7 +51,7 @@ interface APIUser {
     idIsActive: boolean;
     isAutoRegisteredUser: boolean;
   };
-  AccountDetails: {
+  AccountDetails?: {
     liability: number;
     Balance: number | string;
     profitLoss: number;
@@ -49,15 +61,15 @@ interface APIUser {
     ExposureLimit: number;
     creditRef: number;
   };
-  userLocked: boolean;
-  bettingLocked: boolean;
-  fancyLocked: boolean;
-  __type: string;
-  allowedNoOfUsers: number;
-  createdUsersCount: number;
-  remarks: string;
-  createdAt: string;
-  updatedAt: string;
+  userLocked?: boolean;
+  bettingLocked?: boolean;
+  fancyLocked?: boolean;
+  __type?: string;
+  allowedNoOfUsers?: number;
+  createdUsersCount?: number;
+  remarks?: string;
+  createdAt?: string;
+  updatedAt?: string;
   downlineBalances?: any;
 }
 
@@ -284,25 +296,84 @@ const ChildAdmin: React.FC = () => {
       return [];
     }
     return downlineData.data.users.map((user: APIUser): ClientRow => {
-      const balance = typeof user.AccountDetails.Balance === 'string' 
-        ? parseFloat(user.AccountDetails.Balance) 
-        : user.AccountDetails.Balance || 0;
-      const creditRefNum = user.AccountDetails.creditRef || 0;
+      // Support both new flat structure and old nested structure
+      // Check for new structure: has userId at root level OR has username/balance at root level
+      const isNewStructure = user.userId !== undefined || user.username !== undefined || user.balance !== undefined;
+      
+      const balance = isNewStructure 
+        ? (user.balance || 0)
+        : (typeof user.AccountDetails?.Balance === 'string' 
+            ? parseFloat(user.AccountDetails.Balance) 
+            : (user.AccountDetails?.Balance || 0));
+      
+      const creditRefNum = isNewStructure
+        ? (user.creditRef || 0)
+        : (user.AccountDetails?.creditRef || 0);
+      
+      const userName = isNewStructure
+        ? (user.username || "N/A")
+        : (user.PersonalDetails?.loginId || user.PersonalDetails?.userName || "N/A");
+      
+      const fullName = isNewStructure
+        ? (user.username || "N/A")
+        : (user.PersonalDetails?.userName || user.PersonalDetails?.loginId || "N/A");
+      
+      const exposure = isNewStructure
+        ? (user.exposure || 0)
+        : (user.AccountDetails?.Exposure || 0);
+      
+      const availableBalance = isNewStructure
+        ? (user.availableBalance || 0)
+        : (balance - exposure);
+      
+      const clientPL = isNewStructure
+        ? (user.clientProfitLoss !== undefined ? formatNumber(user.clientProfitLoss) : formatNumber(balance - creditRefNum))
+        : formatNumber(balance - creditRefNum);
+      
+      const userLocked = isNewStructure
+        ? (user.userLocked || false)
+        : (user.userLocked || false);
+      
+      const bettingLocked = isNewStructure
+        ? (user.bettingLocked || false)
+        : (user.bettingLocked || false);
+      
+      const exposureLimit = isNewStructure
+        ? (user.exposureLimit !== undefined && user.exposureLimit !== null ? user.exposureLimit : 0)
+        : (user.AccountDetails?.ExposureLimit || 0);
+      
+      const defaultPercent = isNewStructure
+        ? (user.partnershipOwn !== undefined ? parseFloat(String(user.partnershipOwn)) : 0)
+        : parseFloat((user as any).commissionDetails?.partnershipOwn || "0");
+      
+      const accountType = isNewStructure
+        ? (user.accountType === "client" ? "User" : (user.accountType || "User"))
+        : (user.__type === "client" ? "User" : (user.__type || "User"));
+      
+      const userId = isNewStructure
+        ? (user.userId || "")
+        : (user.userId || "");
+      
+      const userType = isNewStructure
+        ? (user.accountType || "User")
+        : (user.__type || "User");
+      
       return {
-        userName: user.PersonalDetails.loginId || user.PersonalDetails.userName || "N/A",
-        fullName: user.PersonalDetails.userName || user.PersonalDetails.loginId || "N/A",
+        userName,
+        fullName,
         creditRef: creditRefNum ? creditRefNum.toLocaleString() : "0",
         balance,
-        clientPL: formatNumber(balance - creditRefNum),
-        exposure: user.AccountDetails.Exposure || 0,
-        availableBalance: balance - (user.AccountDetails.Exposure || 0),
-        ust: user.userLocked === true ? false : true,
-        bst: user.bettingLocked === true ? false : true,
-        exposureLimit: user.AccountDetails.ExposureLimit || 0,
-        defaultPercent: parseFloat((user as any).commissionDetails?.partnershipOwn || "0"),
-        accountType: user.__type === "client" ? "User" : user.__type || "User",
-        _id: user.userId || "",
-        __type: user.__type || "User",
+        clientPL,
+        exposure,
+        availableBalance,
+        // Interpret as ACTIVE states (true means active)
+        ust: userLocked === true ? false : true,
+        bst: bettingLocked === true ? false : true,
+        exposureLimit,
+        defaultPercent,
+        accountType,
+        _id: userId,
+        __type: userType,
       };
     });
   }, [downlineData?.data?.users]);
