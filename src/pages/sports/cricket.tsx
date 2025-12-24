@@ -1341,17 +1341,17 @@ const Cricket: React.FC<CricketProps> = ({
                         <thead>
                           <tr className="border-white/10 border-b">
                             <td className="text-xs font-bold text-[var(--bg-primary90)] pl-2">
-                              Min: {oddEven?.min || 0} Max: {formatMaxValue(oddEven?.max)}
+                              {/* Min: {oddEven?.min || 0} Max: {formatMaxValue(oddEven?.max)} */}
                             </td>
                             <td className="p-0 border-white/10 w-full">
-                              <div className="flex justify-end">
+                              {/* <div className="flex justify-end">
                                 <div className="text-center text-xs md:text-sm py-1 bg-[var(--lay)] font-semibold w-16 md:w-28">
                                   No
                                 </div>
                                 <div className="text-center flex justify-center items-center text-xs md:text-sm py-1 bg-[var(--back)] font-semibold w-16 md:w-28">
                                   Yes
                                 </div>
-                              </div>
+                              </div> */}
                             </td>
                           </tr>
                         </thead>
@@ -1386,7 +1386,7 @@ const Cricket: React.FC<CricketProps> = ({
                                         <BlinkingOddsCell
                                           value={item?.l1}
                                           vol={item?.ls1}
-                                          type="lay"
+                                          type="back"
                                           index={0}
                                           isLocked={isLocked}
                                           onClick={() =>
@@ -1396,7 +1396,7 @@ const Cricket: React.FC<CricketProps> = ({
                                             console.log(
                                               "Bet clicked:",
                                               item,
-                                              "lay",
+                                              "back",
                                               item.ls1,
                                               item.l1
                                             )
