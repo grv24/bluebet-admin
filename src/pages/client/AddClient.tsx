@@ -68,6 +68,15 @@ const USER_TYPE_MAP: Record<string, string> = {
 const getAccountTypeLabel = (type: string): string =>
   type === "Client" ? "User" : type;
 
+// Format number: remove trailing zeros, show as integer if no decimals
+const formatCommissionValue = (value: number | undefined | null): string => {
+  if (value === undefined || value === null || isNaN(value)) return "0";
+  // Convert to string with 2 decimal places, then remove trailing zeros
+  const formatted = value.toFixed(2);
+  // Remove trailing zeros and decimal point if not needed
+  return formatted.replace(/\.?0+$/, "");
+};
+
 // Default commission rates by user type (from guide)
 const getDefaultCommissionRates = (userType: string) => {
   const defaultRates: { [key: string]: { panel: number; match: number; session: number } } = {
@@ -651,7 +660,7 @@ const AddClient: React.FC = () => {
           // Send original sports settings as they are without modifications
           ...(data.accountType !== "Client" && {
             commissionGiven: data.downlineCommission || 0,    // ✅ Downline commission
-            partnershipGiven: partnershipCalculations.downlineAbsolute || 0,  // ✅ Calculated absolute partnership value
+            partnershipGiven: data.downlinePartnership || 0,  // ✅ Downline partnership (user input)
             partnershipToUserId: userId || "",
             partnershipToType: userType || "",
             commissionToUserId: userId || "",
@@ -981,36 +990,12 @@ const AddClient: React.FC = () => {
                   </h2>
                   <input
                     type="text"
-                    value={commissionCalculations.upline.toFixed(2)}
+                    value={formatCommissionValue(commissionCalculations.own)}
                     disabled
                     className="w-full border-gray-300 px-4 text-xs leading-8 border-l"
                   />
                 </div>
                 <div className=" bg-white flex justify-between items-center border-white font-normal text-xs">
-                  <h2 className="text-xs font-normal w-1/2 px-4 leading-8">
-                    Our
-                  </h2>
-                  <input
-                    type="number"
-                    disabled
-                    {...register("ourCommission", {
-                      valueAsNumber: true,
-                      min: { value: 0, message: "Must be at least 0" },
-                      max: {
-                        value: commissionCalculations.maxOurAllowed,
-                        message: `Must be at most ${commissionCalculations.maxOurAllowed}%`,
-                      },
-                    })}
-                    min="0"
-                    max={commissionCalculations.maxOurAllowed}
-                    className={`w-full focus:outline-none px-4 text-xs leading-8 border-l ${
-                      commissionCalculations.isValidAllocation
-                        ? "border-gray-300"
-                        : "border-red-300 bg-red-50"
-                    }`}
-                  />
-                </div>
-                <div className=" bg-[#0000000d] flex justify-between items-center border-white font-normal text-xs">
                   <h2 className="text-xs font-normal w-1/2 px-4 leading-8">
                     Downline
                   </h2>
@@ -1031,6 +1016,19 @@ const AddClient: React.FC = () => {
                         ? "border-gray-300"
                         : "border-red-300 bg-red-50"
                     }`}
+                  />
+                </div>
+                <div className=" bg-[#0000000d] flex justify-between items-center border-white font-normal text-xs">
+                  <h2 className="text-xs font-normal w-1/2 px-4 leading-8">
+                    Our
+                  </h2>
+                  <input
+                    type="text"
+                    value={watch("downlineCommission") && watch("downlineCommission") > 0 
+                      ? formatCommissionValue(commissionCalculations.own - (watch("downlineCommission") || 0))
+                      : ""}
+                    disabled
+                    className="w-full border-gray-300 px-4 text-xs leading-8 border-l"
                   />
                 </div>
                 {!commissionCalculations.isValidAllocation && (
@@ -1056,39 +1054,21 @@ const AddClient: React.FC = () => {
 
               <div className="flex flex-col">
                 <div className=" bg-[#0000000d] flex justify-between items-center border-white font-normal text-xs">
-                  <div className="w-[57.5%] px-4 leading-8 flex gap-2">
-                    <h2 className="text-xs font-normal">Upline Share</h2>
-                    <p className="text-xs text-gray-500">(Fixed - cannot be changed)</p>
+                  <div className="w-1/2 px-4 leading-8 flex gap-2">
+                    <h2 className="text-xs font-normal">Upline</h2>
+                  
                   </div>
                   <input
                     type="text"
-                    value={partnershipCalculations.upline.toFixed(2)}
+                    value={formatCommissionValue(partnershipCalculations.own)}
                     disabled
                     className="w-full border-gray-300 px-4 text-xs leading-8 border-l bg-gray-100"
                   />
                 </div>
                 <div className=" bg-white flex justify-between items-center border-white font-normal text-xs">
-                  <div className="w-[56.5%] px-4 leading-8 flex gap-2 items-center">
-                    <h2 className="text-xs font-normal">Your Share</h2>
-                    <p className="text-xs text-gray-500">(Available for distribution)</p>
-                  </div>
-                  <div className="w-full flex items-center">
-                    <input
-                      type="text"
-                      value={partnershipCalculations.our.toFixed(2)}
-                      disabled
-                      className="w-full border-gray-300 px-4 text-xs leading-8 border-l bg-gray-100"
-                    />
-                    <span className="ml-2 text-xs text-gray-500">%</span>
-                  </div>
-                </div>
-                <div className=" bg-[#0000000d] flex justify-between items-center border-white font-normal text-xs">
                   <div className="w-1/2 px-4 leading-8 flex gap-2 items-center">
-                    <h2 className="text-xs font-normal text-nowrap">Give to Downline</h2>
-                    <p className="text-xs text-gray-500 text-nowrap">(% of your share)</p>
-                    <div className="text-xs text-blue-600 font-medium text-nowrap">
-                      = {partnershipCalculations.downlineAbsolute.toFixed(2)}% actual share
-                    </div>
+                    <h2 className="text-xs font-normal">Downline</h2>
+                  
                   </div>
                   <div className="w-full flex items-center">
                     <input
@@ -1116,7 +1096,23 @@ const AddClient: React.FC = () => {
                           ? "border-gray-300"
                           : "border-red-300 bg-red-50"
                       }`}
-                      placeholder="Enter % to give"
+                    />
+                    <span className="ml-2 text-xs text-gray-500">%</span>
+                  </div>
+                </div>
+                <div className=" bg-[#0000000d] flex justify-between items-center border-white font-normal text-xs">
+                  <div className="w-1/2 px-4 leading-8 flex gap-2 items-center">
+                    <h2 className="text-xs font-normal text-nowrap">Our</h2>
+                  
+                  </div>
+                  <div className="w-full flex items-center">
+                    <input
+                      type="text"
+                      value={watch("downlinePartnership") && watch("downlinePartnership") > 0
+                        ? formatCommissionValue(partnershipCalculations.own - (watch("downlinePartnership") || 0))
+                        : ""}
+                      disabled
+                      className="w-full border-gray-300 px-4 text-xs leading-8 border-l"
                     />
                     <span className="ml-2 text-xs text-gray-500">%</span>
                   </div>

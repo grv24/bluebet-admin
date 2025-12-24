@@ -697,11 +697,11 @@ const Cricket: React.FC<CricketProps> = ({
                             className="text-sm font-normal hover:cursor-pointer text-white/90 leading-6 tracking-tight"
                           >
                             {marketName}
-                          </h2>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
+                  </h2>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
                                 setSelectedBetLockMarket({
                                   mid: market.mid,
                                   marketName: marketName,
@@ -709,33 +709,33 @@ const Cricket: React.FC<CricketProps> = ({
                                 });
                                 setUserBookMarketType('bookmaker');
                                 setSelectedBookmakerIndex(index);
-                                setShowBetLockModal(true);
-                              }}
-                              className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
-                            >
-                              BET LOCK
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setUserBookMarketType('bookmaker');
+                        setShowBetLockModal(true);
+                      }}
+                      className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
+                    >
+                      BET LOCK
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUserBookMarketType('bookmaker');
                                 setSelectedBookmakerIndex(index);
-                                setShowUserBookModal(true);
-                              }}
-                              className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
-                            >
-                              USER BOOK
-                            </button>
-                          </div>
-                        </div>
-                        <div
-                          className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                        setShowUserBookModal(true);
+                      }}
+                      className="text-xs px-2 hover:cursor-pointer font-semibold leading-6 tracking-tight bg-[var(--bg-secondary)] text-white/90"
+                    >
+                      USER BOOK
+                    </button>
+                  </div>
+                </div>
+                <div
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
                             isBookmakerExpanded
-                              ? "max-h-[1000px] opacity-100"
-                              : "max-h-0 opacity-0"
-                          }`}
-                        >
-                          <table className="w-full">
+                      ? "max-h-[1000px] opacity-100"
+                      : "max-h-0 opacity-0"
+                  }`}
+                >
+                      <table className="w-full">
                         <thead>
                           <tr>
                             <td className="text-xs font-bold text-[var(--bg-primary90)] pl-2 md:w-72">
@@ -863,7 +863,7 @@ const Cricket: React.FC<CricketProps> = ({
                           )}
                         </tbody>
                       </table>
-                        </div>
+                    </div>
                       </div>
                     );
                   })}
