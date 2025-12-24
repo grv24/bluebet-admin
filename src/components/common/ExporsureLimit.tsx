@@ -67,11 +67,11 @@ const ExporsureLimit: React.FC<ExporsureLimitProps> = ({
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          userId: user?._id || "",
+        userId: user?._id || "",
           newLimit: exposureLimit,
-          transactionPassword,
-          userType: user?.__type || "",
-        }),
+        transactionPassword,
+        userType: user?.__type || "",
+      }),
       });
 
       // Parse response body regardless of status code

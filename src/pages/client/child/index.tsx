@@ -303,7 +303,7 @@ const ChildAdmin: React.FC = () => {
       const balance = isNewStructure 
         ? (user.balance || 0)
         : (typeof user.AccountDetails?.Balance === 'string' 
-            ? parseFloat(user.AccountDetails.Balance) 
+        ? parseFloat(user.AccountDetails.Balance) 
             : (user.AccountDetails?.Balance || 0));
       
       const creditRefNum = isNewStructure

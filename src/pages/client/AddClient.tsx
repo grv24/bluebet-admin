@@ -660,7 +660,9 @@ const AddClient: React.FC = () => {
           // Send original sports settings as they are without modifications
           ...(data.accountType !== "Client" && {
             commissionGiven: data.downlineCommission || 0,    // ✅ Downline commission
+            commissionUpline: commissionCalculations.own - (data.downlineCommission || 0),  // ✅ Commission Our (Upline - Downline)
             partnershipGiven: data.downlinePartnership || 0,  // ✅ Downline partnership (user input)
+            partnershipUpline: partnershipCalculations.own - (data.downlinePartnership || 0),  // ✅ Partnership Our (Upline - Downline)
             partnershipToUserId: userId || "",
             partnershipToType: userType || "",
             commissionToUserId: userId || "",
