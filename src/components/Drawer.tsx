@@ -138,7 +138,7 @@ const Drawer: React.FC<TopDrawerProps> = ({ items, groups, defaultOpen = false }
         </div>
         <div className={`px-3 ${isOpen ? "py-2" : "py-0"}`}>
           <div
-            className={`grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-3 transition-opacity duration-200 ${
+            className={`flex justify-between gap-y-3 transition-opacity duration-200 ${
               isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
             }`}
           >
@@ -154,7 +154,7 @@ const Drawer: React.FC<TopDrawerProps> = ({ items, groups, defaultOpen = false }
               groupedMetrics.map((col, colIdx) => (
                 <div key={`col-${colIdx}`} className="space-y-2">
                   {col.map((m) => (
-                    <div key={m.label} className="text-xs flex items-center justify-between">
+                    <div key={m.label} className="text-xs gap-12 md:gap-20 flex items-center justify-between">
                       <span className="opacity-90 whitespace-nowrap mr-2">{m.label}:</span>
                       <span className={`font-medium`}>
                         {typeof m.value === "number" ? m.value.toLocaleString("en-IN") : m.value}
