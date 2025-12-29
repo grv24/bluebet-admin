@@ -143,7 +143,7 @@ const Drawer: React.FC<TopDrawerProps> = ({ items, groups, defaultOpen = false }
             }`}
           >
             {loading ? (
-              <div className="col-span-3 text-center text-white/70 text-xs py-4">
+              <div className="col-span-3 flex justify-center items-center w-full text-center text-white/70 text-xs py-4">
                 Loading balance data...
               </div>
             ) : error ? (
